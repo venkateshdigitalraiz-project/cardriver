@@ -4,16 +4,21 @@ import '../entities/profile_menu_item.dart';
 class GetProfileMenuUseCase {
   List<ProfileMenuItem> execute() {
     return const [
+      // ProfileMenuItem(
+      //   title: 'Ride History',
+      //   subtitle: 'View your past rides and details',
+      //   icon: Icons.history,
+      // ),
       ProfileMenuItem(
         title: 'Earnings',
         subtitle: 'Transfer Money to Bank, History',
         icon: Icons.account_balance_wallet_outlined,
       ),
-      ProfileMenuItem(
-        title: 'Incentives and More',
-        subtitle: 'Know how you get paid',
-        icon: Icons.money,
-      ),
+      // ProfileMenuItem(
+      //   title: 'Incentives and More',
+      //   subtitle: 'Know how you get paid',
+      //   icon: Icons.money,
+      // ),
       ProfileMenuItem(
         title: 'Rewards',
         subtitle: 'Insurance and Discounts',
@@ -29,11 +34,11 @@ class GetProfileMenuUseCase {
         subtitle: 'Past High Demand Areas & More',
         icon: Icons.hexagon_outlined,
       ),
-      ProfileMenuItem(
-        title: 'Help',
-        subtitle: 'Get support, Accident Insurance',
-        icon: Icons.headset_mic_outlined,
-      ),
+      // ProfileMenuItem(
+      //   title: 'Help',
+      //   subtitle: 'Get support, Accident Insurance',
+      //   icon: Icons.headset_mic_outlined,
+      // ),
     ];
   }
 }

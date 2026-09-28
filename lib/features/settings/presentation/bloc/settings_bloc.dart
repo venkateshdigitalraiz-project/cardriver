@@ -33,11 +33,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
             title: 'Notifications',
             subtitle: 'Alerts, updates and messages',
           ),
-          SettingsMenuItem(
-            icon: Icons.security,
-            title: 'Account & Security',
-            subtitle: 'Change password, 2FA, devices',
-          ),
+          // SettingsMenuItem(
+          //   icon: Icons.security,
+          //   title: 'Account & Security',
+          //   subtitle: 'Change password, 2FA, devices',
+          // ),
           // SettingsMenuItem(
           //   icon: Icons.directions_car,
           //   title: 'Vehicle Information',

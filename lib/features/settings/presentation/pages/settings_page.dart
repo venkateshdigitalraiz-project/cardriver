@@ -4,6 +4,7 @@ import '../bloc/settings_bloc.dart';
 import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../documents/presentation/pages/documents_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -247,7 +248,12 @@ class SettingsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: () {
-            if (item.title == 'Log Out') {
+            if (item.title == 'Documents') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DocumentsPage()),
+              );
+            } else if (item.title == 'Log Out') {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginPage()),

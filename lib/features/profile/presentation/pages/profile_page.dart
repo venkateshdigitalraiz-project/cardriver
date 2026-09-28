@@ -9,6 +9,9 @@ import 'edit_profile_page.dart';
 import '../../../earnings/presentation/pages/earnings_page.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
+import '../../../ride_history/presentation/pages/ride_history_page.dart';
+import '../../../rewards/presentation/pages/rewards_page.dart';
+import '../../../support/presentation/pages/support_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final String userName;
@@ -47,7 +50,6 @@ class _ProfileView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.arrow_back, color: Colors.white),
                 const SizedBox(width: 16),
                 const Text(
                   'Driver Profile',
@@ -59,7 +61,10 @@ class _ProfileView extends StatelessWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.settings_outlined, color: Colors.white),
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -302,7 +307,24 @@ class _ProfileView extends StatelessWidget {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => const EarningsPage(),
+                                              builder: (context) =>
+                                                  const EarningsPage(),
+                                            ),
+                                          );
+                                        } else if (item.title == 'Ride History') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const RideHistoryPage(),
+                                            ),
+                                          );
+                                        } else if (item.title == 'Rewards') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const RewardsPage(),
                                             ),
                                           );
                                         }
@@ -411,11 +433,27 @@ class _ProfileView extends StatelessWidget {
                           Icons.history,
                           'Ride\nHistory',
                           Colors.purple,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RideHistoryPage(),
+                              ),
+                            );
+                          },
                         ),
                         _buildActionCard(
                           Icons.headset_mic,
                           'Help &\nSupport',
                           Colors.orange,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SupportPage(),
+                              ),
+                            );
+                          },
                         ),
                         _buildActionCard(
                           Icons.logout,

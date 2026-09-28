@@ -113,14 +113,14 @@ class _LoginPageState extends State<LoginPage> {
 
         return Scaffold(
           backgroundColor: AppColors.darkBackground,
-          body: Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: size.height * 0.5,
-                child: Container(
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Stack(
+              children: [
+                Container(
+                  height: size.height * 0.5,
+                  width: double.infinity,
+                  child: Container(
                   decoration: const BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage('assets/images/car_driver.jpg'),
@@ -213,12 +213,13 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              Positioned(
-                top: size.height * 0.4,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: TweenAnimationBuilder<double>(
+                Container(
+                  margin: EdgeInsets.only(top: size.height * 0.4),
+                  constraints: BoxConstraints(
+                    minHeight: size.height * 0.6,
+                  ),
+                  width: double.infinity,
+                  child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 800),
                   curve: Curves.easeOutCubic,
@@ -246,8 +247,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 32,
@@ -537,8 +536,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
