@@ -5,19 +5,9 @@ class GetProfileMenuUseCase {
   List<ProfileMenuItem> execute() {
     return const [
       // ProfileMenuItem(
-      //   title: 'Ride History',
-      //   subtitle: 'View your past rides and details',
-      //   icon: Icons.history,
-      // ),
-      ProfileMenuItem(
-        title: 'Earnings',
-        subtitle: 'Transfer Money to Bank, History',
-        icon: Icons.account_balance_wallet_outlined,
-      ),
-      // ProfileMenuItem(
-      //   title: 'Incentives and More',
-      //   subtitle: 'Know how you get paid',
-      //   icon: Icons.money,
+      //   title: 'Earnings',
+      //   subtitle: 'Transfer Money to Bank, History',
+      //   icon: Icons.account_balance_wallet_outlined,
       // ),
       ProfileMenuItem(
         title: 'Rewards',
@@ -25,20 +15,20 @@ class GetProfileMenuUseCase {
         icon: Icons.card_giftcard_rounded,
       ),
       ProfileMenuItem(
-        title: 'Service Manager',
-        subtitle: 'Food Delivery & more',
-        icon: Icons.grid_view_rounded,
+        title: 'My Tickets',
+        subtitle: 'Track Your Support Requests',
+        icon: Icons.confirmation_number_outlined,
       ),
       ProfileMenuItem(
-        title: 'Demand Planner',
-        subtitle: 'Past High Demand Areas & More',
-        icon: Icons.hexagon_outlined,
+        title: 'Subscription',
+        subtitle: 'Manage Your Plan & Benefits',
+        icon: Icons.stars_rounded,
       ),
-      // ProfileMenuItem(
-      //   title: 'Help',
-      //   subtitle: 'Get support, Accident Insurance',
-      //   icon: Icons.headset_mic_outlined,
-      // ),
+      ProfileMenuItem(
+        title: 'Subscription History',
+        subtitle: 'View All Subscription Transactions',
+        icon: Icons.history_rounded,
+      ),
     ];
   }
 }
