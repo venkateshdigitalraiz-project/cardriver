@@ -1,8 +1,8 @@
 import 'dart:io';
+import 'package:cardriver/features/documents/presentation/pages/documents_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-// import '../../../../core/style/app_typography.dart';
 import '../../domain/usecases/get_profile_menu_usecase.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
@@ -10,10 +10,11 @@ import '../bloc/profile_state.dart';
 import 'edit_profile_page.dart';
 import '../../../earnings/presentation/pages/earnings_page.dart';
 import '../../../auth/presentation/pages/login_page.dart';
-import '../../../settings/presentation/pages/settings_page.dart';
 import '../../../ride_history/presentation/pages/ride_history_page.dart';
 import '../../../rewards/presentation/pages/rewards_page.dart';
 import '../../../support/presentation/pages/support_page.dart';
+import '../../../legal/presentation/pages/legal_page.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../subscription/presentation/pages/subscription_page.dart';
 import '../../../subscription_history/presentation/pages/subscription_history_page.dart';
 
@@ -64,20 +65,6 @@ class _ProfileView extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(
-                    Icons.settings_outlined,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsPage(),
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
           ),
@@ -307,7 +294,24 @@ class _ProfileView extends StatelessWidget {
                                         color: Colors.grey,
                                       ),
                                       onTap: () {
-                                        if (item.title == 'Rewards') {
+                                        if (item.title == 'Documents') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const DocumentsPage(),
+                                            ),
+                                          );
+                                        } else if (item.title ==
+                                            'Notifications') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const NotificationsPage(),
+                                            ),
+                                          );
+                                        } else if (item.title == 'Rewards') {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
@@ -335,6 +339,30 @@ class _ProfileView extends StatelessWidget {
                                           );
                                         } else if (item.title == 'My Tickets') {
                                           _showMyTicketsSheet(context);
+                                        } else if (item.title ==
+                                            'Terms & Conditions') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const LegalPage(
+                                                    pageType:
+                                                        LegalPageType.terms,
+                                                  ),
+                                            ),
+                                          );
+                                        } else if (item.title ==
+                                            'Privacy Policy') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const LegalPage(
+                                                    pageType:
+                                                        LegalPageType.privacy,
+                                                  ),
+                                            ),
+                                          );
                                         }
                                       },
                                     ),
@@ -560,14 +588,16 @@ class _ProfileView extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 75,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        width: 80,
+        height: 100, // Fixed height ensures all cards are exactly the same size
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade200),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -585,6 +615,7 @@ class _ProfileView extends StatelessWidget {
                 color: Colors.grey.shade700,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
+                height: 1.2,
               ),
             ),
           ],
@@ -651,16 +682,28 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt_rounded, color: Colors.blue),
-                  title: const Text('Take a photo', style: TextStyle(color: Color(0xFF0F172A))),
+                  leading: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.blue,
+                  ),
+                  title: const Text(
+                    'Take a photo',
+                    style: TextStyle(color: Color(0xFF0F172A)),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.camera);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_rounded, color: Colors.green),
-                  title: const Text('Choose from gallery', style: TextStyle(color: Color(0xFF0F172A))),
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Colors.green,
+                  ),
+                  title: const Text(
+                    'Choose from gallery',
+                    style: TextStyle(color: Color(0xFF0F172A)),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.gallery);
@@ -716,10 +759,16 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFE0E7FF), Color(0xFFC7D2FE)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE0E7FF), Color(0xFFC7D2FE)],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.confirmation_number_rounded, color: Color(0xFF4F46E5), size: 24),
+                  child: const Icon(
+                    Icons.confirmation_number_rounded,
+                    color: Color(0xFF4F46E5),
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 const Expanded(
@@ -737,10 +786,7 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                       SizedBox(height: 4),
                       Text(
                         'Create a new support request',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontSize: 13),
                       ),
                     ],
                   ),
@@ -774,7 +820,10 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+                  borderSide: BorderSide(
+                    color: Colors.blue.shade400,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -806,7 +855,10 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+                  borderSide: BorderSide(
+                    color: Colors.blue.shade400,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -830,11 +882,18 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                          style: BorderStyle.solid,
+                        ),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.add_a_photo_rounded, color: Colors.blue.shade600, size: 28),
+                          Icon(
+                            Icons.add_a_photo_rounded,
+                            color: Colors.blue.shade600,
+                            size: 28,
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             'Upload photo from Camera or Gallery',
@@ -892,7 +951,10 @@ class _MyTicketsSheetState extends State<_MyTicketsSheet> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
                           onPressed: () {
                             setState(() {
                               _selectedImage = null;

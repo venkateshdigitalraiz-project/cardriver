@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/documents_bloc.dart';
 import '../bloc/documents_event.dart';
 import '../bloc/documents_state.dart';
+import 'package:file_picker/file_picker.dart';
 
 class DocumentsPage extends StatelessWidget {
   const DocumentsPage({super.key});
@@ -17,7 +18,11 @@ class DocumentsPage extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.black,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
           centerTitle: true,
@@ -80,33 +85,40 @@ class DocumentsPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Chips
                         Row(
                           children: [
                             _FilterChip(
                               label: 'All',
                               isSelected: state.selectedFilter == 'All',
-                              onTap: () => context.read<DocumentsBloc>().add(FilterDocumentsEvent('All')),
+                              onTap: () => context.read<DocumentsBloc>().add(
+                                FilterDocumentsEvent('All'),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             _FilterChip(
                               label: 'Driver',
                               isSelected: state.selectedFilter == 'Driver',
-                              onTap: () => context.read<DocumentsBloc>().add(FilterDocumentsEvent('Driver')),
+                              onTap: () => context.read<DocumentsBloc>().add(
+                                FilterDocumentsEvent('Driver'),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             _FilterChip(
                               label: 'Vehicle',
                               isSelected: state.selectedFilter == 'Vehicle',
-                              onTap: () => context.read<DocumentsBloc>().add(FilterDocumentsEvent('Vehicle')),
+                              onTap: () => context.read<DocumentsBloc>().add(
+                                FilterDocumentsEvent('Vehicle'),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 24),
 
                         // Driver Documents Section
-                        if (state.selectedFilter == 'All' || state.selectedFilter == 'Driver') ...[
+                        if (state.selectedFilter == 'All' ||
+                            state.selectedFilter == 'Driver') ...[
                           const Text(
                             'Driver documents',
                             style: TextStyle(
@@ -121,7 +133,8 @@ class DocumentsPage extends StatelessWidget {
                         ],
 
                         // Vehicle Documents Section
-                        if (state.selectedFilter == 'All' || state.selectedFilter == 'Vehicle') ...[
+                        if (state.selectedFilter == 'All' ||
+                            state.selectedFilter == 'Vehicle') ...[
                           const Text(
                             'Vehicle documents · TS 09 EA 1234',
                             style: TextStyle(
@@ -139,14 +152,20 @@ class DocumentsPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Fixed Bottom Button
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 0, // Above bottom nav if any, but since we have a bottom nav in design, we put it above it.
+                    bottom:
+                        0, // Above bottom nav if any, but since we have a bottom nav in design, we put it above it.
                     child: Container(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80),
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 16,
+                        bottom: 80,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         boxShadow: [
@@ -161,8 +180,38 @@ class DocumentsPage extends StatelessWidget {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.upload_file, color: Colors.white),
+                          onPressed: () async {
+                            try {
+                              final result = await FilePicker.pickFiles(
+                                type: FileType.custom,
+                                allowedExtensions: ['pdf'],
+                              );
+                              if (result.isNotEmpty) {
+                                if (!context.mounted) return;
+                                // PDF attached successfully
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Attached: ${result.first.name}',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.upload_file,
+                            color: Colors.white,
+                          ),
                           label: const Text(
                             'Upload document',
                             style: TextStyle(
@@ -198,14 +247,30 @@ class DocumentsPage extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _BottomNavItem(icon: Icons.home_outlined, label: 'Home', isSelected: false),
-                          _BottomNavItem(icon: Icons.map_outlined, label: 'Trips', isSelected: false),
-                          _BottomNavItem(icon: Icons.account_balance_wallet_outlined, label: 'Earnings', isSelected: false),
-                          _BottomNavItem(icon: Icons.grid_view, label: 'Service', isSelected: true),
+                          _BottomNavItem(
+                            icon: Icons.home_outlined,
+                            label: 'Home',
+                            isSelected: false,
+                          ),
+                          _BottomNavItem(
+                            icon: Icons.map_outlined,
+                            label: 'Trips',
+                            isSelected: false,
+                          ),
+                          _BottomNavItem(
+                            icon: Icons.account_balance_wallet_outlined,
+                            label: 'Earnings',
+                            isSelected: false,
+                          ),
+                          _BottomNavItem(
+                            icon: Icons.grid_view,
+                            label: 'Service',
+                            isSelected: true,
+                          ),
                         ],
                       ),
                     ),
-                  )
+                  ),
                 ],
               );
             }
@@ -249,13 +314,7 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: textColor,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: textColor)),
         ],
       ),
     );
@@ -314,10 +373,8 @@ class _DocumentGroup extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
         itemCount: documents.length,
-        separatorBuilder: (context, index) => Divider(
-          color: Colors.grey.shade300,
-          height: 1,
-        ),
+        separatorBuilder: (context, index) =>
+            Divider(color: Colors.grey.shade300, height: 1),
         itemBuilder: (context, index) {
           final doc = documents[index];
           return _DocumentListItem(doc: doc);
@@ -327,10 +384,17 @@ class _DocumentGroup extends StatelessWidget {
   }
 }
 
-class _DocumentListItem extends StatelessWidget {
+class _DocumentListItem extends StatefulWidget {
   final DocumentItem doc;
 
   const _DocumentListItem({required this.doc});
+
+  @override
+  State<_DocumentListItem> createState() => _DocumentListItemState();
+}
+
+class _DocumentListItemState extends State<_DocumentListItem> {
+  String? uploadedFileName;
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +402,9 @@ class _DocumentListItem extends StatelessWidget {
     Color iconBgColor;
     Color iconColor;
 
-    if (doc.title.contains('Insurance') || doc.title.contains('PUC') || doc.title.contains('Police')) {
+    if (widget.doc.title.contains('Insurance') ||
+        widget.doc.title.contains('PUC') ||
+        widget.doc.title.contains('Police')) {
       iconBgColor = const Color(0xFFFBE9E7); // light red/orange
       iconColor = Colors.deepOrange;
       iconData = Icons.description_outlined;
@@ -347,6 +413,16 @@ class _DocumentListItem extends StatelessWidget {
       iconColor = Colors.indigo;
       iconData = Icons.credit_card_outlined;
     }
+
+    String displaySubtitle = uploadedFileName != null
+        ? 'Successfully loaded ${uploadedFileName!}'
+        : widget.doc.subtitle;
+
+    Color subtitleColor = uploadedFileName != null
+        ? Colors.green.shade700
+        : (widget.doc.statusType == 'upload'
+              ? Colors.red.shade700
+              : Colors.grey.shade600);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -367,7 +443,7 @@ class _DocumentListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  doc.title,
+                  widget.doc.title,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -375,32 +451,62 @@ class _DocumentListItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  doc.subtitle,
-                  style: TextStyle(
-                    color: doc.statusType == 'upload' ? Colors.red.shade700 : Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
+                  displaySubtitle,
+                  style: TextStyle(color: subtitleColor, fontSize: 12),
                 ),
               ],
             ),
           ),
-          _buildStatus(doc.status, doc.statusType),
+          if (uploadedFileName == null)
+            _buildStatus(context, widget.doc.status, widget.doc.statusType)
+          else
+            _buildStatus(context, 'Uploaded', 'success'),
         ],
       ),
     );
   }
 
-  Widget _buildStatus(String status, String type) {
+  Widget _buildStatus(BuildContext context, String status, String type) {
     if (type == 'upload') {
-      return Text(
-        status,
-        style: const TextStyle(
-          color: Color(0xFF2B78E4),
-          fontWeight: FontWeight.bold,
+      return GestureDetector(
+        onTap: () async {
+          try {
+            final result = await FilePicker.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['pdf'],
+            );
+            if (result.isNotEmpty) {
+              if (!context.mounted) return;
+              setState(() {
+                uploadedFileName = result.first.name;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Attached: ${result.first.name}'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        child: Text(
+          status,
+          style: const TextStyle(
+            color: Color(0xFF2B78E4),
+            fontWeight: FontWeight.bold,
+          ),
         ),
       );
     }
-    
+
     Color bgColor;
     Color textColor;
     if (type == 'success') {
