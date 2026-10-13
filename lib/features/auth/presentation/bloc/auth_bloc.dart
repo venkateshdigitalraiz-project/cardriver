@@ -3,6 +3,7 @@ import '../../../../core/errors/exceptions.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/usecases/login_customer_usecase.dart';
 import '../../domain/usecases/register_customer_usecase.dart';
+import '../../domain/usecases/register_driver_usecase.dart';
 import '../../domain/usecases/send_otp_usecase.dart';
 import '../../domain/usecases/verify_otp_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
@@ -15,6 +16,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SendOtpUseCase sendOtpUseCase;
   final VerifyOtpUseCase verifyOtpUseCase;
   final RegisterCustomerUseCase registerCustomerUseCase;
+  final RegisterDriverUseCase? registerDriverUseCase;
   final LogoutUseCase logoutUseCase;
   final AuthRepository authRepository;
 
@@ -23,6 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.sendOtpUseCase,
     required this.verifyOtpUseCase,
     required this.registerCustomerUseCase,
+    this.registerDriverUseCase,
     required this.logoutUseCase,
     required this.authRepository,
   }) : super(const AuthState()) {
@@ -32,6 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<VerifyOtpEvent>(_onVerifyOtp);
     on<SocialLoginEvent>(_onSocialLogin);
     on<RegisterCustomerEvent>(_onRegisterCustomer);
+    on<RegisterDriverEvent>(_onRegisterDriver);
     on<SwitchLoginModeEvent>(_onSwitchLoginMode);
     on<ToggleRememberMeEvent>(_onToggleRememberMe);
     on<LogoutEvent>(_onLogout);
@@ -197,6 +201,45 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: 'Account creation failed. Please try again.',
+      ));
+    }
+  }
+
+  Future<void> _onRegisterDriver(
+    RegisterDriverEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(state.copyWith(status: AuthStatus.loading, clearError: true));
+    try {
+      final driverUseCase = registerDriverUseCase ?? RegisterDriverUseCase(authRepository);
+      final driver = await driverUseCase(
+        RegisterDriverParams(
+          firstName: event.firstName,
+          lastName: event.lastName,
+          name: event.name,
+          email: event.email,
+          phone: event.phone,
+          password: event.password,
+          address: event.address,
+          licenseNumber: event.licenseNumber,
+          vehicleModel: event.vehicleModel,
+          vehiclePlate: event.vehiclePlate,
+          serviceType: event.serviceType,
+        ),
+      );
+      emit(state.copyWith(
+        status: AuthStatus.authenticated,
+        driver: driver,
+      ));
+    } on AuthException catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.message,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Driver registration failed. Please try again.',
       ));
     }
   }

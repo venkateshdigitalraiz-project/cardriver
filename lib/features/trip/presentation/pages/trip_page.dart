@@ -6,6 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_spacing.dart';
 import '../../../../core/style/app_typography.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:cardriver/features/active_ride/presentation/pages/active_ride_page.dart';
+import 'package:cardriver/features/trip/presentation/pages/trip_details_page.dart';
 
 class TripPage extends StatelessWidget {
   const TripPage({super.key});
@@ -190,7 +193,27 @@ class _TripView extends StatelessWidget {
                                       width: double.infinity,
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          // Navigate to Active Trip Screen
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ActiveRidePage(
+                                                startLocation: const LatLng(
+                                                  12.9716,
+                                                  77.5946,
+                                                ),
+                                                endLocation: const LatLng(
+                                                  12.9916,
+                                                  77.5946,
+                                                ),
+                                                startLocationName:
+                                                    trip.pickupLocation,
+                                                endLocationName:
+                                                    trip.destination,
+                                                cost:
+                                                    '₹${(trip.fare * 80).toStringAsFixed(0)}', // Adjusting for INR dummy data
+                                              ),
+                                            ),
+                                          );
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.primary,
@@ -212,7 +235,12 @@ class _TripView extends StatelessWidget {
                                       width: double.infinity,
                                       child: OutlinedButton(
                                         onPressed: () {
-                                          // Navigate to Trip Details
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => TripDetailsPage(trip: trip),
+                                            ),
+                                          );
                                         },
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor:

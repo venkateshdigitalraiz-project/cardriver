@@ -7,6 +7,8 @@ import '../../../../core/utils/app_snackbar.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import 'driver_dashboard_page.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,6 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   bool _isOtpSentLocal = false;
+  bool _keepMeSignedIn = true;
 
   @override
   void dispose() {
@@ -94,18 +97,30 @@ class _LoginPageState extends State<LoginPage> {
             'OTP code sent to ${state.pendingPhoneNumber}!',
           );
           // No longer navigating to OtpVerificationPage! We stay on the same page.
-        } else if (state.status == AuthStatus.authenticated &&
-            state.customer != null) {
-          AppSnackBar.showSuccess(
-            context,
-            'Welcome back, ${state.customer!.name}!',
-          );
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (_) => WelcomePage(customer: state.customer!),
-            ),
-            (route) => false,
-          );
+        } else if (state.status == AuthStatus.authenticated) {
+          if (state.driver != null) {
+            AppSnackBar.showSuccess(
+              context,
+              'Welcome, ${state.driver!.name}!',
+            );
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => DriverDashboardPage(driver: state.driver!),
+              ),
+              (route) => false,
+            );
+          } else if (state.customer != null) {
+            AppSnackBar.showSuccess(
+              context,
+              'Welcome back, ${state.customer!.name}!',
+            );
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => WelcomePage(customer: state.customer!),
+              ),
+              (route) => false,
+            );
+          }
         }
       },
       builder: (context, state) {
@@ -486,61 +501,170 @@ class _LoginPageState extends State<LoginPage> {
                                       }),
                                     ),
                                   ],
-                                  const SizedBox(height: 32),
-                                  ElevatedButton(
-                                    onPressed: state.isLoading
-                                        ? null
-                                        : (isOtpSent
-                                              ? _onVerifyOtp
-                                              : _onSendOtp),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 0,
-                                    ),
-                                    child: state.isLoading
-                                        ? const SizedBox(
-                                            height: 24,
-                                            width: 24,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
-                                            ),
-                                          )
-                                        : Text(
-                                            isOtpSent
-                                                ? 'Verify OTP'
-                                                : 'Send OTP',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+                                   const SizedBox(height: 20),
+                                   // Keep me signed in Checkbox
+                                   Row(
+                                     children: [
+                                       SizedBox(
+                                         height: 22,
+                                         width: 22,
+                                         child: Checkbox(
+                                           value: _keepMeSignedIn,
+                                           activeColor: AppColors.primary,
+                                           checkColor: Colors.black87,
+                                           shape: RoundedRectangleBorder(
+                                             borderRadius: BorderRadius.circular(4),
+                                           ),
+                                           side: BorderSide(
+                                             color: Colors.grey[400]!,
+                                             width: 1.5,
+                                           ),
+                                           onChanged: (val) {
+                                             setState(() {
+                                               _keepMeSignedIn = val ?? true;
+                                             });
+                                             context.read<AuthBloc>().add(
+                                                   ToggleRememberMeEvent(_keepMeSignedIn),
+                                                 );
+                                           },
+                                         ),
+                                       ),
+                                       const SizedBox(width: 10),
+                                       GestureDetector(
+                                         onTap: () {
+                                           setState(() {
+                                             _keepMeSignedIn = !_keepMeSignedIn;
+                                           });
+                                           context.read<AuthBloc>().add(
+                                                 ToggleRememberMeEvent(_keepMeSignedIn),
+                                               );
+                                         },
+                                         child: const Text(
+                                           'Keep me signed in',
+                                           style: TextStyle(
+                                             fontSize: 14,
+                                             fontWeight: FontWeight.w500,
+                                             color: Colors.black87,
+                                           ),
+                                         ),
+                                       ),
+                                     ],
+                                   ),
+                                   const SizedBox(height: 24),
+                                   // Send / Verify OTP Action Button
+                                   Container(
+                                     height: 52,
+                                     decoration: BoxDecoration(
+                                       borderRadius: BorderRadius.circular(16),
+                                       gradient: state.isLoading
+                                           ? null
+                                           : const LinearGradient(
+                                               colors: [Color(0xFFFFB800), Color(0xFFFF9800)],
+                                               begin: Alignment.centerLeft,
+                                               end: Alignment.centerRight,
+                                             ),
+                                       color: state.isLoading ? Colors.grey[300] : null,
+                                       boxShadow: state.isLoading
+                                           ? null
+                                           : [
+                                               BoxShadow(
+                                                 color: const Color(0xFFFFB800).withValues(alpha: 0.35),
+                                                 blurRadius: 16,
+                                                 offset: const Offset(0, 6),
+                                               ),
+                                             ],
+                                     ),
+                                     child: ElevatedButton(
+                                       onPressed: state.isLoading
+                                           ? null
+                                           : (isOtpSent ? _onVerifyOtp : _onSendOtp),
+                                       style: ElevatedButton.styleFrom(
+                                         backgroundColor: Colors.transparent,
+                                         shadowColor: Colors.transparent,
+                                         disabledBackgroundColor: Colors.transparent,
+                                         shape: RoundedRectangleBorder(
+                                           borderRadius: BorderRadius.circular(16),
+                                         ),
+                                         padding: const EdgeInsets.symmetric(vertical: 14),
+                                       ),
+                                       child: state.isLoading
+                                           ? const SizedBox(
+                                               height: 22,
+                                               width: 22,
+                                               child: CircularProgressIndicator(
+                                                 strokeWidth: 2.5,
+                                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
+                                               ),
+                                             )
+                                           : Row(
+                                               mainAxisAlignment: MainAxisAlignment.center,
+                                               mainAxisSize: MainAxisSize.min,
+                                               children: [
+                                                 Text(
+                                                   isOtpSent ? 'Verify OTP' : 'Send OTP',
+                                                   style: const TextStyle(
+                                                     fontSize: 16,
+                                                     fontWeight: FontWeight.bold,
+                                                     color: Colors.black87,
+                                                   ),
+                                                 ),
+                                                 const SizedBox(width: 8),
+                                                 const Icon(
+                                                   Icons.arrow_forward_rounded,
+                                                   size: 20,
+                                                   color: Colors.black87,
+                                                 ),
+                                               ],
+                                             ),
+                                     ),
+                                   ),
+                                   const SizedBox(height: 24),
+                                   // Don't have an account? Register
+                                   Row(
+                                     mainAxisAlignment: MainAxisAlignment.center,
+                                     children: [
+                                       const Text(
+                                         "Don't have an account? ",
+                                         style: TextStyle(
+                                           fontSize: 14,
+                                           color: Color(0xFF64748B),
+                                           fontWeight: FontWeight.w500,
+                                         ),
+                                       ),
+                                       GestureDetector(
+                                         onTap: () {
+                                           Navigator.of(context).push(
+                                             MaterialPageRoute(
+                                               builder: (_) => const RegisterPage(),
+                                             ),
+                                           );
+                                         },
+                                         child: const Text(
+                                           'Register',
+                                           style: TextStyle(
+                                             fontSize: 14,
+                                             color: Color(0xFFE5A600),
+                                             fontWeight: FontWeight.bold,
+                                           ),
+                                         ),
+                                       ),
+                                     ],
+                                   ),
+                                   const SizedBox(height: 8),
+                                 ],
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),
+                     ),
+                   ),
+                 ),
+               ],
+             ),
+           ),
+         );
+       },
+     );
+   }
 }

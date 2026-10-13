@@ -96,6 +96,8 @@ class RegisterDriverEvent extends AuthEvent {
   final String email;
   final String phone;
   final String password;
+  final String? address;
+  final String? licenseNumber;
   final String vehicleModel;
   final String vehiclePlate;
   final DriverServiceType serviceType;
@@ -107,9 +109,11 @@ class RegisterDriverEvent extends AuthEvent {
     required this.email,
     required this.phone,
     required this.password,
-    required this.vehicleModel,
-    required this.vehiclePlate,
-    required this.serviceType,
+    this.address,
+    this.licenseNumber,
+    this.vehicleModel = 'Standard',
+    this.vehiclePlate = 'N/A',
+    this.serviceType = DriverServiceType.taxi,
   });
 
   @override
@@ -120,6 +124,8 @@ class RegisterDriverEvent extends AuthEvent {
         email,
         phone,
         password,
+        address,
+        licenseNumber,
         vehicleModel,
         vehiclePlate,
         serviceType,

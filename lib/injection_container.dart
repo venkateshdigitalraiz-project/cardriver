@@ -5,6 +5,7 @@ import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/login_customer_usecase.dart';
 import 'features/auth/domain/usecases/logout_usecase.dart';
 import 'features/auth/domain/usecases/register_customer_usecase.dart';
+import 'features/auth/domain/usecases/register_driver_usecase.dart';
 import 'features/auth/domain/usecases/send_otp_usecase.dart';
 import 'features/auth/domain/usecases/verify_otp_usecase.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -21,6 +22,7 @@ class InjectionContainer {
   static late final SendOtpUseCase sendOtpUseCase;
   static late final VerifyOtpUseCase verifyOtpUseCase;
   static late final RegisterCustomerUseCase registerCustomerUseCase;
+  static late final RegisterDriverUseCase registerDriverUseCase;
   static late final LogoutUseCase logoutUseCase;
 
   static void init() {
@@ -39,6 +41,7 @@ class InjectionContainer {
     sendOtpUseCase = SendOtpUseCase(authRepository);
     verifyOtpUseCase = VerifyOtpUseCase(authRepository);
     registerCustomerUseCase = RegisterCustomerUseCase(authRepository);
+    registerDriverUseCase = RegisterDriverUseCase(authRepository);
     logoutUseCase = LogoutUseCase(authRepository);
   }
 
@@ -48,6 +51,7 @@ class InjectionContainer {
       sendOtpUseCase: sendOtpUseCase,
       verifyOtpUseCase: verifyOtpUseCase,
       registerCustomerUseCase: registerCustomerUseCase,
+      registerDriverUseCase: registerDriverUseCase,
       logoutUseCase: logoutUseCase,
       authRepository: authRepository,
     );

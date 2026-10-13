@@ -3,6 +3,8 @@ import '../models/customer_model.dart';
 import '../models/driver_model.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
+import '../../../../core/network/api_endpoints.dart';
+import 'package:dio/dio.dart';
 
 abstract class AuthRemoteDataSource {
   Future<CustomerModel> loginCustomerWithEmail({
@@ -160,10 +162,31 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<void> sendOtp({required String phone}) async {
-    await Future.delayed(const Duration(milliseconds: 750));
+    final dio = Dio()..interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ));
+    try {
+      final response = await dio.post(
+        ApiEndpoints.driverLogin,
+        options: Options(headers: {'content-type': 'application/json'}),
+        data: {'phone': phone},
+      );
 
-    if (phone.contains('00000')) {
-      throw const AuthException(message: 'Unable to send SMS code. Please check your number.');
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw AuthException(message: 'Failed to send OTP. Server responded with ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw AuthException(message: _handleDioError(e));
+    } catch (e) {
+      if (e is AuthException) {
+        rethrow;
+      }
+      throw const AuthException(message: 'Something went wrong. Please try again.');
     }
   }
 
@@ -172,30 +195,46 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String phone,
     required String otp,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    final dio = Dio()..interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ));
+    try {
+      final response = await dio.post(
+        ApiEndpoints.driverVerifyOtp,
+        options: Options(headers: {'content-type': 'application/json'}),
+        data: {'phone': phone, 'otp': otp},
+      );
 
-    if (otp == '000000') {
-      throw const AuthException(message: 'The OTP code is invalid or has expired.');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return CustomerModel(
+          id: 'cust_api_${DateTime.now().millisecondsSinceEpoch}',
+          firstName: 'Verified',
+          lastName: 'Driver',
+          name: 'Verified Driver',
+          email: 'driver.api@cardriver.com',
+          phone: phone,
+          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+          rating: 5.0,
+          totalRides: 0,
+          preferredPayment: CustomerPaymentMethod.card,
+          token: response.data is Map && response.data['token'] != null 
+              ? response.data['token'] 
+              : 'api_token_${DateTime.now().millisecondsSinceEpoch}',
+        );
+      } else {
+        throw AuthException(message: 'The OTP code is invalid or has expired.');
+      }
+    } on DioException catch (e) {
+      throw AuthException(message: _handleDioError(e));
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw const AuthException(message: 'Something went wrong. Please try again.');
     }
-
-    final matched = mockCustomers.firstWhere(
-      (c) => c.phone.replaceAll(RegExp(r'\D'), '') == phone.replaceAll(RegExp(r'\D'), ''),
-      orElse: () => CustomerModel(
-        id: 'cust_phone_${DateTime.now().millisecondsSinceEpoch}',
-        firstName: 'Verified',
-        lastName: 'Passenger',
-        name: 'Verified Passenger',
-        email: 'rider.phone@cardriver.com',
-        phone: phone,
-        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-        rating: 5.0,
-        totalRides: 5,
-        preferredPayment: CustomerPaymentMethod.card,
-        token: 'otp_token_cust_${DateTime.now().millisecondsSinceEpoch}',
-      ),
-    );
-
-    return matched;
   }
 
   @override
@@ -257,7 +296,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String phone,
     required String otp,
   }) async {
-    return mockDrivers.first;
+    final dio = Dio()..interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ));
+    try {
+      final response = await dio.post(
+        ApiEndpoints.driverVerifyOtp,
+        options: Options(headers: {'content-type': 'application/json'}),
+        data: {'phone': phone, 'otp': otp},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return mockDrivers.first;
+      } else {
+        throw AuthException(message: 'The OTP code is invalid or has expired.');
+      }
+    } on DioException catch (e) {
+      throw AuthException(message: _handleDioError(e));
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw const AuthException(message: 'Something went wrong. Please try again.');
+    }
   }
 
   @override
@@ -278,5 +342,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required DriverServiceType serviceType,
   }) async {
     return mockDrivers.first;
+  }
+
+  String _handleDioError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'Connection timed out. Please check your internet connection.';
+      case DioExceptionType.badResponse:
+        final statusCode = e.response?.statusCode;
+        if (statusCode == 400 || statusCode == 401) {
+          if (e.response?.data is Map && e.response?.data['message'] != null) {
+            return e.response?.data['message'];
+          }
+          return 'Invalid request. Please check your details.';
+        } else if (statusCode != null && statusCode >= 500) {
+          return 'Server is currently unavailable. Please try again later.';
+        }
+        return 'Something went wrong. Please try again.';
+      case DioExceptionType.connectionError:
+        return 'No internet connection. Please connect to the internet and try again.';
+      default:
+        return 'An unexpected network error occurred. Please try again.';
+    }
   }
 }
