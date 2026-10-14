@@ -1,17 +1,22 @@
+import 'package:flutter/foundation.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
+import '../models/driver_register_body.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AuthLocalDataSource localDataSource;
+  final FirebaseMessagingService? messagingService;
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
+    this.messagingService,
   });
 
   @override
@@ -133,6 +138,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<DriverEntity> registerDriver({
+    DriverRegisterBody? body,
     required String name,
     required String email,
     required String phone,
@@ -140,8 +146,31 @@ class AuthRepositoryImpl implements AuthRepository {
     required String vehicleModel,
     required String vehiclePlate,
     required DriverServiceType serviceType,
+    String? firstName,
+    String? lastName,
+    String? address,
+    String? licenseNumber,
+    String? pancardNumber,
+    String? aadhaarNumber,
+    String? passportId,
+    String? pancard,
+    String? aadhaarCardFront,
+    String? aadhaarCardBack,
+    String? drivingLicense,
+    String? selfie,
+    String? passport,
+    String? aadharNumber,
+    String? panNumber,
+    String? passportNumber,
+    String? aadharFrontPath,
+    String? aadharBackPath,
+    String? panCardPath,
+    String? drivingLicensePath,
+    String? passportPath,
+    String? profilePicPath,
   }) async {
     final driver = await remoteDataSource.registerDriver(
+      body: body,
       name: name,
       email: email,
       phone: phone,
@@ -149,7 +178,30 @@ class AuthRepositoryImpl implements AuthRepository {
       vehicleModel: vehicleModel,
       vehiclePlate: vehiclePlate,
       serviceType: serviceType,
+      firstName: firstName,
+      lastName: lastName,
+      address: address,
+      licenseNumber: licenseNumber,
+      pancardNumber: pancardNumber,
+      aadhaarNumber: aadhaarNumber,
+      passportId: passportId,
+      pancard: pancard,
+      aadhaarCardFront: aadhaarCardFront,
+      aadhaarCardBack: aadhaarCardBack,
+      drivingLicense: drivingLicense,
+      selfie: selfie,
+      passport: passport,
+      aadharNumber: aadharNumber,
+      panNumber: panNumber,
+      passportNumber: passportNumber,
+      aadharFrontPath: aadharFrontPath,
+      aadharBackPath: aadharBackPath,
+      panCardPath: panCardPath,
+      drivingLicensePath: drivingLicensePath,
+      passportPath: passportPath,
+      profilePicPath: profilePicPath,
     );
+    await localDataSource.cacheDriver(driver);
     return driver;
   }
 
@@ -166,5 +218,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     await localDataSource.clearCache();
+    try {
+      debugPrint('🔒 [AuthRepository] Logging out and refreshing device push token...');
+      await messagingService?.refreshFcmToken();
+    } catch (e) {
+      debugPrint('⚠️ [AuthRepository] Notice refreshing token on logout: $e');
+    }
   }
 }

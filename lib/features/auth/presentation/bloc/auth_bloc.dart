@@ -214,6 +214,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final driverUseCase = registerDriverUseCase ?? RegisterDriverUseCase(authRepository);
       final driver = await driverUseCase(
         RegisterDriverParams(
+          body: event.body,
           firstName: event.firstName,
           lastName: event.lastName,
           name: event.name,
@@ -225,6 +226,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           vehicleModel: event.vehicleModel,
           vehiclePlate: event.vehiclePlate,
           serviceType: event.serviceType,
+          pancardNumber: event.pancardNumber,
+          aadhaarNumber: event.aadhaarNumber,
+          passportId: event.passportId,
+          pancard: event.pancard,
+          aadhaarCardFront: event.aadhaarCardFront,
+          aadhaarCardBack: event.aadhaarCardBack,
+          drivingLicense: event.drivingLicense,
+          selfie: event.selfie,
+          passport: event.passport,
+          aadharNumber: event.aadhaarNumber,
+          panNumber: event.pancardNumber,
+          passportNumber: event.passportId,
+          aadharFrontPath: event.aadhaarCardFront,
+          aadharBackPath: event.aadhaarCardBack,
+          panCardPath: event.pancard,
+          drivingLicensePath: event.drivingLicensePath,
+          passportPath: event.passport,
+          profilePicPath: event.selfie,
         ),
       );
       emit(state.copyWith(

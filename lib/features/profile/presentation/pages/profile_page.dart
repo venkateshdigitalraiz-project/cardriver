@@ -9,6 +9,8 @@ import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
 import 'edit_profile_page.dart';
 import '../../../earnings/presentation/pages/earnings_page.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../ride_history/presentation/pages/ride_history_page.dart';
 import '../../../rewards/presentation/pages/rewards_page.dart';
@@ -495,15 +497,7 @@ class _ProfileView extends StatelessWidget {
                           Icons.logout,
                           'Logout',
                           Colors.red,
-                          onTap: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
-                              ),
-                              (route) => false,
-                            );
-                          },
+                          onTap: () => _handleLogout(context),
                         ),
                       ],
                     ),
@@ -546,6 +540,49 @@ class _ProfileView extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Sign Out'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to sign out? Your session and device push token will be refreshed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<AuthBloc>().add(const LogoutEvent());
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginPage(),
+                ),
+                (route) => false,
+              );
+            },
+            child: const Text('Sign Out'),
           ),
         ],
       ),

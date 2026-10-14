@@ -15,6 +15,15 @@ class DriverModel extends DriverEntity {
     required super.todayEarnings,
     super.isOnline,
     required super.token,
+    super.aadharNumber,
+    super.panNumber,
+    super.passportNumber,
+    super.aadharFrontPath,
+    super.aadharBackPath,
+    super.panCardPath,
+    super.drivingLicensePath,
+    super.passportPath,
+    super.profilePicPath,
   });
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +41,15 @@ class DriverModel extends DriverEntity {
       todayEarnings: (json['todayEarnings'] as num?)?.toDouble() ?? 0.0,
       isOnline: json['isOnline'] as bool? ?? false,
       token: json['token'] as String? ?? 'jwt_token_sample',
+      aadharNumber: json['aadharNumber'] as String?,
+      panNumber: json['panNumber'] as String?,
+      passportNumber: json['passportNumber'] as String?,
+      aadharFrontPath: json['aadharFrontPath'] as String?,
+      aadharBackPath: json['aadharBackPath'] as String?,
+      panCardPath: json['panCardPath'] as String?,
+      drivingLicensePath: json['drivingLicensePath'] as String?,
+      passportPath: json['passportPath'] as String?,
+      profilePicPath: json['profilePicPath'] as String?,
     );
   }
 
@@ -50,6 +68,15 @@ class DriverModel extends DriverEntity {
       'todayEarnings': todayEarnings,
       'isOnline': isOnline,
       'token': token,
+      'aadharNumber': aadharNumber,
+      'panNumber': panNumber,
+      'passportNumber': passportNumber,
+      'aadharFrontPath': aadharFrontPath,
+      'aadharBackPath': aadharBackPath,
+      'panCardPath': panCardPath,
+      'drivingLicensePath': drivingLicensePath,
+      'passportPath': passportPath,
+      'profilePicPath': profilePicPath,
     };
   }
 
@@ -82,6 +109,15 @@ class DriverModel extends DriverEntity {
       todayEarnings: entity.todayEarnings,
       isOnline: entity.isOnline,
       token: entity.token,
+      aadharNumber: entity.aadharNumber,
+      panNumber: entity.panNumber,
+      passportNumber: entity.passportNumber,
+      aadharFrontPath: entity.aadharFrontPath,
+      aadharBackPath: entity.aadharBackPath,
+      panCardPath: entity.panCardPath,
+      drivingLicensePath: entity.drivingLicensePath,
+      passportPath: entity.passportPath,
+      profilePicPath: entity.profilePicPath,
     );
   }
 }

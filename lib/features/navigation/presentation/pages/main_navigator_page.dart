@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../trip/presentation/pages/trip_page.dart';
@@ -36,9 +39,18 @@ class _MainNavigatorView extends StatelessWidget {
       ProfilePage(userName: customer.name),
     ];
 
-    return BlocBuilder<NavigationBloc, NavigationState>(
-      builder: (context, state) {
-        return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state.status == AuthStatus.unauthenticated) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+          );
+        }
+      },
+      child: BlocBuilder<NavigationBloc, NavigationState>(
+        builder: (context, state) {
+          return Scaffold(
           backgroundColor: Colors.white,
           body: IndexedStack(
             index: state.tabIndex,
@@ -69,6 +81,7 @@ class _MainNavigatorView extends StatelessWidget {
           ),
         );
       },
+      ),
     );
   }
 }

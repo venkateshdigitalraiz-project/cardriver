@@ -4,4 +4,8 @@ class ApiEndpoints {
   // Driver Authentication
   static const String driverLogin = '$baseUrl/driver/login';
   static const String driverVerifyOtp = '$baseUrl/driver/verify-otp';
+  static const String driverRegister = '$baseUrl/driver/register';
+
+  // Driver Rides
+  static const String driverAvailableRides = '$baseUrl/driver/available-rides';
 }

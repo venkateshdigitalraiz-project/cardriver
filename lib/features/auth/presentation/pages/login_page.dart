@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
             physics: const BouncingScrollPhysics(),
             child: Stack(
               children: [
-                Container(
+                SizedBox(
                   height: size.height * 0.5,
                   width: double.infinity,
                   child: Container(

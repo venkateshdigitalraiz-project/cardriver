@@ -1,6 +1,8 @@
+import 'dart:io';
 import '../../../../core/errors/exceptions.dart';
 import '../models/customer_model.dart';
 import '../models/driver_model.dart';
+import '../models/driver_register_body.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
 import '../../../../core/network/api_endpoints.dart';
@@ -49,6 +51,7 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<DriverModel> registerDriver({
+    DriverRegisterBody? body,
     required String name,
     required String email,
     required String phone,
@@ -56,6 +59,28 @@ abstract class AuthRemoteDataSource {
     required String vehicleModel,
     required String vehiclePlate,
     required DriverServiceType serviceType,
+    String? firstName,
+    String? lastName,
+    String? address,
+    String? licenseNumber,
+    String? pancardNumber,
+    String? aadhaarNumber,
+    String? passportId,
+    String? pancard,
+    String? aadhaarCardFront,
+    String? aadhaarCardBack,
+    String? drivingLicense,
+    String? selfie,
+    String? passport,
+    String? aadharNumber,
+    String? panNumber,
+    String? passportNumber,
+    String? aadharFrontPath,
+    String? aadharBackPath,
+    String? panCardPath,
+    String? drivingLicensePath,
+    String? passportPath,
+    String? profilePicPath,
   });
 }
 
@@ -333,6 +358,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<DriverModel> registerDriver({
+    DriverRegisterBody? body,
     required String name,
     required String email,
     required String phone,
@@ -340,8 +366,254 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String vehicleModel,
     required String vehiclePlate,
     required DriverServiceType serviceType,
+    String? firstName,
+    String? lastName,
+    String? address,
+    String? licenseNumber,
+    String? pancardNumber,
+    String? aadhaarNumber,
+    String? passportId,
+    String? pancard,
+    String? aadhaarCardFront,
+    String? aadhaarCardBack,
+    String? drivingLicense,
+    String? selfie,
+    String? passport,
+    String? aadharNumber,
+    String? panNumber,
+    String? passportNumber,
+    String? aadharFrontPath,
+    String? aadharBackPath,
+    String? panCardPath,
+    String? drivingLicensePath,
+    String? passportPath,
+    String? profilePicPath,
   }) async {
-    return mockDrivers.first;
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 25),
+        receiveTimeout: const Duration(seconds: 25),
+      ),
+    )..interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestHeader: true,
+          requestBody: true,
+          responseHeader: true,
+          responseBody: true,
+          error: true,
+        ),
+      );
+
+    try {
+      final FormData formData;
+      if (body != null) {
+        formData = await body.toFormData();
+      } else {
+        formData = FormData();
+
+        // Text fields according to cURL API specifications
+        formData.fields.addAll([
+          MapEntry('firstName', firstName ?? ''),
+          MapEntry('lastName', lastName ?? ''),
+          MapEntry('email', email),
+          MapEntry('phone', phone),
+          MapEntry('address', address ?? ''),
+          MapEntry('licenseNumber', licenseNumber ?? ''),
+          MapEntry('pancardNumber', pancardNumber ?? panNumber ?? ''),
+          MapEntry('aadhaarNumber', aadhaarNumber ?? aadharNumber ?? ''),
+          MapEntry('passportId', passportId ?? passportNumber ?? ''),
+        ]);
+
+        if (password.isNotEmpty) {
+          formData.fields.add(MapEntry('password', password));
+        }
+
+        // Multipart files: pancard, aadhaarCardFront, aadhaarCardBack, drivingLicense, selfie, passport
+        final effectivePanPath = pancard ?? panCardPath;
+        if (effectivePanPath != null &&
+            effectivePanPath.isNotEmpty &&
+            File(effectivePanPath).existsSync()) {
+          formData.files.add(MapEntry(
+            'pancard',
+            await MultipartFile.fromFile(
+              effectivePanPath,
+              filename: effectivePanPath.split(Platform.pathSeparator).last,
+            ),
+          ));
+        } else {
+          formData.fields.add(const MapEntry('pancard', ''));
+        }
+
+        final effectiveAadharFront = aadhaarCardFront ?? aadharFrontPath;
+        if (effectiveAadharFront != null &&
+            effectiveAadharFront.isNotEmpty &&
+            File(effectiveAadharFront).existsSync()) {
+          formData.files.add(MapEntry(
+            'aadhaarCardFront',
+            await MultipartFile.fromFile(
+              effectiveAadharFront,
+              filename: effectiveAadharFront.split(Platform.pathSeparator).last,
+            ),
+          ));
+        } else {
+          formData.fields.add(const MapEntry('aadhaarCardFront', ''));
+        }
+
+        final effectiveAadharBack = aadhaarCardBack ?? aadharBackPath;
+        if (effectiveAadharBack != null &&
+            effectiveAadharBack.isNotEmpty &&
+            File(effectiveAadharBack).existsSync()) {
+          formData.files.add(MapEntry(
+            'aadhaarCardBack',
+            await MultipartFile.fromFile(
+              effectiveAadharBack,
+              filename: effectiveAadharBack.split(Platform.pathSeparator).last,
+            ),
+          ));
+        } else {
+          formData.fields.add(const MapEntry('aadhaarCardBack', ''));
+        }
+
+        final effectiveLicensePath = drivingLicense ?? drivingLicensePath;
+        if (effectiveLicensePath != null &&
+            effectiveLicensePath.isNotEmpty &&
+            File(effectiveLicensePath).existsSync()) {
+          formData.files.add(MapEntry(
+            'drivingLicense',
+            await MultipartFile.fromFile(
+              effectiveLicensePath,
+              filename: effectiveLicensePath.split(Platform.pathSeparator).last,
+            ),
+          ));
+        } else {
+          formData.fields.add(const MapEntry('drivingLicense', ''));
+        }
+
+        final effectiveSelfie = selfie ?? profilePicPath;
+        if (effectiveSelfie != null &&
+            effectiveSelfie.isNotEmpty &&
+            File(effectiveSelfie).existsSync()) {
+          formData.files.add(MapEntry(
+            'selfie',
+            await MultipartFile.fromFile(
+              effectiveSelfie,
+              filename: effectiveSelfie.split(Platform.pathSeparator).last,
+            ),
+          ));
+        } else {
+          formData.fields.add(const MapEntry('selfie', ''));
+        }
+
+        final effectivePassportPath = passport ?? passportPath;
+        if (effectivePassportPath != null &&
+            effectivePassportPath.isNotEmpty &&
+            File(effectivePassportPath).existsSync()) {
+          formData.files.add(MapEntry(
+            'passport',
+            await MultipartFile.fromFile(
+              effectivePassportPath,
+              filename: effectivePassportPath.split(Platform.pathSeparator).last,
+            ),
+          ));
+        } else {
+          formData.fields.add(const MapEntry('passport', ''));
+        }
+      }
+
+      final response = await dio.post(
+        ApiEndpoints.driverRegister,
+        options: Options(
+          headers: {'content-type': 'multipart/form-data'},
+        ),
+        data: formData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = response.data;
+        Map<String, dynamic> driverData = {};
+        String token =
+            'jwt_driver_token_${DateTime.now().millisecondsSinceEpoch}';
+
+        if (resData is Map<String, dynamic>) {
+          if (resData['driver'] is Map<String, dynamic>) {
+            driverData = resData['driver'];
+          } else if (resData['data'] is Map<String, dynamic>) {
+            driverData = resData['data'];
+          } else {
+            driverData = resData;
+          }
+          if (resData['token'] != null) {
+            token = resData['token'].toString();
+          } else if (driverData['token'] != null) {
+            token = driverData['token'].toString();
+          }
+        }
+
+        final effectiveFirstName = body?.firstName ?? firstName;
+        final effectiveLastName = body?.lastName ?? lastName;
+        final fullName = (effectiveFirstName != null &&
+                effectiveLastName != null &&
+                effectiveFirstName.isNotEmpty)
+            ? '$effectiveFirstName $effectiveLastName'.trim()
+            : name;
+
+        return DriverModel(
+          id: driverData['id']?.toString() ??
+              driverData['_id']?.toString() ??
+              'drv_${DateTime.now().millisecondsSinceEpoch}',
+          name: driverData['name']?.toString() ?? fullName,
+          email: driverData['email']?.toString() ?? body?.email ?? email,
+          phone: driverData['phone']?.toString() ?? body?.phone ?? phone,
+          avatarUrl: driverData['avatarUrl']?.toString() ??
+              body?.selfie ??
+              selfie ??
+              profilePicPath ??
+              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80',
+          vehicleModel: driverData['vehicleModel']?.toString() ?? vehicleModel,
+          vehiclePlate: driverData['vehiclePlate']?.toString() ?? vehiclePlate,
+          serviceType: serviceType,
+          rating: (driverData['rating'] as num?)?.toDouble() ?? 5.0,
+          totalTrips: (driverData['totalTrips'] as int?) ?? 0,
+          todayEarnings:
+              (driverData['todayEarnings'] as num?)?.toDouble() ?? 0.0,
+          isOnline: (driverData['isOnline'] as bool?) ?? true,
+          token: token,
+          aadharNumber: driverData['aadhaarNumber']?.toString() ??
+              body?.aadhaarNumber ??
+              aadhaarNumber ??
+              aadharNumber,
+          panNumber: driverData['pancardNumber']?.toString() ??
+              body?.pancardNumber ??
+              pancardNumber ??
+              panNumber,
+          passportNumber: driverData['passportId']?.toString() ??
+              body?.passportId ??
+              passportId ??
+              passportNumber,
+          aadharFrontPath:
+              body?.aadhaarCardFront ?? aadhaarCardFront ?? aadharFrontPath,
+          aadharBackPath:
+              body?.aadhaarCardBack ?? aadhaarCardBack ?? aadharBackPath,
+          panCardPath: body?.pancard ?? pancard ?? panCardPath,
+          drivingLicensePath:
+              body?.drivingLicense ?? drivingLicense ?? drivingLicensePath,
+          passportPath: body?.passport ?? passport ?? passportPath,
+          profilePicPath: body?.selfie ?? selfie ?? profilePicPath,
+        );
+      } else {
+        throw AuthException(
+          message: 'Registration failed with status ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      throw AuthException(message: _handleDioError(e));
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw AuthException(
+        message: 'Registration failed: ${e.toString()}',
+      );
+    }
   }
 
   String _handleDioError(DioException e) {

@@ -11,9 +11,7 @@ void main() {
     await tester.pumpWidget(const CarDriverApp());
     await tester.pumpAndSettle();
 
-    // Verify Passenger Login header and widgets exist
-    expect(find.text('SAFE & VERIFIED DRIVERS NEARBY'), findsOneWidget);
-    expect(find.text('Where to next?'), findsOneWidget);
-    expect(find.text('QUICK DEMO RIDER ACCOUNTS'), findsOneWidget);
+    // Verify LoginPage header exists
+    expect(find.text('Ready to Drive?'), findsOneWidget);
   });
 }

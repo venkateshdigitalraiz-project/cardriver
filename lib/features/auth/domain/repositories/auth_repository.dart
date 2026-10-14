@@ -1,3 +1,4 @@
+import '../../data/models/driver_register_body.dart';
 import '../entities/customer_entity.dart';
 import '../entities/driver_entity.dart';
 
@@ -48,6 +49,7 @@ abstract class AuthRepository {
   });
 
   Future<DriverEntity> registerDriver({
+    DriverRegisterBody? body,
     required String name,
     required String email,
     required String phone,
@@ -55,6 +57,28 @@ abstract class AuthRepository {
     required String vehicleModel,
     required String vehiclePlate,
     required DriverServiceType serviceType,
+    String? firstName,
+    String? lastName,
+    String? address,
+    String? licenseNumber,
+    String? pancardNumber,
+    String? aadhaarNumber,
+    String? passportId,
+    String? pancard,
+    String? aadhaarCardFront,
+    String? aadhaarCardBack,
+    String? drivingLicense,
+    String? selfie,
+    String? passport,
+    String? aadharNumber,
+    String? panNumber,
+    String? passportNumber,
+    String? aadharFrontPath,
+    String? aadharBackPath,
+    String? panCardPath,
+    String? drivingLicensePath,
+    String? passportPath,
+    String? profilePicPath,
   });
 
   Future<CustomerEntity?> getCurrentCustomer();

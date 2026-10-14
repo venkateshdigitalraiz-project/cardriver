@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "538470397018",
+    "project_id": "driverbooking-4b700",
+    "storage_bucket": "driverbooking-4b700.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538470397018:android:50df20bbfb5d655a399463",
+        "android_client_info": {
+          "package_name": "com.example.cardriver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvtvOKWHImzzkLKYN2eAuLBG1wMS4hm80"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538470397018:android:8a5cfe2d11216f0c399463",
+        "android_client_info": {
+          "package_name": "com.example.cardriver_customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvtvOKWHImzzkLKYN2eAuLBG1wMS4hm80"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

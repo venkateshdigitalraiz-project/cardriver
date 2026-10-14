@@ -48,12 +48,9 @@ class _CurrentLocationMapState extends State<CurrentLocationMap> {
     try {
       Position? position = await Geolocator.getLastKnownPosition();
       
-      if (position == null) {
-        // Add a 5 second timeout so it doesn't get stuck loading forever on emulators
-        position = await Geolocator.getCurrentPosition(
-          timeLimit: const Duration(seconds: 5),
-        );
-      }
+      position ??= await Geolocator.getCurrentPosition(
+        timeLimit: const Duration(seconds: 5),
+      );
       
       if (mounted) {
         setState(() {

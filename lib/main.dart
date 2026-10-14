@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/notifications/presentation/bloc/notification_bloc.dart';
+import 'features/notifications/presentation/bloc/notification_event.dart';
 import 'injection_container.dart';
-
-import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Request camera and storage permissions on startup
-  await [
-    Permission.camera,
-    Permission.storage,
-  ].request();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -31,7 +26,27 @@ void main() async {
   // Initialize Clean Architecture dependency injection container
   InjectionContainer.init();
 
+  // Initialize Firebase and messaging safely (without throwing uncaught exceptions)
+  await InjectionContainer.firebaseMessagingService.initialize();
+
   runApp(const CarDriverApp());
+
+  // Request runtime permissions safely after first frame to prevent startup PlatformException collision
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _requestAppPermissionsSafely();
+  });
+}
+
+Future<void> _requestAppPermissionsSafely() async {
+  try {
+    await [
+      Permission.notification,
+      Permission.camera,
+      Permission.storage,
+    ].request();
+  } catch (e) {
+    debugPrint('Startup permissions note: $e');
+  }
 }
 
 class CarDriverApp extends StatelessWidget {
@@ -46,6 +61,10 @@ class CarDriverApp extends StatelessWidget {
         ),
         BlocProvider<AuthBloc>(
           create: (_) => InjectionContainer.createAuthBloc(),
+        ),
+        BlocProvider<NotificationBloc>(
+          create: (_) => InjectionContainer.createNotificationBloc()
+            ..add(const LoadNotifications()),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(

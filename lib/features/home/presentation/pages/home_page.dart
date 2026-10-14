@@ -1,17 +1,19 @@
 import 'package:cardriver/features/active_ride/presentation/pages/active_ride_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:latlong2/latlong.dart';
+
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_spacing.dart';
 import '../../../../core/style/app_typography.dart';
+import '../../../../injection_container.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
 import '../../../navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../navigation/presentation/bloc/navigation_event.dart';
-import 'package:latlong2/latlong.dart';
+import '../../domain/entities/available_ride_entity.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
-// import '../widgets/current_location_map.dart';
 
 class HomePage extends StatelessWidget {
   final CustomerEntity customer;
@@ -21,7 +23,8 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => HomeBloc(),
+      create: (_) =>
+          InjectionContainer.createHomeBloc(driverToken: customer.token),
       child: _HomeView(customer: customer),
     );
   }
@@ -43,11 +46,22 @@ class _HomeView extends StatelessWidget {
           backgroundColor: AppColors.lightBackground,
           appBar: AppBar(
             backgroundColor: AppColors.lightSurface,
+            elevation: 1,
             title: Row(
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundImage: NetworkImage(customer.avatarUrl),
+                  backgroundImage: customer.avatarUrl.isNotEmpty
+                      ? NetworkImage(customer.avatarUrl)
+                      : null,
+                  child: customer.avatarUrl.isEmpty
+                      ? Text(
+                          customer.name.isNotEmpty
+                              ? customer.name[0].toUpperCase()
+                              : 'D',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -62,14 +76,29 @@ class _HomeView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      Text(
-                        state.isOnline ? 'Online' : 'Offline',
-                        style: AppTypography.bodySmall(
-                          color: state.isOnline
-                              ? const Color(0xFF10B981)
-                              : AppColors.textMutedLight,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: state.isOnline
+                                  ? const Color(0xFF10B981)
+                                  : AppColors.textMutedLight,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            state.isOnline ? 'Online • Live Radar' : 'Offline',
+                            style: AppTypography.bodySmall(
+                              color: state.isOnline
+                                  ? const Color(0xFF10B981)
+                                  : AppColors.textMutedLight,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -92,8 +121,13 @@ class _HomeView extends StatelessWidget {
                   Switch(
                     value: state.isOnline,
                     activeThumbColor: const Color(0xFF10B981),
+                    activeTrackColor: const Color(
+                      0xFF10B981,
+                    ).withValues(alpha: 0.3),
                     onChanged: (value) {
-                      context.read<HomeBloc>().add(ToggleOnlineStatusEvent());
+                      context.read<HomeBloc>().add(
+                        ToggleOnlineStatusEvent(forceStatus: value),
+                      );
                     },
                   ),
                 ],
@@ -105,14 +139,125 @@ class _HomeView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Live Radar Online Status Alert Banner (Rapid Capital style)
+                if (state.isOnline) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.sensors_rounded,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'LIVE MONITORING • Rapid live sync watching for ride requests in real-time',
+                            style: AppTypography.bodySmall(
+                              color: const Color(0xFF047857),
+                            ).copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        if (state.isLoadingRides)
+                          const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // New Ride Alert Flash Notification (Rapid Capital style)
+                if (state.isOnline && state.newRideAlert != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(
+                            0xFFF59E0B,
+                          ).withValues(alpha: 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.notifications_active_rounded,
+                          color: Color(0xFFD97706),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'NEW RIDE REQUEST DETECTED!',
+                                style: AppTypography.bodySmall(
+                                  color: const Color(0xFF92400E),
+                                ).copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                '${state.newRideAlert!.riderName} • ${state.newRideAlert!.formattedFare} • ${state.newRideAlert!.serviceType.toUpperCase()}',
+                                style: AppTypography.bodySmall(
+                                  color: const Color(0xFF78350F),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: Color(0xFF92400E),
+                          ),
+                          onPressed: () {
+                            context.read<HomeBloc>().add(
+                              ClearNewRideAlertEvent(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // Stats Row
                 Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          // Quick access to Trips (can be handled by NavigationBloc or local routing)
-                          // If Trips is index 1 in bottom nav:
                           context.read<NavigationBloc>().add(
                             const NavigationTabChanged(1),
                           );
@@ -171,7 +316,6 @@ class _HomeView extends StatelessWidget {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          // Quick access to Trips
                           context.read<NavigationBloc>().add(
                             const NavigationTabChanged(1),
                           );
@@ -230,7 +374,6 @@ class _HomeView extends StatelessWidget {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          // Quick access to Profile (Rating)
                           context.read<NavigationBloc>().add(
                             const NavigationTabChanged(2),
                           );
@@ -290,74 +433,227 @@ class _HomeView extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Upcoming Booking / Request Card
+                // Live Available Ride Requests Section
                 if (state.isOnline) ...[
-                  if (state.activeRequestIds.isNotEmpty) ...[
-                    Text(
-                      'New Ride Requests',
-                      style: AppTypography.headingMedium(color: primaryTextColor),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Available Rides',
+                            style: AppTypography.headingMedium(
+                              color: primaryTextColor,
+                            ),
+                          ),
+                          if (state.availableRides.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${state.availableRides.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(
+                            0xFF10B981,
+                          ).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.radar_rounded,
+                              size: 14,
+                              color: Color(0xFF10B981),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'RAPID LIVE SYNC',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  if (state.availableRides.isNotEmpty) ...[
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: state.availableRides.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final ride = state.availableRides[index];
+                        return _buildAvailableRideCard(
+                          ride: ride,
+                          context: context,
+                          primaryTextColor: primaryTextColor,
+                          secondaryTextColor: secondaryTextColor,
+                        );
+                      },
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (state.activeRequestIds.contains('req_1')) ...[
-                    _buildRideRequestCard(
-                      requestId: 'req_1',
-                      context: context,
-                      riderName: 'Sarah Connor',
-                      rating: '4.9',
-                      timeAway: '2 mins away',
-                      fare: '₹1250',
-                      distanceTime: '8.5 km • 25 mins',
-                      pickup: 'Koramangala, Bangalore',
-                      dropoff: 'International Airport T2',
-                      primaryTextColor: primaryTextColor,
-                      secondaryTextColor: secondaryTextColor,
+                    const SizedBox(height: 24),
+                  ] else if (state.isLoadingRides) ...[
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: const Column(
+                        children: [
+                          CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Color(0xFF10B981),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Connecting live radar to fetch available rides...',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (state.activeRequestIds.contains('req_2')) ...[
-                    _buildRideRequestCard(
-                      requestId: 'req_2',
-                      context: context,
-                      riderName: 'John Smith',
-                      rating: '4.7',
-                      timeAway: '5 mins away',
-                      fare: '₹650',
-                      distanceTime: '3.2 km • 12 mins',
-                      pickup: 'Indiranagar',
-                      dropoff: 'MG Road',
-                      primaryTextColor: primaryTextColor,
-                      secondaryTextColor: secondaryTextColor,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (state.activeRequestIds.contains('req_3')) ...[
-                    _buildRideRequestCard(
-                      requestId: 'req_3',
-                      context: context,
-                      riderName: 'Emily Chen',
-                      rating: '5.0',
-                      timeAway: '1 min away',
-                      fare: '₹1800',
-                      distanceTime: '15.0 km • 40 mins',
-                      pickup: 'Electronic City',
-                      dropoff: 'Whitefield',
-                      primaryTextColor: primaryTextColor,
-                      secondaryTextColor: secondaryTextColor,
+                    const SizedBox(height: 24),
+                  ] else ...[
+                    // Empty state while Online
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.radar_rounded,
+                              color: Color(0xFF10B981),
+                              size: 36,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Searching for Nearby Rides...',
+                            style: AppTypography.headingSmall(
+                              color: primaryTextColor,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'You are Online! Rapid sync is actively monitoring customer bookings every few seconds. New ride requests will show up here automatically.',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodySmall(
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
                   ],
+                ] else ...[
+                  // Offline Status Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.power_settings_new_rounded,
+                            color: Colors.grey.shade600,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'You are Offline',
+                                style: AppTypography.headingSmall(
+                                  color: primaryTextColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Toggle "GO ONLINE" in the top bar to start live monitoring and receive incoming rides.',
+                                style: AppTypography.bodySmall(
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
 
-                // Map Placeholder
-                /* Text(
-                  'Current Location',
-                  style: AppTypography.headingMedium(color: primaryTextColor),
-                ),
-                const SizedBox(height: 12),
-                const CurrentLocationMap(),
-                */
-                
                 // Weekly Goal Progress
                 Text(
                   'Weekly Goal',
@@ -386,11 +682,15 @@ class _HomeView extends StatelessWidget {
                         children: [
                           Text(
                             'Earn ₹40,000 this week',
-                            style: AppTypography.bodyMedium(color: primaryTextColor).copyWith(fontWeight: FontWeight.bold),
+                            style: AppTypography.bodyMedium(
+                              color: primaryTextColor,
+                            ).copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
                             '₹9,640 / ₹40,000',
-                            style: AppTypography.bodySmall(color: AppColors.primary).copyWith(fontWeight: FontWeight.bold),
+                            style: AppTypography.bodySmall(
+                              color: AppColors.primary,
+                            ).copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -399,7 +699,9 @@ class _HomeView extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
                           value: 9640.0 / 40000.0,
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                          backgroundColor: AppColors.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           color: AppColors.primary,
                           minHeight: 8,
                         ),
@@ -407,38 +709,64 @@ class _HomeView extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         'You are on track to reach your goal!',
-                        style: AppTypography.bodySmall(color: secondaryTextColor),
+                        style: AppTypography.bodySmall(
+                          color: secondaryTextColor,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Recent Activity / Trips
+
+                // Recent Trips Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Recent Trips',
-                      style: AppTypography.headingMedium(color: primaryTextColor),
+                      style: AppTypography.headingMedium(
+                        color: primaryTextColor,
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
-                        context.read<NavigationBloc>().add(const NavigationTabChanged(1));
+                        context.read<NavigationBloc>().add(
+                          const NavigationTabChanged(1),
+                        );
                       },
                       child: Text(
                         'See All',
-                        style: AppTypography.bodyMedium(color: AppColors.primary).copyWith(fontWeight: FontWeight.bold),
+                        style: AppTypography.bodyMedium(
+                          color: AppColors.primary,
+                        ).copyWith(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                _buildRecentTripItem('Koramangala, BLR', '₹1960', '2:30 PM', primaryTextColor, secondaryTextColor),
+                _buildRecentTripItem(
+                  'Koramangala, BLR',
+                  '₹1960',
+                  '2:30 PM',
+                  primaryTextColor,
+                  secondaryTextColor,
+                ),
                 const SizedBox(height: 12),
-                _buildRecentTripItem('Kempegowda Airport', '₹3600', '10:15 AM', primaryTextColor, secondaryTextColor),
+                _buildRecentTripItem(
+                  'Kempegowda Airport',
+                  '₹3600',
+                  '10:15 AM',
+                  primaryTextColor,
+                  secondaryTextColor,
+                ),
                 const SizedBox(height: 12),
-                _buildRecentTripItem('MG Road, BLR', '₹1450', 'Yesterday', primaryTextColor, secondaryTextColor),
+                _buildRecentTripItem(
+                  'MG Road, BLR',
+                  '₹1450',
+                  'Yesterday',
+                  primaryTextColor,
+                  secondaryTextColor,
+                ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -448,7 +776,13 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentTripItem(String destination, String earnings, String time, Color primaryText, Color secondaryText) {
+  Widget _buildRecentTripItem(
+    String destination,
+    String earnings,
+    String time,
+    Color primaryText,
+    Color secondaryText,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -484,7 +818,9 @@ class _HomeView extends StatelessWidget {
               children: [
                 Text(
                   destination,
-                  style: AppTypography.bodyMedium(color: primaryText).copyWith(fontWeight: FontWeight.bold),
+                  style: AppTypography.bodyMedium(
+                    color: primaryText,
+                  ).copyWith(fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -498,23 +834,18 @@ class _HomeView extends StatelessWidget {
           ),
           Text(
             earnings,
-            style: AppTypography.bodyMedium(color: const Color(0xFF10B981)).copyWith(fontWeight: FontWeight.bold),
+            style: AppTypography.bodyMedium(
+              color: const Color(0xFF10B981),
+            ).copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRideRequestCard({
-    required String requestId,
+  Widget _buildAvailableRideCard({
+    required AvailableRideEntity ride,
     required BuildContext context,
-    required String riderName,
-    required String rating,
-    required String timeAway,
-    required String fare,
-    required String distanceTime,
-    required String pickup,
-    required String dropoff,
     required Color primaryTextColor,
     required Color secondaryTextColor,
   }) {
@@ -525,23 +856,29 @@ class _HomeView extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF10B981).withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
-        border: Border.all(
-          color: const Color(0xFF10B981),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFF10B981), width: 1.5),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Row: Rider Name, Avatar, Booking ID, OTP
           Row(
             children: [
-              const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=80',
+              CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                child: Text(
+                  ride.riderName.isNotEmpty
+                      ? ride.riderName[0].toUpperCase()
+                      : 'P',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -550,39 +887,106 @@ class _HomeView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      riderName,
-                      style: AppTypography.headingSmall(color: primaryTextColor),
+                      ride.riderName,
+                      style: AppTypography.headingSmall(
+                        color: primaryTextColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          size: 14,
-                          color: Color(0xFFF59E0B),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            ride.bookingId,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
                         ),
-                        Text(
-                          ' $rating',
-                          style: AppTypography.bodySmall(color: secondaryTextColor),
-                        ),
+                        if (ride.riderPhone.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            ride.riderPhone,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  timeAway,
-                  style: AppTypography.badgeText(color: const Color(0xFF10B981)),
-                ),
-              ),
+              // if (ride.startOtp.isNotEmpty)
+              //   Container(
+              //     padding: const EdgeInsets.symmetric(
+              //       horizontal: 10,
+              //       vertical: 5,
+              //     ),
+              //     decoration: BoxDecoration(
+              //       color: const Color(0xFFFEF3C7),
+              //       borderRadius: BorderRadius.circular(8),
+              //       border: Border.all(color: const Color(0xFFF59E0B)),
+              //     ),
+              //     child: Text(
+              //       'OTP: ${ride.startOtp}',
+              //       style: const TextStyle(
+              //         fontSize: 12,
+              //         fontWeight: FontWeight.bold,
+              //         color: Color(0xFF92400E),
+              //       ),
+              //     ),
+              //   ),
             ],
           ),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 12),
+
+          // Trip Badges Row
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildBadge(
+                ride.vehicleType.toUpperCase(),
+                const Color(0xFF2563EB),
+                const Color(0xFFEFF6FF),
+              ),
+              _buildBadge(
+                ride.serviceType.toUpperCase(),
+                const Color(0xFF7C3AED),
+                const Color(0xFFF5F3FF),
+              ),
+              _buildBadge(
+                ride.tripType.replaceAll('_', ' ').toUpperCase(),
+                const Color(0xFF059669),
+                const Color(0xFFECFDF5),
+              ),
+              if (ride.durationHours > 0)
+                _buildBadge(
+                  '${ride.durationHours} HRS',
+                  const Color(0xFFD97706),
+                  const Color(0xFFFFFBEB),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Fare & Financial Container
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
@@ -596,76 +1000,135 @@ class _HomeView extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Estimated Fare', style: AppTypography.bodySmall(color: secondaryTextColor)),
+                    Text(
+                      'Estimated Fare',
+                      style: AppTypography.bodySmall(color: secondaryTextColor),
+                    ),
                     const SizedBox(height: 4),
-                    Text(fare, style: AppTypography.headingMedium(color: AppColors.primary)),
+                    Text(
+                      ride.formattedFare,
+                      style: AppTypography.headingMedium(
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ],
                 ),
+                if (ride.driverFee > 0)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Driver Fee',
+                        style: AppTypography.bodySmall(
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        ride.formattedDriverFee,
+                        style: AppTypography.headingSmall(
+                          color: const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Trip Distance', style: AppTypography.bodySmall(color: secondaryTextColor)),
+                    Text(
+                      'Payment Method',
+                      style: AppTypography.bodySmall(color: secondaryTextColor),
+                    ),
                     const SizedBox(height: 4),
-                    Text(distanceTime, style: AppTypography.bodyMedium(color: primaryTextColor).copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      ride.paymentMethod.toUpperCase(),
+                      style: AppTypography.bodyMedium(
+                        color: primaryTextColor,
+                      ).copyWith(fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 16),
+
+          // Pickup Location
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.my_location_rounded,
-                size: 20,
-                color: Color(0xFF10B981),
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.my_location_rounded,
+                  size: 18,
+                  color: Color(0xFF10B981),
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  pickup,
+                  ride.pickupAddress,
                   style: AppTypography.bodyMedium(color: primaryTextColor),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
+
           const Padding(
-            padding: EdgeInsets.only(left: 9),
+            padding: EdgeInsets.only(left: 8),
             child: SizedBox(
-              height: 16,
-              child: VerticalDivider(
-                color: Colors.grey,
-                thickness: 1.5,
-              ),
+              height: 14,
+              child: VerticalDivider(color: Colors.grey, thickness: 1.5),
             ),
           ),
+
+          // Dropoff Location
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.location_on_rounded,
-                size: 20,
-                color: AppColors.error,
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  size: 18,
+                  color: AppColors.error,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  dropoff,
+                  ride.dropAddress,
                   style: AppTypography.bodyMedium(color: primaryTextColor),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
+          // Buttons: Decline & View / Accept
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    context.read<HomeBloc>().add(DeclineRideRequestEvent(requestId));
+                    context.read<HomeBloc>().add(
+                      DeclineRideRequestEvent(ride.id),
+                    );
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: const BorderSide(color: AppColors.error),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   child: const Text('Decline'),
                 ),
@@ -674,15 +1137,24 @@ class _HomeView extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
+                    final pickupCoord =
+                        (ride.pickupLat != 0.0 && ride.pickupLng != 0.0)
+                        ? LatLng(ride.pickupLat, ride.pickupLng)
+                        : const LatLng(17.4921, 78.3936);
+                    final dropCoord =
+                        (ride.dropLat != 0.0 && ride.dropLng != 0.0)
+                        ? LatLng(ride.dropLat, ride.dropLng)
+                        : const LatLng(17.4836, 78.3202);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => ActiveRidePage(
-                          startLocation: const LatLng(12.9716, 77.5946),
-                          endLocation: const LatLng(12.9916, 77.5946),
-                          startLocationName: pickup,
-                          endLocationName: dropoff,
-                          cost: fare,
+                          startLocation: pickupCoord,
+                          endLocation: dropCoord,
+                          startLocationName: ride.pickupAddress,
+                          endLocationName: ride.dropAddress,
+                          cost: ride.formattedFare,
                         ),
                       ),
                     );
@@ -690,13 +1162,47 @@ class _HomeView extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: const Text('view'),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'View & Accept',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_rounded, size: 16),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBadge(String label, Color textColor, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: textColor.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

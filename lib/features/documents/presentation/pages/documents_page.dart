@@ -23,7 +23,7 @@ class DocumentsPage extends StatelessWidget {
               color: Colors.black,
               size: 20,
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.maybePop(context),
           ),
           centerTitle: true,
           title: const Text(
@@ -170,7 +170,7 @@ class DocumentsPage extends StatelessWidget {
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             offset: const Offset(0, -4),
                             blurRadius: 8,
                           ),

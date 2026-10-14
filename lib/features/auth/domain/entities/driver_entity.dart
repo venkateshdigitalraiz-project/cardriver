@@ -16,6 +16,15 @@ class DriverEntity extends Equatable {
   final double todayEarnings;
   final bool isOnline;
   final String token;
+  final String? aadharNumber;
+  final String? panNumber;
+  final String? passportNumber;
+  final String? aadharFrontPath;
+  final String? aadharBackPath;
+  final String? panCardPath;
+  final String? drivingLicensePath;
+  final String? passportPath;
+  final String? profilePicPath;
 
   const DriverEntity({
     required this.id,
@@ -31,6 +40,15 @@ class DriverEntity extends Equatable {
     required this.todayEarnings,
     this.isOnline = false,
     required this.token,
+    this.aadharNumber,
+    this.panNumber,
+    this.passportNumber,
+    this.aadharFrontPath,
+    this.aadharBackPath,
+    this.panCardPath,
+    this.drivingLicensePath,
+    this.passportPath,
+    this.profilePicPath,
   });
 
   DriverEntity copyWith({
@@ -47,6 +65,15 @@ class DriverEntity extends Equatable {
     double? todayEarnings,
     bool? isOnline,
     String? token,
+    String? aadharNumber,
+    String? panNumber,
+    String? passportNumber,
+    String? aadharFrontPath,
+    String? aadharBackPath,
+    String? panCardPath,
+    String? drivingLicensePath,
+    String? passportPath,
+    String? profilePicPath,
   }) {
     return DriverEntity(
       id: id ?? this.id,
@@ -62,6 +89,15 @@ class DriverEntity extends Equatable {
       todayEarnings: todayEarnings ?? this.todayEarnings,
       isOnline: isOnline ?? this.isOnline,
       token: token ?? this.token,
+      aadharNumber: aadharNumber ?? this.aadharNumber,
+      panNumber: panNumber ?? this.panNumber,
+      passportNumber: passportNumber ?? this.passportNumber,
+      aadharFrontPath: aadharFrontPath ?? this.aadharFrontPath,
+      aadharBackPath: aadharBackPath ?? this.aadharBackPath,
+      panCardPath: panCardPath ?? this.panCardPath,
+      drivingLicensePath: drivingLicensePath ?? this.drivingLicensePath,
+      passportPath: passportPath ?? this.passportPath,
+      profilePicPath: profilePicPath ?? this.profilePicPath,
     );
   }
 
@@ -80,5 +116,14 @@ class DriverEntity extends Equatable {
         todayEarnings,
         isOnline,
         token,
+        aadharNumber,
+        panNumber,
+        passportNumber,
+        aadharFrontPath,
+        aadharBackPath,
+        panCardPath,
+        drivingLicensePath,
+        passportPath,
+        profilePicPath,
       ];
 }
