@@ -10,7 +10,8 @@ class DriverAuthHeader extends StatelessWidget {
   const DriverAuthHeader({
     super.key,
     this.title = 'Driver Partner Login',
-    this.subtitle = 'Access your live route dispatch console & instant earnings',
+    this.subtitle =
+        'Access your live route dispatch console & instant earnings',
   });
 
   @override
@@ -110,11 +111,15 @@ class DriverAuthHeader extends StatelessWidget {
           textAlign: TextAlign.center,
           text: TextSpan(
             text: 'CAR ',
-            style: AppTypography.displayLarge(color: AppColors.white).copyWith(fontSize: 28),
+            style: AppTypography.displayLarge(
+              color: AppColors.white,
+            ).copyWith(fontSize: 28),
             children: [
               TextSpan(
                 text: 'DRIVER',
-                style: AppTypography.displayLarge(color: AppColors.primary).copyWith(fontSize: 28),
+                style: AppTypography.displayLarge(
+                  color: AppColors.primary,
+                ).copyWith(fontSize: 28),
               ),
             ],
           ),
@@ -127,9 +132,7 @@ class DriverAuthHeader extends StatelessWidget {
           child: Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: AppTypography.bodyMedium(
-              color: AppColors.textSecondaryDark,
-            ),
+            style: AppTypography.bodyMedium(color: AppColors.textSecondaryDark),
           ),
         ),
         const SizedBox(height: 14),
@@ -140,11 +143,23 @@ class DriverAuthHeader extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildPerkChip(Icons.bolt_rounded, 'Instant Payouts', AppColors.primary),
+              _buildPerkChip(
+                Icons.bolt_rounded,
+                'Instant Payouts',
+                AppColors.primary,
+              ),
               const SizedBox(width: 8),
-              _buildPerkChip(Icons.shield_rounded, 'Trip Insurance', AppColors.secondary),
+              _buildPerkChip(
+                Icons.shield_rounded,
+                'Trip Insurance',
+                AppColors.secondary,
+              ),
               const SizedBox(width: 8),
-              _buildPerkChip(Icons.star_rounded, '100% Tips Kept', AppColors.driverOnline),
+              _buildPerkChip(
+                Icons.star_rounded,
+                '100% Tips Kept',
+                AppColors.driverOnline,
+              ),
             ],
           ),
         ),
@@ -158,10 +173,7 @@ class DriverAuthHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: AppSpacing.roundedFull,
-        border: Border.all(
-          color: color.withValues(alpha: 0.25),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

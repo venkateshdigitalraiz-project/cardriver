@@ -3,7 +3,14 @@ import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
 import 'auth_event.dart';
 
-enum AuthStatus { initial, loading, otpSent, authenticated, unauthenticated, error }
+enum AuthStatus {
+  initial,
+  loading,
+  otpSent,
+  authenticated,
+  unauthenticated,
+  error,
+}
 
 class AuthState extends Equatable {
   final AuthStatus status;
@@ -25,7 +32,9 @@ class AuthState extends Equatable {
   });
 
   bool get isLoading => status == AuthStatus.loading;
-  bool get isAuthenticated => status == AuthStatus.authenticated && (customer != null || driver != null);
+  bool get isAuthenticated =>
+      status == AuthStatus.authenticated &&
+      (customer != null || driver != null);
   bool get isOtpSent => status == AuthStatus.otpSent;
   bool get hasError => status == AuthStatus.error && errorMessage != null;
 
@@ -52,12 +61,12 @@ class AuthState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        customer,
-        driver,
-        errorMessage,
-        loginMode,
-        rememberMe,
-        pendingPhoneNumber,
-      ];
+    status,
+    customer,
+    driver,
+    errorMessage,
+    loginMode,
+    rememberMe,
+    pendingPhoneNumber,
+  ];
 }

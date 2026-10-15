@@ -55,14 +55,16 @@ class DocumentUploadTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: hasFile
                   ? const Color(0xFFF0FDF4) // Light subtle green
-                  : (hasError ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC)),
+                  : (hasError
+                        ? const Color(0xFFFEF2F2)
+                        : const Color(0xFFF8FAFC)),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: hasError
                     ? AppColors.error
                     : (hasFile
-                        ? const Color(0xFF22C55E) // Green
-                        : Colors.grey[300]!),
+                          ? const Color(0xFF22C55E) // Green
+                          : Colors.grey[300]!),
                 width: hasFile || hasError ? 1.5 : 1.0,
               ),
               boxShadow: [
@@ -120,7 +122,9 @@ class DocumentUploadTile extends StatelessWidget {
                     ),
                     child: Icon(
                       icon,
-                      color: hasError ? AppColors.error : const Color(0xFFE5A600),
+                      color: hasError
+                          ? AppColors.error
+                          : const Color(0xFFE5A600),
                       size: 24,
                     ),
                   ),
@@ -138,7 +142,9 @@ class DocumentUploadTile extends StatelessWidget {
                           Flexible(
                             child: Text(
                               title.endsWith('*')
-                                  ? title.substring(0, title.length - 1).trimRight()
+                                  ? title
+                                        .substring(0, title.length - 1)
+                                        .trimRight()
                                   : title,
                               style: const TextStyle(
                                 fontSize: 14,
@@ -222,8 +228,10 @@ class DocumentUploadTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isRequired
                           ? (hasError
-                              ? AppColors.error.withValues(alpha: 0.12)
-                              : const Color(0xFFFFB800).withValues(alpha: 0.15))
+                                ? AppColors.error.withValues(alpha: 0.12)
+                                : const Color(
+                                    0xFFFFB800,
+                                  ).withValues(alpha: 0.15))
                           : Colors.grey.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -233,7 +241,9 @@ class DocumentUploadTile extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: isRequired
-                            ? (hasError ? AppColors.error : const Color(0xFFB45309))
+                            ? (hasError
+                                  ? AppColors.error
+                                  : const Color(0xFFB45309))
                             : Colors.grey[700],
                       ),
                     ),

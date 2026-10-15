@@ -13,7 +13,7 @@ class AvailableRideModel extends AvailableRideEntity {
     required super.dropAddress,
     required super.dropLat,
     required super.dropLng,
-    required super.totalAmount,
+    required super.fare,
     required super.driverFee,
     required super.serviceType,
     required super.tripType,
@@ -29,44 +29,119 @@ class AvailableRideModel extends AvailableRideEntity {
   });
 
   factory AvailableRideModel.fromJson(Map<String, dynamic> json) {
+    double toDouble(dynamic val, [double fallback = 0.0]) {
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? fallback;
+      return fallback;
+    }
+
+    int toInt(dynamic val, [int fallback = 0]) {
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? fallback;
+      return fallback;
+    }
+
     // Pickup Location Parsing
-    final pickupMap = json['pickupLocation'] as Map<String, dynamic>?;
-    final pickupAddress = pickupMap?['address']?.toString() ?? 'Pickup Location';
+    final pickupMap = json['pickupLocation'] is Map
+        ? Map<String, dynamic>.from(json['pickupLocation'] as Map)
+        : null;
+    final pickupAddress = pickupMap?['address']?.toString() ??
+        json['pickupAddress']?.toString() ??
+        'Pickup Location';
+
     double pickupLat = 0.0;
     double pickupLng = 0.0;
-    if (pickupMap?['location'] is Map<String, dynamic>) {
-      final loc = pickupMap!['location'] as Map<String, dynamic>;
-      if (loc['coordinates'] is List && (loc['coordinates'] as List).length >= 2) {
-        pickupLng = ((loc['coordinates'] as List)[0] as num).toDouble();
-        pickupLat = ((loc['coordinates'] as List)[1] as num).toDouble();
+    if (pickupMap != null) {
+      if (pickupMap['location'] is Map) {
+        final loc = Map<String, dynamic>.from(pickupMap['location'] as Map);
+        if (loc['coordinates'] is List && (loc['coordinates'] as List).length >= 2) {
+          pickupLng = toDouble((loc['coordinates'] as List)[0]);
+          pickupLat = toDouble((loc['coordinates'] as List)[1]);
+        }
       }
+      if (pickupLat == 0.0 && pickupLng == 0.0) {
+        pickupLat = toDouble(pickupMap['lat'] ?? pickupMap['latitude']);
+        pickupLng = toDouble(pickupMap['lng'] ?? pickupMap['longitude']);
+      }
+    }
+    if (pickupLat == 0.0 && pickupLng == 0.0) {
+      pickupLat = toDouble(json['pickupLat'] ?? json['pickupLatitude']);
+      pickupLng = toDouble(json['pickupLng'] ?? json['pickupLongitude']);
     }
 
     // Drop Location Parsing
-    final dropMap = json['dropLocation'] as Map<String, dynamic>?;
-    final dropAddress = dropMap?['address']?.toString() ?? 'Drop Location';
+    final dropMap = json['dropLocation'] is Map
+        ? Map<String, dynamic>.from(json['dropLocation'] as Map)
+        : null;
+    final dropAddress = dropMap?['address']?.toString() ??
+        json['dropAddress']?.toString() ??
+        'Drop Location';
+
     double dropLat = 0.0;
     double dropLng = 0.0;
-    if (dropMap?['location'] is Map<String, dynamic>) {
-      final loc = dropMap!['location'] as Map<String, dynamic>;
-      if (loc['coordinates'] is List && (loc['coordinates'] as List).length >= 2) {
-        dropLng = ((loc['coordinates'] as List)[0] as num).toDouble();
-        dropLat = ((loc['coordinates'] as List)[1] as num).toDouble();
+    if (dropMap != null) {
+      if (dropMap['location'] is Map) {
+        final loc = Map<String, dynamic>.from(dropMap['location'] as Map);
+        if (loc['coordinates'] is List && (loc['coordinates'] as List).length >= 2) {
+          dropLng = toDouble((loc['coordinates'] as List)[0]);
+          dropLat = toDouble((loc['coordinates'] as List)[1]);
+        }
       }
+      if (dropLat == 0.0 && dropLng == 0.0) {
+        dropLat = toDouble(dropMap['lat'] ?? dropMap['latitude']);
+        dropLng = toDouble(dropMap['lng'] ?? dropMap['longitude']);
+      }
+    }
+    if (dropLat == 0.0 && dropLng == 0.0) {
+      dropLat = toDouble(json['dropLat'] ?? json['dropLatitude']);
+      dropLng = toDouble(json['dropLng'] ?? json['dropLongitude']);
     }
 
     // User Details Parsing
-    final userDetails = json['userDetails'] as Map<String, dynamic>?;
+    final userDetails = json['userDetails'] is Map
+        ? Map<String, dynamic>.from(json['userDetails'] as Map)
+        : (json['user'] is Map
+            ? Map<String, dynamic>.from(json['user'] as Map)
+            : null);
+
     final firstName = userDetails?['firstName']?.toString() ?? '';
     final lastName = userDetails?['lastName']?.toString() ?? '';
     final fullName = '$firstName $lastName'.trim();
-    final riderName = fullName.isNotEmpty ? fullName : 'Passenger';
-    final riderPhone = userDetails?['phone']?.toString() ?? '';
-    final riderCustId = userDetails?['custId']?.toString() ?? '';
+    final directName = userDetails?['name']?.toString() ??
+        json['riderName']?.toString() ??
+        json['customerName']?.toString() ??
+        '';
+    final riderName = fullName.isNotEmpty
+        ? fullName
+        : (directName.isNotEmpty ? directName : 'Passenger');
+
+    final riderPhone = userDetails?['phone']?.toString() ??
+        json['riderPhone']?.toString() ??
+        json['customerPhone']?.toString() ??
+        '';
+    final riderCustId = userDetails?['custId']?.toString() ??
+        json['riderCustId']?.toString() ??
+        json['customerId']?.toString() ??
+        '';
+
+    final id = json['_id']?.toString() ??
+        json['id']?.toString() ??
+        json['bookingId']?.toString() ??
+        json['booking_id']?.toString() ??
+        json['rideId']?.toString() ??
+        json['ride_id']?.toString() ??
+        '';
+    final bookingId = json['bookingId']?.toString() ??
+        json['booking_id']?.toString() ??
+        json['rideId']?.toString() ??
+        json['ride_id']?.toString() ??
+        (id.isNotEmpty
+            ? 'BKG-${id.substring(0, id.length > 8 ? 8 : id.length).toUpperCase()}'
+            : 'BKG-${DateTime.now().millisecondsSinceEpoch}');
 
     return AvailableRideModel(
-      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
-      bookingId: json['bookingId']?.toString() ?? 'BKG-${DateTime.now().millisecondsSinceEpoch}',
+      id: id,
+      bookingId: bookingId,
       riderName: riderName,
       riderPhone: riderPhone,
       riderCustId: riderCustId,
@@ -76,19 +151,27 @@ class AvailableRideModel extends AvailableRideEntity {
       dropAddress: dropAddress,
       dropLat: dropLat,
       dropLng: dropLng,
-      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? (json['baseAmount'] as num?)?.toDouble() ?? 0.0,
-      driverFee: (json['driverFee'] as num?)?.toDouble() ?? 0.0,
-      serviceType: json['serviceType']?.toString() ?? 'local',
-      tripType: json['tripType']?.toString() ?? 'round_trip',
-      vehicleType: json['vehicleType']?.toString() ?? 'standard',
-      durationHours: (json['durationHours'] as num?)?.toInt() ?? 1,
-      distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? (json['estimatedDistance'] as num?)?.toDouble() ?? 0.0,
-      scheduledStartTime: json['scheduledStartTime']?.toString() ?? '',
-      startOtp: json['startOtp']?.toString() ?? '',
-      bookingStatus: json['bookingStatus']?.toString() ?? 'pending',
-      paymentMethod: json['paymentMethod']?.toString() ?? 'online',
-      paymentStatus: json['paymentStatus']?.toString() ?? 'pending',
-      createdAt: json['createdAt']?.toString() ?? '',
+      fare: toDouble(
+        json['totalAmount'] ?? json['total_amount'] ?? json['baseAmount'] ?? json['fare'] ?? json['amount'],
+      ),
+      driverFee: toDouble(
+        json['driverFee'] ?? json['driver_fee'] ?? json['driverPrice'] ?? json['driver_price'],
+      ),
+      serviceType: json['serviceType']?.toString() ?? json['service_type']?.toString() ?? 'local',
+      tripType: json['tripType']?.toString() ?? json['trip_type']?.toString() ?? 'round_trip',
+      vehicleType: json['vehicleType']?.toString() ?? json['vehicle_type']?.toString() ?? 'standard',
+      durationHours: toInt(json['durationHours'] ?? json['duration_hours'] ?? json['duration'], 1),
+      distanceKm: toDouble(
+        json['distanceKm'] ?? json['distance_km'] ?? json['estimatedDistance'] ?? json['estimated_distance'],
+      ),
+      scheduledStartTime: json['scheduledStartTime']?.toString() ??
+          json['scheduled_start_time']?.toString() ??
+          '',
+      startOtp: json['startOtp']?.toString() ?? json['start_otp']?.toString() ?? json['otp']?.toString() ?? '',
+      bookingStatus: json['bookingStatus']?.toString() ?? json['booking_status']?.toString() ?? 'pending',
+      paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? 'online',
+      paymentStatus: json['paymentStatus']?.toString() ?? json['payment_status']?.toString() ?? 'pending',
+      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString() ?? '',
     );
   }
 

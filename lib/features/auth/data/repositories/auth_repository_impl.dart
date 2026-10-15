@@ -67,14 +67,20 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AuthException {
       rethrow;
     } catch (e) {
-      throw ServerException(message: 'OTP verification failed: ${e.toString()}');
+      throw ServerException(
+        message: 'OTP verification failed: ${e.toString()}',
+      );
     }
   }
 
   @override
-  Future<CustomerEntity> loginCustomerWithSocial({required String provider}) async {
+  Future<CustomerEntity> loginCustomerWithSocial({
+    required String provider,
+  }) async {
     try {
-      final customer = await remoteDataSource.loginCustomerWithSocial(provider: provider);
+      final customer = await remoteDataSource.loginCustomerWithSocial(
+        provider: provider,
+      );
       await localDataSource.cacheCustomer(customer);
       return customer;
     } on AuthException {
@@ -117,7 +123,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     bool rememberMe = true,
   }) async {
-    final driver = await remoteDataSource.loginWithEmail(email: email, password: password);
+    final driver = await remoteDataSource.loginWithEmail(
+      email: email,
+      password: password,
+    );
     return driver;
   }
 
@@ -127,6 +136,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String otp,
   }) async {
     final driver = await remoteDataSource.verifyOtp(phone: phone, otp: otp);
+    await localDataSource.cacheDriver(driver);
     return driver;
   }
 
@@ -219,7 +229,9 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     await localDataSource.clearCache();
     try {
-      debugPrint('🔒 [AuthRepository] Logging out and refreshing device push token...');
+      debugPrint(
+        '🔒 [AuthRepository] Logging out and refreshing device push token...',
+      );
       await messagingService?.refreshFcmToken();
     } catch (e) {
       debugPrint('⚠️ [AuthRepository] Notice refreshing token on logout: $e');

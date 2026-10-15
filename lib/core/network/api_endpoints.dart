@@ -1,5 +1,9 @@
 class ApiEndpoints {
-  static const String baseUrl = 'http://192.168.0.161:3000/api';
+  static const String _host = 'http://192.168.0.161:3000';
+  static const String baseUrl = '$_host/api';
+
+  // Socket.IO server root (no /api prefix)
+  static const String socketUrl = _host;
 
   // Driver Authentication
   static const String driverLogin = '$baseUrl/driver/login';

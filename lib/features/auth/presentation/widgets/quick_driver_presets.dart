@@ -22,10 +22,7 @@ class QuickDriverPresets extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.darkCard,
         borderRadius: AppSpacing.roundedMd,
-        border: Border.all(
-          color: AppColors.darkCardBorder,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.darkCardBorder, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,7 +37,9 @@ class QuickDriverPresets extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'QUICK DEMO DRIVER ACCOUNTS',
-                style: AppTypography.badgeText(color: AppColors.textSecondaryDark),
+                style: AppTypography.badgeText(
+                  color: AppColors.textSecondaryDark,
+                ),
               ),
               const Spacer(),
               Text(
@@ -63,7 +62,10 @@ class QuickDriverPresets extends StatelessWidget {
                   accentColor: AppColors.primary,
                   onTap: () {
                     if (isEmailMode) {
-                      onSelectEmailPreset('driver@cardriver.com', 'password123');
+                      onSelectEmailPreset(
+                        'driver@cardriver.com',
+                        'password123',
+                      );
                     } else {
                       onSelectPhonePreset('+1 555-019-2834');
                     }

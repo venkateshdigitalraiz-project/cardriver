@@ -14,9 +14,10 @@ class CustomerEntity extends Equatable {
   final int totalRides;
   final CustomerPaymentMethod preferredPayment;
   final String token;
+  final String? driverId;
 
   const CustomerEntity({
-    required this.id,
+    this.id = '',
     required this.firstName,
     required this.lastName,
     required this.name,
@@ -27,6 +28,7 @@ class CustomerEntity extends Equatable {
     required this.totalRides,
     this.preferredPayment = CustomerPaymentMethod.card,
     required this.token,
+    this.driverId,
   });
 
   CustomerEntity copyWith({
@@ -41,6 +43,7 @@ class CustomerEntity extends Equatable {
     int? totalRides,
     CustomerPaymentMethod? preferredPayment,
     String? token,
+    String? driverId,
   }) {
     return CustomerEntity(
       id: id ?? this.id,
@@ -54,21 +57,23 @@ class CustomerEntity extends Equatable {
       totalRides: totalRides ?? this.totalRides,
       preferredPayment: preferredPayment ?? this.preferredPayment,
       token: token ?? this.token,
+      driverId: driverId ?? this.driverId,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        firstName,
-        lastName,
-        name,
-        email,
-        phone,
-        avatarUrl,
-        rating,
-        totalRides,
-        preferredPayment,
-        token,
-      ];
+    id,
+    firstName,
+    lastName,
+    name,
+    email,
+    phone,
+    avatarUrl,
+    rating,
+    totalRides,
+    preferredPayment,
+    token,
+    driverId,
+  ];
 }

@@ -69,57 +69,59 @@ class RegisterDriverParams extends Equatable {
     String? drivingLicensePath,
     String? passportPath,
     String? profilePicPath,
-  })  : firstName = firstName ?? body?.firstName,
-        lastName = lastName ?? body?.lastName,
-        name = name ??
-            ((body != null)
-                ? '${body.firstName} ${body.lastName}'.trim()
-                : 'Driver'),
-        email = email ?? body?.email ?? '',
-        phone = phone ?? body?.phone ?? '',
-        password = password ?? body?.password ?? '',
-        address = address ?? body?.address,
-        licenseNumber = licenseNumber ?? body?.licenseNumber,
-        aadhaarNumber = aadhaarNumber ?? aadharNumber ?? body?.aadhaarNumber,
-        pancardNumber = pancardNumber ?? panNumber ?? body?.pancardNumber,
-        passportId = passportId ?? passportNumber ?? body?.passportId,
-        pancard = pancard ?? panCardPath ?? body?.pancard,
-        aadhaarCardFront =
-            aadhaarCardFront ?? aadharFrontPath ?? body?.aadhaarCardFront,
-        aadhaarCardBack =
-            aadhaarCardBack ?? aadharBackPath ?? body?.aadhaarCardBack,
-        drivingLicense =
-            drivingLicense ?? drivingLicensePath ?? body?.drivingLicense,
-        selfie = selfie ?? profilePicPath ?? body?.selfie,
-        passport = passport ?? passportPath ?? body?.passport;
+  }) : firstName = firstName ?? body?.firstName,
+       lastName = lastName ?? body?.lastName,
+       name =
+           name ??
+           ((body != null)
+               ? '${body.firstName} ${body.lastName}'.trim()
+               : 'Driver'),
+       email = email ?? body?.email ?? '',
+       phone = phone ?? body?.phone ?? '',
+       password = password ?? body?.password ?? '',
+       address = address ?? body?.address,
+       licenseNumber = licenseNumber ?? body?.licenseNumber,
+       aadhaarNumber = aadhaarNumber ?? aadharNumber ?? body?.aadhaarNumber,
+       pancardNumber = pancardNumber ?? panNumber ?? body?.pancardNumber,
+       passportId = passportId ?? passportNumber ?? body?.passportId,
+       pancard = pancard ?? panCardPath ?? body?.pancard,
+       aadhaarCardFront =
+           aadhaarCardFront ?? aadharFrontPath ?? body?.aadhaarCardFront,
+       aadhaarCardBack =
+           aadhaarCardBack ?? aadharBackPath ?? body?.aadhaarCardBack,
+       drivingLicense =
+           drivingLicense ?? drivingLicensePath ?? body?.drivingLicense,
+       selfie = selfie ?? profilePicPath ?? body?.selfie,
+       passport = passport ?? passportPath ?? body?.passport;
 
   @override
   List<Object?> get props => [
-        body,
-        firstName,
-        lastName,
-        name,
-        email,
-        phone,
-        password,
-        address,
-        licenseNumber,
-        vehicleModel,
-        vehiclePlate,
-        serviceType,
-        pancardNumber,
-        aadhaarNumber,
-        passportId,
-        pancard,
-        aadhaarCardFront,
-        aadhaarCardBack,
-        drivingLicense,
-        selfie,
-        passport,
-      ];
+    body,
+    firstName,
+    lastName,
+    name,
+    email,
+    phone,
+    password,
+    address,
+    licenseNumber,
+    vehicleModel,
+    vehiclePlate,
+    serviceType,
+    pancardNumber,
+    aadhaarNumber,
+    passportId,
+    pancard,
+    aadhaarCardFront,
+    aadhaarCardBack,
+    drivingLicense,
+    selfie,
+    passport,
+  ];
 }
 
-class RegisterDriverUseCase implements UseCase<DriverEntity, RegisterDriverParams> {
+class RegisterDriverUseCase
+    implements UseCase<DriverEntity, RegisterDriverParams> {
   final AuthRepository repository;
 
   RegisterDriverUseCase(this.repository);

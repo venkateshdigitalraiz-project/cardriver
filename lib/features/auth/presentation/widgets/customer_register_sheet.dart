@@ -39,15 +39,15 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
     if (_formKey.currentState?.validate() ?? false) {
       Navigator.of(context).pop();
       context.read<AuthBloc>().add(
-            RegisterCustomerEvent(
-              firstName: _firstNameController.text.trim(),
-              lastName: _lastNameController.text.trim(),
-              email: _emailController.text.trim(),
-              phone: _phoneController.text.trim(),
-              password: _passwordController.text,
-              preferredPayment: _selectedPayment,
-            ),
-          );
+        RegisterCustomerEvent(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          password: _passwordController.text,
+          preferredPayment: _selectedPayment,
+        ),
+      );
     }
   }
 
@@ -78,7 +78,9 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                   width: 48,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                    color: isDark
+                        ? AppColors.darkCardBorder
+                        : AppColors.lightCardBorder,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -92,7 +94,11 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF10B981), size: 22),
+                    child: const Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: Color(0xFF10B981),
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -101,13 +107,17 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                       Text(
                         'Create Passenger Account',
                         style: AppTypography.headingMedium(
-                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
                         ),
                       ),
                       Text(
                         'Sign up to book rides & track drivers',
                         style: AppTypography.bodySmall(
-                          color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                          color: isDark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
                       ),
                     ],
@@ -124,8 +134,14 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                       controller: _firstNameController,
                       labelText: 'First Name',
                       hintText: 'e.g. Sarah',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF10B981), size: 20),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      ),
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Required'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -134,8 +150,14 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                       controller: _lastNameController,
                       labelText: 'Last Name',
                       hintText: 'e.g. Jenkins',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF10B981), size: 20),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      ),
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Required'
+                          : null,
                     ),
                   ),
                 ],
@@ -148,7 +170,11 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                 labelText: 'Email Address',
                 hintText: 'sarah@example.com',
                 keyboardType: TextInputType.emailAddress,
-                prefixIcon: const Icon(Icons.mail_outline_rounded, color: Color(0xFF10B981), size: 20),
+                prefixIcon: const Icon(
+                  Icons.mail_outline_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
                 validator: InputValidators.validateEmail,
               ),
               const SizedBox(height: 14),
@@ -159,7 +185,11 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                 labelText: 'Mobile Phone',
                 hintText: '+1 555-901-2345',
                 keyboardType: TextInputType.phone,
-                prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFF10B981), size: 20),
+                prefixIcon: const Icon(
+                  Icons.phone_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
                 validator: InputValidators.validatePhone,
               ),
               const SizedBox(height: 14),
@@ -168,7 +198,9 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
               Text(
                 'Preferred Payment Method',
                 style: AppTypography.inputLabel(
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
                 ),
               ),
               const SizedBox(height: 8),
@@ -182,17 +214,23 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                       style: AppTypography.bodySmall(
                         color: isSelected
                             ? AppColors.white
-                            : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                            : (isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     selected: isSelected,
                     selectedColor: const Color(0xFF10B981),
-                    backgroundColor: isDark ? AppColors.darkInputFill : AppColors.lightInputFill,
+                    backgroundColor: isDark
+                        ? AppColors.darkInputFill
+                        : AppColors.lightInputFill,
                     side: BorderSide(
                       color: isSelected
                           ? const Color(0xFF10B981)
-                          : (isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder),
+                          : (isDark
+                                ? AppColors.darkCardBorder
+                                : AppColors.lightCardBorder),
                     ),
                     onSelected: (selected) {
                       if (selected) {
@@ -212,7 +250,11 @@ class _CustomerRegisterSheetState extends State<CustomerRegisterSheet> {
                 labelText: 'Create Password',
                 hintText: 'Minimum 6 characters',
                 isPassword: true,
-                prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF10B981), size: 20),
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
                 validator: InputValidators.validatePassword,
               ),
               const SizedBox(height: 24),

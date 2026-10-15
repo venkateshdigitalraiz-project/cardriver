@@ -25,6 +25,7 @@ class DriverEntity extends Equatable {
   final String? drivingLicensePath;
   final String? passportPath;
   final String? profilePicPath;
+  final String? driverId;
 
   const DriverEntity({
     required this.id,
@@ -49,6 +50,7 @@ class DriverEntity extends Equatable {
     this.drivingLicensePath,
     this.passportPath,
     this.profilePicPath,
+    this.driverId,
   });
 
   DriverEntity copyWith({
@@ -74,6 +76,7 @@ class DriverEntity extends Equatable {
     String? drivingLicensePath,
     String? passportPath,
     String? profilePicPath,
+    String? driverId,
   }) {
     return DriverEntity(
       id: id ?? this.id,
@@ -98,32 +101,34 @@ class DriverEntity extends Equatable {
       drivingLicensePath: drivingLicensePath ?? this.drivingLicensePath,
       passportPath: passportPath ?? this.passportPath,
       profilePicPath: profilePicPath ?? this.profilePicPath,
+      driverId: driverId ?? this.driverId,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        email,
-        phone,
-        avatarUrl,
-        vehicleModel,
-        vehiclePlate,
-        serviceType,
-        rating,
-        totalTrips,
-        todayEarnings,
-        isOnline,
-        token,
-        aadharNumber,
-        panNumber,
-        passportNumber,
-        aadharFrontPath,
-        aadharBackPath,
-        panCardPath,
-        drivingLicensePath,
-        passportPath,
-        profilePicPath,
-      ];
+    id,
+    name,
+    email,
+    phone,
+    avatarUrl,
+    vehicleModel,
+    vehiclePlate,
+    serviceType,
+    rating,
+    totalTrips,
+    todayEarnings,
+    isOnline,
+    token,
+    aadharNumber,
+    panNumber,
+    passportNumber,
+    aadharFrontPath,
+    aadharBackPath,
+    panCardPath,
+    drivingLicensePath,
+    passportPath,
+    profilePicPath,
+    driverId,
+  ];
 }

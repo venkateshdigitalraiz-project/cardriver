@@ -1,4 +1,6 @@
 import 'core/services/firebase_messaging_service.dart';
+import 'core/services/socket_service.dart';
+import 'core/storage/local_storage_service.dart';
 import 'features/auth/data/datasources/auth_local_data_source.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -18,6 +20,7 @@ import 'features/notifications/domain/usecases/get_notifications_usecase.dart';
 import 'features/notifications/domain/usecases/refresh_fcm_token_usecase.dart';
 import 'features/notifications/domain/usecases/send_notification_usecase.dart';
 import 'features/notifications/presentation/bloc/notification_bloc.dart';
+import 'features/home/data/datasources/available_rides_remote_data_source.dart';
 import 'features/home/data/datasources/home_remote_data_source.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'features/home/domain/repositories/home_repository.dart';
@@ -30,6 +33,8 @@ class InjectionContainer {
 
   // Core Services
   static late final FirebaseMessagingService firebaseMessagingService;
+  static late final LocalStorageService localStorageService;
+  static final SocketService socketService = SocketService();
 
   // Home Data Sources & Repositories
   static late final HomeRemoteDataSource homeRemoteDataSource;
@@ -64,10 +69,14 @@ class InjectionContainer {
   static void init() {
     // Core Services
     firebaseMessagingService = FirebaseMessagingService();
+    localStorageService = LocalStorageService();
+    // socketService is a singleton — no initialization needed here.
 
     // Data Sources
     authRemoteDataSource = AuthRemoteDataSourceImpl();
-    authLocalDataSource = AuthLocalDataSourceImpl();
+    authLocalDataSource = AuthLocalDataSourceImpl(
+      storageService: localStorageService,
+    );
     notificationRemoteDataSource = NotificationRemoteDataSourceImpl(
       messagingService: firebaseMessagingService,
     );
@@ -124,9 +133,10 @@ class InjectionContainer {
     );
   }
 
-  static HomeBloc createHomeBloc({String? driverToken}) {
+  static HomeBloc createHomeBloc({required String driverToken}) {
     return HomeBloc(
-      getAvailableRidesUseCase: getAvailableRidesUseCase,
+      remoteDataSource: AvailableRidesRemoteDataSourceImpl(),
+      socketService: socketService,
       driverToken: driverToken,
     );
   }

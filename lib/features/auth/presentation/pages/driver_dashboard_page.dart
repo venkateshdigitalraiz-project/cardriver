@@ -17,10 +17,7 @@ enum TripState { idle, requestReceived, headingToPickup, onTrip, completed }
 class DriverDashboardPage extends StatefulWidget {
   final DriverEntity driver;
 
-  const DriverDashboardPage({
-    super.key,
-    required this.driver,
-  });
+  const DriverDashboardPage({super.key, required this.driver});
 
   @override
   State<DriverDashboardPage> createState() => _DriverDashboardPageState();
@@ -48,10 +45,7 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.darkCard,
         shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
-        title: Text(
-          'Sign Out',
-          style: AppTypography.headingMedium(),
-        ),
+        title: Text('Sign Out', style: AppTypography.headingMedium()),
         content: Text(
           'Are you sure you want to go offline and sign out of your driver account?',
           style: AppTypography.bodyMedium(color: AppColors.textSecondaryDark),
@@ -87,21 +81,30 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
     setState(() {
       _tripState = TripState.requestReceived;
     });
-    AppSnackBar.showInfo(context, 'New Ride Request nearby (Downtown to Airport)!');
+    AppSnackBar.showInfo(
+      context,
+      'New Ride Request nearby (Downtown to Airport)!',
+    );
   }
 
   void _acceptTrip() {
     setState(() {
       _tripState = TripState.headingToPickup;
     });
-    AppSnackBar.showSuccess(context, 'Ride Accepted! Navigating to Pickup Point.');
+    AppSnackBar.showSuccess(
+      context,
+      'Ride Accepted! Navigating to Pickup Point.',
+    );
   }
 
   void _arriveAtPickup() {
     setState(() {
       _tripState = TripState.onTrip;
     });
-    AppSnackBar.showInfo(context, 'Passenger boarded. Trip in progress to Airport Terminal 2.');
+    AppSnackBar.showInfo(
+      context,
+      'Passenger boarded. Trip in progress to Airport Terminal 2.',
+    );
   }
 
   void _completeTrip() {
@@ -110,7 +113,10 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
       _totalTrips += 1;
       _tripState = TripState.idle;
     });
-    AppSnackBar.showSuccess(context, 'Trip completed! +\$$_mockFare added to today\'s balance.');
+    AppSnackBar.showSuccess(
+      context,
+      'Trip completed! +\$$_mockFare added to today\'s balance.',
+    );
   }
 
   void _declineTrip() {
@@ -144,13 +150,14 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                   color: AppColors.primary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.local_taxi_rounded, color: AppColors.primary, size: 20),
+                child: const Icon(
+                  Icons.local_taxi_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
-              Text(
-                'Driver Console',
-                style: AppTypography.headingSmall(),
-              ),
+              Text('Driver Console', style: AppTypography.headingSmall()),
             ],
           ),
           actions: [
@@ -190,15 +197,24 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.star_rounded, color: AppColors.primary, size: 16),
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        color: AppColors.primary,
+                                        size: 16,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         widget.driver.rating.toStringAsFixed(2),
@@ -224,11 +240,16 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.darkBackground,
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: AppColors.darkCardBorder),
+                                    border: Border.all(
+                                      color: AppColors.darkCardBorder,
+                                    ),
                                   ),
                                   child: Text(
                                     widget.driver.vehiclePlate,
@@ -240,13 +261,19 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.secondary.withValues(alpha: 0.15),
+                                    color: AppColors.secondary.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    widget.driver.serviceType.name.toUpperCase(),
+                                    widget.driver.serviceType.name
+                                        .toUpperCase(),
                                     style: AppTypography.bodySmall(
                                       color: AppColors.secondary,
                                       fontWeight: FontWeight.w700,
@@ -276,7 +303,9 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                           end: Alignment.bottomRight,
                         )
                       : null,
-                  borderColor: _isOnline ? AppColors.driverOnline.withValues(alpha: 0.5) : null,
+                  borderColor: _isOnline
+                      ? AppColors.driverOnline.withValues(alpha: 0.5)
+                      : null,
                   child: Row(
                     children: [
                       Container(
@@ -284,11 +313,15 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                         height: 14,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _isOnline ? AppColors.driverOnline : AppColors.driverOffline,
+                          color: _isOnline
+                              ? AppColors.driverOnline
+                              : AppColors.driverOffline,
                           boxShadow: _isOnline
                               ? [
                                   BoxShadow(
-                                    color: AppColors.driverOnline.withValues(alpha: 0.6),
+                                    color: AppColors.driverOnline.withValues(
+                                      alpha: 0.6,
+                                    ),
                                     blurRadius: 10,
                                     spreadRadius: 2,
                                   ),
@@ -302,9 +335,13 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _isOnline ? 'ONLINE & READY FOR DISPATCH' : 'OFFLINE',
+                              _isOnline
+                                  ? 'ONLINE & READY FOR DISPATCH'
+                                  : 'OFFLINE',
                               style: AppTypography.bodyMedium(
-                                color: _isOnline ? AppColors.driverOnline : AppColors.textSecondaryDark,
+                                color: _isOnline
+                                    ? AppColors.driverOnline
+                                    : AppColors.textSecondaryDark,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -312,7 +349,9 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                               _isOnline
                                   ? 'Receiving ride & passenger requests nearby'
                                   : 'Switch online to accept new ride requests',
-                              style: AppTypography.bodySmall(color: AppColors.textMutedDark),
+                              style: AppTypography.bodySmall(
+                                color: AppColors.textMutedDark,
+                              ),
                             ),
                           ],
                         ),
@@ -320,7 +359,9 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                       Switch(
                         value: _isOnline,
                         activeThumbColor: AppColors.driverOnline,
-                        activeTrackColor: AppColors.driverOnline.withValues(alpha: 0.3),
+                        activeTrackColor: AppColors.driverOnline.withValues(
+                          alpha: 0.3,
+                        ),
                         onChanged: (val) {
                           setState(() {
                             _isOnline = val;
@@ -329,9 +370,15 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                             }
                           });
                           if (_isOnline) {
-                            AppSnackBar.showSuccess(context, 'You are now Online and accepting rides!');
+                            AppSnackBar.showSuccess(
+                              context,
+                              'You are now Online and accepting rides!',
+                            );
                           } else {
-                            AppSnackBar.showInfo(context, 'You are now Offline.');
+                            AppSnackBar.showInfo(
+                              context,
+                              'You are now Offline.',
+                            );
                           }
                         },
                       ),
@@ -340,7 +387,10 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                 ),
 
                 const SizedBox(height: 24),
-                Text('Today\'s Performance', style: AppTypography.headingMedium()),
+                Text(
+                  'Today\'s Performance',
+                  style: AppTypography.headingMedium(),
+                ),
                 const SizedBox(height: 14),
 
                 // Stats Cards
@@ -352,11 +402,21 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 24),
+                            const Icon(
+                              Icons.account_balance_wallet_rounded,
+                              color: AppColors.primary,
+                              size: 24,
+                            ),
                             const SizedBox(height: 12),
-                            Text('\$${_todayEarnings.toStringAsFixed(2)}', style: AppTypography.statValue()),
+                            Text(
+                              '\$${_todayEarnings.toStringAsFixed(2)}',
+                              style: AppTypography.statValue(),
+                            ),
                             const SizedBox(height: 4),
-                            Text('Today\'s Earnings', style: AppTypography.statLabel()),
+                            Text(
+                              'Today\'s Earnings',
+                              style: AppTypography.statLabel(),
+                            ),
                           ],
                         ),
                       ),
@@ -368,11 +428,21 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.navigation_rounded, color: AppColors.secondary, size: 24),
+                            const Icon(
+                              Icons.navigation_rounded,
+                              color: AppColors.secondary,
+                              size: 24,
+                            ),
                             const SizedBox(height: 12),
-                            Text('$_totalTrips', style: AppTypography.statValue()),
+                            Text(
+                              '$_totalTrips',
+                              style: AppTypography.statValue(),
+                            ),
                             const SizedBox(height: 4),
-                            Text('Total Trips Completed', style: AppTypography.statLabel()),
+                            Text(
+                              'Total Trips Completed',
+                              style: AppTypography.statLabel(),
+                            ),
                           ],
                         ),
                       ),
@@ -381,7 +451,10 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                 ),
 
                 const SizedBox(height: 24),
-                Text('Live Dispatch Stream', style: AppTypography.headingMedium()),
+                Text(
+                  'Live Dispatch Stream',
+                  style: AppTypography.headingMedium(),
+                ),
                 const SizedBox(height: 14),
 
                 // Dynamic Interactive Trip Dispatch Console
@@ -390,14 +463,23 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        const Icon(Icons.location_off_rounded, size: 44, color: AppColors.textMutedDark),
+                        const Icon(
+                          Icons.location_off_rounded,
+                          size: 44,
+                          color: AppColors.textMutedDark,
+                        ),
                         const SizedBox(height: 10),
-                        Text('You are currently offline', style: AppTypography.headingSmall()),
+                        Text(
+                          'You are currently offline',
+                          style: AppTypography.headingSmall(),
+                        ),
                         const SizedBox(height: 6),
                         Text(
                           'Switch on duty above to receive incoming passenger ride requests.',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall(color: AppColors.textSecondaryDark),
+                          style: AppTypography.bodySmall(
+                            color: AppColors.textSecondaryDark,
+                          ),
                         ),
                       ],
                     ),
@@ -407,14 +489,23 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        const Icon(Icons.radar_rounded, size: 44, color: AppColors.primary),
+                        const Icon(
+                          Icons.radar_rounded,
+                          size: 44,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(height: 10),
-                        Text('Searching for passenger pickups...', style: AppTypography.headingSmall()),
+                        Text(
+                          'Searching for passenger pickups...',
+                          style: AppTypography.headingSmall(),
+                        ),
                         const SizedBox(height: 6),
                         Text(
                           'High demand area: 1.4x surge active in Downtown.',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall(color: AppColors.textSecondaryDark),
+                          style: AppTypography.bodySmall(
+                            color: AppColors.textSecondaryDark,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         CustomElevatedButton(
@@ -437,19 +528,26 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 'NEW DISPATCH REQUEST',
-                                style: AppTypography.badgeText(color: AppColors.primary),
+                                style: AppTypography.badgeText(
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                             Text(
                               '\$$_mockFare',
-                              style: AppTypography.statValue(color: AppColors.primary),
+                              style: AppTypography.statValue(
+                                color: AppColors.primary,
+                              ),
                             ),
                           ],
                         ),
@@ -459,35 +557,61 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                             const CircleAvatar(
                               radius: 18,
                               backgroundColor: AppColors.darkInputFill,
-                              child: Icon(Icons.person_rounded, color: AppColors.white),
+                              child: Icon(
+                                Icons.person_rounded,
+                                color: AppColors.white,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Sarah Jenkins', style: AppTypography.inputText()),
-                                Text('⭐ 4.95 (52 rides)', style: AppTypography.bodySmall()),
+                                Text(
+                                  'Sarah Jenkins',
+                                  style: AppTypography.inputText(),
+                                ),
+                                Text(
+                                  '⭐ 4.95 (52 rides)',
+                                  style: AppTypography.bodySmall(),
+                                ),
                               ],
                             ),
                           ],
                         ),
-                        const Divider(height: 24, color: AppColors.darkCardBorder),
+                        const Divider(
+                          height: 24,
+                          color: AppColors.darkCardBorder,
+                        ),
                         Row(
                           children: [
-                            const Icon(Icons.my_location_rounded, color: AppColors.driverOnline, size: 18),
+                            const Icon(
+                              Icons.my_location_rounded,
+                              color: AppColors.driverOnline,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text('Pick up: 742 Evergreen Terrace, Downtown (1.2 km away)', style: AppTypography.bodyMedium()),
+                              child: Text(
+                                'Pick up: 742 Evergreen Terrace, Downtown (1.2 km away)',
+                                style: AppTypography.bodyMedium(),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.location_on_rounded, color: AppColors.error, size: 18),
+                            const Icon(
+                              Icons.location_on_rounded,
+                              color: AppColors.error,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text('Drop off: International Airport Terminal 2', style: AppTypography.bodyMedium()),
+                              child: Text(
+                                'Drop off: International Airport Terminal 2',
+                                style: AppTypography.bodyMedium(),
+                              ),
                             ),
                           ],
                         ),
@@ -498,8 +622,12 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                               child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.error,
-                                  side: const BorderSide(color: AppColors.error),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  side: const BorderSide(
+                                    color: AppColors.error,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                 ),
                                 onPressed: _declineTrip,
                                 child: const Text('Decline'),
@@ -529,13 +657,25 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.navigation_rounded, color: AppColors.secondary, size: 20),
+                            const Icon(
+                              Icons.navigation_rounded,
+                              color: AppColors.secondary,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
-                            Text('Navigating to Passenger Pickup', style: AppTypography.headingSmall()),
+                            Text(
+                              'Navigating to Passenger Pickup',
+                              style: AppTypography.headingSmall(),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text('742 Evergreen Terrace, Downtown • ETA 4 mins', style: AppTypography.bodyMedium(color: AppColors.textSecondaryDark)),
+                        Text(
+                          '742 Evergreen Terrace, Downtown • ETA 4 mins',
+                          style: AppTypography.bodyMedium(
+                            color: AppColors.textSecondaryDark,
+                          ),
+                        ),
                         const SizedBox(height: 18),
                         CustomElevatedButton(
                           text: 'Arrived at Pickup & Board Passenger',
@@ -555,13 +695,25 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.route_rounded, color: AppColors.driverOnline, size: 20),
+                            const Icon(
+                              Icons.route_rounded,
+                              color: AppColors.driverOnline,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
-                            Text('Trip in Progress • Heading to Airport', style: AppTypography.headingSmall()),
+                            Text(
+                              'Trip in Progress • Heading to Airport',
+                              style: AppTypography.headingSmall(),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text('Est. Distance: 14 km • Est. Fare: \$$_mockFare', style: AppTypography.bodyMedium(color: AppColors.textSecondaryDark)),
+                        Text(
+                          'Est. Distance: 14 km • Est. Fare: \$$_mockFare',
+                          style: AppTypography.bodyMedium(
+                            color: AppColors.textSecondaryDark,
+                          ),
+                        ),
                         const SizedBox(height: 18),
                         CustomElevatedButton(
                           text: 'Complete Trip & Collect \$$_mockFare',

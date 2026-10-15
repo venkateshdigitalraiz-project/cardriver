@@ -487,9 +487,7 @@ class _RegisterPageState extends State<RegisterPage> {
             'Registration successful! Welcome, $driverName!',
           );
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const DocumentsPage(),
-            ),
+            MaterialPageRoute(builder: (_) => const DocumentsPage()),
           );
         }
       },

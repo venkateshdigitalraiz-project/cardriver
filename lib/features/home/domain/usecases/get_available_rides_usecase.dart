@@ -12,7 +12,8 @@ class GetAvailableRidesParams extends Equatable {
   List<Object?> get props => [token];
 }
 
-class GetAvailableRidesUseCase implements UseCase<List<AvailableRideEntity>, GetAvailableRidesParams> {
+class GetAvailableRidesUseCase
+    implements UseCase<List<AvailableRideEntity>, GetAvailableRidesParams> {
   final HomeRepository repository;
 
   GetAvailableRidesUseCase(this.repository);
@@ -26,6 +27,9 @@ class GetAvailableRidesUseCase implements UseCase<List<AvailableRideEntity>, Get
     GetAvailableRidesParams params, {
     Duration interval = const Duration(seconds: 4),
   }) {
-    return repository.monitorAvailableRides(token: params.token, interval: interval);
+    return repository.monitorAvailableRides(
+      token: params.token,
+      interval: interval,
+    );
   }
 }

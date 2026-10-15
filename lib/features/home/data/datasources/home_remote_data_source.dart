@@ -25,11 +25,15 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<List<AvailableRideModel>> getAvailableRides({String? token}) async {
-    final effectiveToken = (token != null &&
-            token.trim().isNotEmpty &&
-            token.split('.').length == 3)
-        ? token.trim()
-        : defaultDriverToken;
+    String cleanToken = (token ?? '').trim();
+    if (cleanToken.toLowerCase().startsWith('bearer ')) {
+      cleanToken = cleanToken.substring(7).trim();
+    }
+
+    final effectiveToken =
+        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
+            ? cleanToken
+            : defaultDriverToken;
 
     try {
       final response = await dio.get(
@@ -46,22 +50,35 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         final data = response.data;
         List<dynamic> rideListJson = [];
 
-        if (data is Map<String, dynamic>) {
-          if (data['data'] is Map<String, dynamic> &&
-              data['data']['rides'] is List) {
-            rideListJson = data['data']['rides'] as List;
-          } else if (data['rides'] is List) {
-            rideListJson = data['rides'] as List;
-          } else if (data['data'] is List) {
-            rideListJson = data['data'] as List;
+        if (data is Map) {
+          final mapData = Map<String, dynamic>.from(data);
+          final innerData = mapData['data'];
+          if (innerData is Map) {
+            final innerMap = Map<String, dynamic>.from(innerData);
+            if (innerMap['rides'] is List) {
+              rideListJson = innerMap['rides'] as List;
+            } else if (innerMap['availableRides'] is List) {
+              rideListJson = innerMap['availableRides'] as List;
+            } else if (innerMap['bookings'] is List) {
+              rideListJson = innerMap['bookings'] as List;
+            }
+          } else if (innerData is List) {
+            rideListJson = innerData;
+          } else if (mapData['rides'] is List) {
+            rideListJson = mapData['rides'] as List;
+          } else if (mapData['availableRides'] is List) {
+            rideListJson = mapData['availableRides'] as List;
+          } else if (mapData['bookings'] is List) {
+            rideListJson = mapData['bookings'] as List;
           }
         } else if (data is List) {
           rideListJson = data;
         }
 
         return rideListJson
-            .whereType<Map<String, dynamic>>()
-            .map((item) => AvailableRideModel.fromJson(item))
+            .whereType<Map>()
+            .map((item) =>
+                AvailableRideModel.fromJson(Map<String, dynamic>.from(item)))
             .toList();
       } else {
         throw ServerException(

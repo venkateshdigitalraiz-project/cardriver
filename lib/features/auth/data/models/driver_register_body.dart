@@ -85,13 +85,15 @@ class DriverRegisterBody {
 
     // 2. Attached Files (or empty fields matching cURL specification)
     if (pancard != null && pancard!.isNotEmpty && File(pancard!).existsSync()) {
-      formData.files.add(MapEntry(
-        'pancard',
-        await MultipartFile.fromFile(
-          pancard!,
-          filename: pancard!.split(Platform.pathSeparator).last,
+      formData.files.add(
+        MapEntry(
+          'pancard',
+          await MultipartFile.fromFile(
+            pancard!,
+            filename: pancard!.split(Platform.pathSeparator).last,
+          ),
         ),
-      ));
+      );
     } else {
       formData.fields.add(const MapEntry('pancard', ''));
     }
@@ -99,13 +101,15 @@ class DriverRegisterBody {
     if (aadhaarCardFront != null &&
         aadhaarCardFront!.isNotEmpty &&
         File(aadhaarCardFront!).existsSync()) {
-      formData.files.add(MapEntry(
-        'aadhaarCardFront',
-        await MultipartFile.fromFile(
-          aadhaarCardFront!,
-          filename: aadhaarCardFront!.split(Platform.pathSeparator).last,
+      formData.files.add(
+        MapEntry(
+          'aadhaarCardFront',
+          await MultipartFile.fromFile(
+            aadhaarCardFront!,
+            filename: aadhaarCardFront!.split(Platform.pathSeparator).last,
+          ),
         ),
-      ));
+      );
     } else {
       formData.fields.add(const MapEntry('aadhaarCardFront', ''));
     }
@@ -113,13 +117,15 @@ class DriverRegisterBody {
     if (aadhaarCardBack != null &&
         aadhaarCardBack!.isNotEmpty &&
         File(aadhaarCardBack!).existsSync()) {
-      formData.files.add(MapEntry(
-        'aadhaarCardBack',
-        await MultipartFile.fromFile(
-          aadhaarCardBack!,
-          filename: aadhaarCardBack!.split(Platform.pathSeparator).last,
+      formData.files.add(
+        MapEntry(
+          'aadhaarCardBack',
+          await MultipartFile.fromFile(
+            aadhaarCardBack!,
+            filename: aadhaarCardBack!.split(Platform.pathSeparator).last,
+          ),
         ),
-      ));
+      );
     } else {
       formData.fields.add(const MapEntry('aadhaarCardBack', ''));
     }
@@ -127,37 +133,45 @@ class DriverRegisterBody {
     if (drivingLicense != null &&
         drivingLicense!.isNotEmpty &&
         File(drivingLicense!).existsSync()) {
-      formData.files.add(MapEntry(
-        'drivingLicense',
-        await MultipartFile.fromFile(
-          drivingLicense!,
-          filename: drivingLicense!.split(Platform.pathSeparator).last,
+      formData.files.add(
+        MapEntry(
+          'drivingLicense',
+          await MultipartFile.fromFile(
+            drivingLicense!,
+            filename: drivingLicense!.split(Platform.pathSeparator).last,
+          ),
         ),
-      ));
+      );
     } else {
       formData.fields.add(const MapEntry('drivingLicense', ''));
     }
 
     if (selfie != null && selfie!.isNotEmpty && File(selfie!).existsSync()) {
-      formData.files.add(MapEntry(
-        'selfie',
-        await MultipartFile.fromFile(
-          selfie!,
-          filename: selfie!.split(Platform.pathSeparator).last,
+      formData.files.add(
+        MapEntry(
+          'selfie',
+          await MultipartFile.fromFile(
+            selfie!,
+            filename: selfie!.split(Platform.pathSeparator).last,
+          ),
         ),
-      ));
+      );
     } else {
       formData.fields.add(const MapEntry('selfie', ''));
     }
 
-    if (passport != null && passport!.isNotEmpty && File(passport!).existsSync()) {
-      formData.files.add(MapEntry(
-        'passport',
-        await MultipartFile.fromFile(
-          passport!,
-          filename: passport!.split(Platform.pathSeparator).last,
+    if (passport != null &&
+        passport!.isNotEmpty &&
+        File(passport!).existsSync()) {
+      formData.files.add(
+        MapEntry(
+          'passport',
+          await MultipartFile.fromFile(
+            passport!,
+            filename: passport!.split(Platform.pathSeparator).last,
+          ),
         ),
-      ));
+      );
     } else {
       formData.fields.add(const MapEntry('passport', ''));
     }

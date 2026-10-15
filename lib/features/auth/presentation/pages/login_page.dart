@@ -41,15 +41,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onSendOtp() {
-    final phone = _phoneController.text.trim();
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final raw = _phoneController.text.trim();
+    final phone = raw.replaceAll(RegExp(r'\D'), '');
 
-    if (phone.isEmpty) {
+    if (raw.isEmpty) {
       AppSnackBar.showError(context, 'Please enter a mobile number.');
       return;
     }
 
-    if (digits.length != 10) {
+    if (phone.length != 10) {
       AppSnackBar.showError(
         context,
         'Mobile number must be exactly 10 digits.',
@@ -61,18 +61,22 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _isOtpSentLocal = true;
       });
+      // Always send the digits-only phone to ensure server-side OTP is stored
+      // against the same format that verifyOtp will use.
       context.read<AuthBloc>().add(SendOtpEvent(phone: phone));
     }
   }
 
   void _onVerifyOtp() {
-    final otp = _otpControllers.map((c) => c.text).join();
+    final otp = _otpControllers.map((c) => c.text.trim()).join();
     if (otp.length != 4) {
       AppSnackBar.showError(context, 'Please enter exactly 4 digits for OTP.');
       return;
     }
+    // Use digits-only phone — must match what was sent in sendOtp.
+    final phone = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
     context.read<AuthBloc>().add(
-      VerifyOtpEvent(phone: _phoneController.text.trim(), otp: otp),
+      VerifyOtpEvent(phone: phone, otp: otp),
     );
   }
 
@@ -99,10 +103,7 @@ class _LoginPageState extends State<LoginPage> {
           // No longer navigating to OtpVerificationPage! We stay on the same page.
         } else if (state.status == AuthStatus.authenticated) {
           if (state.driver != null) {
-            AppSnackBar.showSuccess(
-              context,
-              'Welcome, ${state.driver!.name}!',
-            );
+            AppSnackBar.showSuccess(context, 'Welcome, ${state.driver!.name}!');
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
                 builder: (_) => DriverDashboardPage(driver: state.driver!),
@@ -136,132 +137,132 @@ class _LoginPageState extends State<LoginPage> {
                   height: size.height * 0.5,
                   width: double.infinity,
                   child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/car_driver.jpg'),
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                    ),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.6),
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.2),
-                        ],
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/car_driver.jpg'),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
                       ),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 60,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFE94E34),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                Positioned(
-                                  left: 8,
-                                  child: Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFFF2A33A,
-                                      ).withValues(alpha: 0.9),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          "Ready to Drive?",
-                          style:
-                              const TextStyle(
-                                fontSize: 32,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ).copyWith(
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-                Container(
-                  margin: EdgeInsets.only(top: size.height * 0.4),
-                  constraints: BoxConstraints(
-                    minHeight: size.height * 0.6,
-                  ),
-                  width: double.infinity,
-                  child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Transform.translate(
-                      offset: Offset(0, 100 * (1 - value)),
-                      child: Opacity(opacity: value, child: child),
-                    );
-                  },
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(32),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.6),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.2),
+                          ],
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 30,
-                            offset: const Offset(0, -10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 60,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFE94E34),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 8,
+                                    child: Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFFF2A33A,
+                                        ).withValues(alpha: 0.9),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            "Ready to Drive?",
+                            style:
+                                const TextStyle(
+                                  fontSize: 32,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ).copyWith(
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                ),
+
+                Container(
+                  margin: EdgeInsets.only(top: size.height * 0.4),
+                  constraints: BoxConstraints(minHeight: size.height * 0.6),
+                  width: double.infinity,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 100 * (1 - value)),
+                        child: Opacity(opacity: value, child: child),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(32),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(32),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 30,
+                              offset: const Offset(0, -10),
+                            ),
+                          ],
+                        ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 32,
@@ -362,15 +363,21 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                       suffixIcon: isOtpSent
                                           ? IconButton(
-                                              icon: const Icon(Icons.edit, color: AppColors.primary),
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                color: AppColors.primary,
+                                              ),
                                               onPressed: () {
                                                 setState(() {
                                                   _isOtpSentLocal = false;
-                                                  for (var c in _otpControllers) {
+                                                  for (var c
+                                                      in _otpControllers) {
                                                     c.clear();
                                                   }
                                                 });
-                                                context.read<AuthBloc>().add(ResetAuthEvent());
+                                                context.read<AuthBloc>().add(
+                                                  ResetAuthEvent(),
+                                                );
                                               },
                                             )
                                           : null,
@@ -501,170 +508,197 @@ class _LoginPageState extends State<LoginPage> {
                                       }),
                                     ),
                                   ],
-                                   const SizedBox(height: 20),
-                                   // Keep me signed in Checkbox
-                                   Row(
-                                     children: [
-                                       SizedBox(
-                                         height: 22,
-                                         width: 22,
-                                         child: Checkbox(
-                                           value: _keepMeSignedIn,
-                                           activeColor: AppColors.primary,
-                                           checkColor: Colors.black87,
-                                           shape: RoundedRectangleBorder(
-                                             borderRadius: BorderRadius.circular(4),
-                                           ),
-                                           side: BorderSide(
-                                             color: Colors.grey[400]!,
-                                             width: 1.5,
-                                           ),
-                                           onChanged: (val) {
-                                             setState(() {
-                                               _keepMeSignedIn = val ?? true;
-                                             });
-                                             context.read<AuthBloc>().add(
-                                                   ToggleRememberMeEvent(_keepMeSignedIn),
-                                                 );
-                                           },
-                                         ),
-                                       ),
-                                       const SizedBox(width: 10),
-                                       GestureDetector(
-                                         onTap: () {
-                                           setState(() {
-                                             _keepMeSignedIn = !_keepMeSignedIn;
-                                           });
-                                           context.read<AuthBloc>().add(
-                                                 ToggleRememberMeEvent(_keepMeSignedIn),
-                                               );
-                                         },
-                                         child: const Text(
-                                           'Keep me signed in',
-                                           style: TextStyle(
-                                             fontSize: 14,
-                                             fontWeight: FontWeight.w500,
-                                             color: Colors.black87,
-                                           ),
-                                         ),
-                                       ),
-                                     ],
-                                   ),
-                                   const SizedBox(height: 24),
-                                   // Send / Verify OTP Action Button
-                                   Container(
-                                     height: 52,
-                                     decoration: BoxDecoration(
-                                       borderRadius: BorderRadius.circular(16),
-                                       gradient: state.isLoading
-                                           ? null
-                                           : const LinearGradient(
-                                               colors: [Color(0xFFFFB800), Color(0xFFFF9800)],
-                                               begin: Alignment.centerLeft,
-                                               end: Alignment.centerRight,
-                                             ),
-                                       color: state.isLoading ? Colors.grey[300] : null,
-                                       boxShadow: state.isLoading
-                                           ? null
-                                           : [
-                                               BoxShadow(
-                                                 color: const Color(0xFFFFB800).withValues(alpha: 0.35),
-                                                 blurRadius: 16,
-                                                 offset: const Offset(0, 6),
-                                               ),
-                                             ],
-                                     ),
-                                     child: ElevatedButton(
-                                       onPressed: state.isLoading
-                                           ? null
-                                           : (isOtpSent ? _onVerifyOtp : _onSendOtp),
-                                       style: ElevatedButton.styleFrom(
-                                         backgroundColor: Colors.transparent,
-                                         shadowColor: Colors.transparent,
-                                         disabledBackgroundColor: Colors.transparent,
-                                         shape: RoundedRectangleBorder(
-                                           borderRadius: BorderRadius.circular(16),
-                                         ),
-                                         padding: const EdgeInsets.symmetric(vertical: 14),
-                                       ),
-                                       child: state.isLoading
-                                           ? const SizedBox(
-                                               height: 22,
-                                               width: 22,
-                                               child: CircularProgressIndicator(
-                                                 strokeWidth: 2.5,
-                                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
-                                               ),
-                                             )
-                                           : Row(
-                                               mainAxisAlignment: MainAxisAlignment.center,
-                                               mainAxisSize: MainAxisSize.min,
-                                               children: [
-                                                 Text(
-                                                   isOtpSent ? 'Verify OTP' : 'Send OTP',
-                                                   style: const TextStyle(
-                                                     fontSize: 16,
-                                                     fontWeight: FontWeight.bold,
-                                                     color: Colors.black87,
-                                                   ),
-                                                 ),
-                                                 const SizedBox(width: 8),
-                                                 const Icon(
-                                                   Icons.arrow_forward_rounded,
-                                                   size: 20,
-                                                   color: Colors.black87,
-                                                 ),
-                                               ],
-                                             ),
-                                     ),
-                                   ),
-                                   const SizedBox(height: 24),
-                                   // Don't have an account? Register
-                                   Row(
-                                     mainAxisAlignment: MainAxisAlignment.center,
-                                     children: [
-                                       const Text(
-                                         "Don't have an account? ",
-                                         style: TextStyle(
-                                           fontSize: 14,
-                                           color: Color(0xFF64748B),
-                                           fontWeight: FontWeight.w500,
-                                         ),
-                                       ),
-                                       GestureDetector(
-                                         onTap: () {
-                                           Navigator.of(context).push(
-                                             MaterialPageRoute(
-                                               builder: (_) => const RegisterPage(),
-                                             ),
-                                           );
-                                         },
-                                         child: const Text(
-                                           'Register',
-                                           style: TextStyle(
-                                             fontSize: 14,
-                                             color: Color(0xFFE5A600),
-                                             fontWeight: FontWeight.bold,
-                                           ),
-                                         ),
-                                       ),
-                                     ],
-                                   ),
-                                   const SizedBox(height: 8),
-                                 ],
-                               ),
-                             ),
-                           ],
-                         ),
-                       ),
-                     ),
-                   ),
-                 ),
-               ],
-             ),
-           ),
-         );
-       },
-     );
-   }
+                                  const SizedBox(height: 20),
+                                  // Keep me signed in Checkbox
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: Checkbox(
+                                          value: _keepMeSignedIn,
+                                          activeColor: AppColors.primary,
+                                          checkColor: Colors.black87,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          side: BorderSide(
+                                            color: Colors.grey[400]!,
+                                            width: 1.5,
+                                          ),
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _keepMeSignedIn = val ?? true;
+                                            });
+                                            context.read<AuthBloc>().add(
+                                              ToggleRememberMeEvent(
+                                                _keepMeSignedIn,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _keepMeSignedIn = !_keepMeSignedIn;
+                                          });
+                                          context.read<AuthBloc>().add(
+                                            ToggleRememberMeEvent(
+                                              _keepMeSignedIn,
+                                            ),
+                                          );
+                                        },
+                                        child: const Text(
+                                          'Keep me signed in',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  // Send / Verify OTP Action Button
+                                  Container(
+                                    height: 52,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: state.isLoading
+                                          ? null
+                                          : const LinearGradient(
+                                              colors: [
+                                                Color(0xFFFFB800),
+                                                Color(0xFFFF9800),
+                                              ],
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                            ),
+                                      color: state.isLoading
+                                          ? Colors.grey[300]
+                                          : null,
+                                      boxShadow: state.isLoading
+                                          ? null
+                                          : [
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFFFFB800,
+                                                ).withValues(alpha: 0.35),
+                                                blurRadius: 16,
+                                                offset: const Offset(0, 6),
+                                              ),
+                                            ],
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed: state.isLoading
+                                          ? null
+                                          : (isOtpSent
+                                                ? _onVerifyOtp
+                                                : _onSendOtp),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        disabledBackgroundColor:
+                                            Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      child: state.isLoading
+                                          ? const SizedBox(
+                                              height: 22,
+                                              width: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2.5,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.black87),
+                                              ),
+                                            )
+                                          : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  isOtpSent
+                                                      ? 'Verify OTP'
+                                                      : 'Send OTP',
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                const Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  size: 20,
+                                                  color: Colors.black87,
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  // Don't have an account? Register
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text(
+                                        "Don't have an account? ",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const RegisterPage(),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text(
+                                          'Register',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFFE5A600),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

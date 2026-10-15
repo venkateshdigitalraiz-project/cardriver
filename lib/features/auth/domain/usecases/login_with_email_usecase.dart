@@ -18,7 +18,8 @@ class LoginWithEmailParams extends Equatable {
   List<Object?> get props => [email, password, rememberMe];
 }
 
-class LoginWithEmailUseCase implements UseCase<DriverEntity, LoginWithEmailParams> {
+class LoginWithEmailUseCase
+    implements UseCase<DriverEntity, LoginWithEmailParams> {
   final AuthRepository repository;
 
   LoginWithEmailUseCase(this.repository);

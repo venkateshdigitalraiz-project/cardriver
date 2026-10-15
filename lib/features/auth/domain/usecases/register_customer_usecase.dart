@@ -22,16 +22,17 @@ class RegisterCustomerParams extends Equatable {
 
   @override
   List<Object?> get props => [
-        firstName,
-        lastName,
-        email,
-        phone,
-        password,
-        preferredPayment,
-      ];
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    preferredPayment,
+  ];
 }
 
-class RegisterCustomerUseCase implements UseCase<CustomerEntity, RegisterCustomerParams> {
+class RegisterCustomerUseCase
+    implements UseCase<CustomerEntity, RegisterCustomerParams> {
   final AuthRepository repository;
 
   RegisterCustomerUseCase(this.repository);

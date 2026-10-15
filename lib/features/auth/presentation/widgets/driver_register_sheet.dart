@@ -41,21 +41,23 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
 
   void _onRegisterSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
+      final fullName =
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+              .trim();
       Navigator.of(context).pop(); // Close sheet
       context.read<AuthBloc>().add(
-            RegisterDriverEvent(
-              firstName: _firstNameController.text.trim(),
-              lastName: _lastNameController.text.trim(),
-              name: fullName,
-              email: _emailController.text.trim(),
-              phone: _phoneController.text.trim(),
-              password: _passwordController.text,
-              vehicleModel: _vehicleModelController.text.trim(),
-              vehiclePlate: _vehiclePlateController.text.trim(),
-              serviceType: _selectedServiceType,
-            ),
-          );
+        RegisterDriverEvent(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          name: fullName,
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          password: _passwordController.text,
+          vehicleModel: _vehicleModelController.text.trim(),
+          vehiclePlate: _vehiclePlateController.text.trim(),
+          serviceType: _selectedServiceType,
+        ),
+      );
     }
   }
 
@@ -98,14 +100,26 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                       color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.app_registration_rounded, color: AppColors.primary, size: 22),
+                    child: const Icon(
+                      Icons.app_registration_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Driver Partner Registration', style: AppTypography.headingMedium()),
-                      Text('Register your vehicle & start driving', style: AppTypography.bodySmall(color: AppColors.textMutedDark)),
+                      Text(
+                        'Driver Partner Registration',
+                        style: AppTypography.headingMedium(),
+                      ),
+                      Text(
+                        'Register your vehicle & start driving',
+                        style: AppTypography.bodySmall(
+                          color: AppColors.textMutedDark,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -120,8 +134,14 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                       controller: _firstNameController,
                       labelText: 'First Name',
                       hintText: 'e.g. David',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Required'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -130,8 +150,14 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                       controller: _lastNameController,
                       labelText: 'Last Name',
                       hintText: 'e.g. Miller',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Required'
+                          : null,
                     ),
                   ),
                 ],
@@ -144,7 +170,11 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                 labelText: 'Email Address',
                 hintText: 'driver@cardriver.com',
                 keyboardType: TextInputType.emailAddress,
-                prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.primary, size: 20),
+                prefixIcon: const Icon(
+                  Icons.mail_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
                 validator: InputValidators.validateEmail,
               ),
               const SizedBox(height: 14),
@@ -155,7 +185,11 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                 labelText: 'Mobile Phone',
                 hintText: '+1 555-012-3456',
                 keyboardType: TextInputType.phone,
-                prefixIcon: const Icon(Icons.phone_rounded, color: AppColors.primary, size: 20),
+                prefixIcon: const Icon(
+                  Icons.phone_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
                 validator: InputValidators.validatePhone,
               ),
               const SizedBox(height: 14),
@@ -169,8 +203,14 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                       controller: _vehicleModelController,
                       labelText: 'Vehicle Model',
                       hintText: 'e.g. Toyota Camry',
-                      prefixIcon: const Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 20),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Vehicle model required' : null,
+                      prefixIcon: const Icon(
+                        Icons.directions_car_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Vehicle model required'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -181,7 +221,9 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                       labelText: 'License Plate',
                       hintText: 'e.g. TX-9900',
                       textCapitalization: TextCapitalization.characters,
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Plate required' : null,
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Plate required'
+                          : null,
                     ),
                   ),
                 ],
@@ -199,7 +241,9 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                     label: Text(
                       type.name.toUpperCase(),
                       style: AppTypography.bodySmall(
-                        color: isSelected ? AppColors.black : AppColors.textSecondaryDark,
+                        color: isSelected
+                            ? AppColors.black
+                            : AppColors.textSecondaryDark,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -207,7 +251,9 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                     selectedColor: AppColors.primary,
                     backgroundColor: AppColors.darkInputFill,
                     side: BorderSide(
-                      color: isSelected ? AppColors.primary : AppColors.darkCardBorder,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.darkCardBorder,
                     ),
                     onSelected: (selected) {
                       if (selected) {
@@ -227,7 +273,11 @@ class _DriverRegisterSheetState extends State<DriverRegisterSheet> {
                 labelText: 'Create Driver Password',
                 hintText: 'Minimum 6 characters',
                 isPassword: true,
-                prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
                 validator: InputValidators.validatePassword,
               ),
               const SizedBox(height: 24),

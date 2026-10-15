@@ -3,73 +3,63 @@ import '../../domain/entities/available_ride_entity.dart';
 
 class HomeState extends Equatable {
   final bool isOnline;
+  final bool isLoadingRides;
+  final List<AvailableRideEntity> availableRides;
+  final AvailableRideEntity? newRideAlert;
+  final String? errorMessage;
   final double todaysEarnings;
   final int todaysTrips;
   final double rating;
-  final bool hasRideRequest;
-  final List<String> activeRequestIds;
-  final List<AvailableRideEntity> availableRides;
-  final Set<String> declinedRideIds;
-  final bool isLoadingRides;
-  final String? errorMessage;
-  final AvailableRideEntity? newRideAlert;
 
   const HomeState({
     this.isOnline = false,
-    this.todaysEarnings = 9640.0,
-    this.todaysTrips = 0,
-    this.rating = 5.0,
-    this.hasRideRequest = false,
-    this.activeRequestIds = const [],
-    this.availableRides = const [],
-    this.declinedRideIds = const {},
     this.isLoadingRides = false,
-    this.errorMessage,
+    this.availableRides = const [],
     this.newRideAlert,
+    this.errorMessage,
+    this.todaysEarnings = 9640.0,
+    this.todaysTrips = 8,
+    this.rating = 4.8,
   });
+
+  /// Convenience getters for UI compatibility
+  bool get hasRideRequest => availableRides.isNotEmpty;
+  List<String> get activeRequestIds => availableRides.map((r) => r.id).toList();
 
   HomeState copyWith({
     bool? isOnline,
+    bool? isLoadingRides,
+    List<AvailableRideEntity>? availableRides,
+    AvailableRideEntity? newRideAlert,
+    bool clearNewRideAlert = false,
+    String? errorMessage,
+    bool clearError = false,
     double? todaysEarnings,
     int? todaysTrips,
     double? rating,
-    bool? hasRideRequest,
-    List<String>? activeRequestIds,
-    List<AvailableRideEntity>? availableRides,
-    Set<String>? declinedRideIds,
-    bool? isLoadingRides,
-    String? errorMessage,
-    bool clearError = false,
-    AvailableRideEntity? newRideAlert,
-    bool clearNewRideAlert = false,
   }) {
     return HomeState(
       isOnline: isOnline ?? this.isOnline,
+      isLoadingRides: isLoadingRides ?? this.isLoadingRides,
+      availableRides: availableRides ?? this.availableRides,
+      newRideAlert:
+          clearNewRideAlert ? null : (newRideAlert ?? this.newRideAlert),
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       todaysEarnings: todaysEarnings ?? this.todaysEarnings,
       todaysTrips: todaysTrips ?? this.todaysTrips,
       rating: rating ?? this.rating,
-      hasRideRequest: hasRideRequest ?? this.hasRideRequest,
-      activeRequestIds: activeRequestIds ?? this.activeRequestIds,
-      availableRides: availableRides ?? this.availableRides,
-      declinedRideIds: declinedRideIds ?? this.declinedRideIds,
-      isLoadingRides: isLoadingRides ?? this.isLoadingRides,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      newRideAlert: clearNewRideAlert ? null : (newRideAlert ?? this.newRideAlert),
     );
   }
 
   @override
   List<Object?> get props => [
         isOnline,
+        isLoadingRides,
+        availableRides,
+        newRideAlert,
+        errorMessage,
         todaysEarnings,
         todaysTrips,
         rating,
-        hasRideRequest,
-        activeRequestIds,
-        availableRides,
-        declinedRideIds,
-        isLoadingRides,
-        errorMessage,
-        newRideAlert,
       ];
 }

@@ -15,9 +15,7 @@ abstract class AuthRepository {
     required String otp,
   });
 
-  Future<CustomerEntity> loginCustomerWithSocial({
-    required String provider,
-  });
+  Future<CustomerEntity> loginCustomerWithSocial({required String provider});
 
   Future<CustomerEntity> registerCustomer({
     required String firstName,
@@ -35,18 +33,11 @@ abstract class AuthRepository {
     bool rememberMe = true,
   });
 
-  Future<void> sendOtp({
-    required String phone,
-  });
+  Future<void> sendOtp({required String phone});
 
-  Future<DriverEntity> verifyOtp({
-    required String phone,
-    required String otp,
-  });
+  Future<DriverEntity> verifyOtp({required String phone, required String otp});
 
-  Future<DriverEntity> loginWithSocial({
-    required String provider,
-  });
+  Future<DriverEntity> loginWithSocial({required String provider});
 
   Future<DriverEntity> registerDriver({
     DriverRegisterBody? body,

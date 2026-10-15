@@ -24,7 +24,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          InjectionContainer.createHomeBloc(driverToken: customer.token),
+          InjectionContainer.createHomeBloc(driverToken: customer.token)
+            ..add(const ToggleOnlineStatusEvent(forceStatus: true)),
       child: _HomeView(customer: customer),
     );
   }
@@ -40,8 +41,22 @@ class _HomeView extends StatelessWidget {
     final primaryTextColor = AppColors.textPrimaryLight;
     final secondaryTextColor = AppColors.textSecondaryLight;
 
-    return BlocBuilder<HomeBloc, HomeState>(
-      builder: (context, state) {
+    return BlocListener<HomeBloc, HomeState>(
+      listenWhen: (previous, current) =>
+          previous.errorMessage != current.errorMessage &&
+          current.errorMessage != null &&
+          current.errorMessage!.isNotEmpty,
+      listener: (context, state) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      child: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
         return Scaffold(
           backgroundColor: AppColors.lightBackground,
           appBar: AppBar(
@@ -773,6 +788,7 @@ class _HomeView extends StatelessWidget {
           ),
         );
       },
+    ),
     );
   }
 

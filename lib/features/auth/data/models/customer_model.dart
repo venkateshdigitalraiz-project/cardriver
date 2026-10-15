@@ -2,7 +2,7 @@ import '../../domain/entities/customer_entity.dart';
 
 class CustomerModel extends CustomerEntity {
   const CustomerModel({
-    required super.id,
+    super.id = '',
     required super.firstName,
     required super.lastName,
     required super.name,
@@ -13,21 +13,36 @@ class CustomerModel extends CustomerEntity {
     required super.totalRides,
     super.preferredPayment,
     required super.token,
+    super.driverId,
   });
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
+    final firstName = json['firstName'] as String? ?? '';
+    final lastName = json['lastName'] as String? ?? '';
+    final rawName = json['name'] as String?;
+    final computedName = (rawName != null && rawName.isNotEmpty)
+        ? rawName
+        : ('$firstName $lastName'.trim().isNotEmpty
+              ? '$firstName $lastName'.trim()
+              : 'Driver');
+
     return CustomerModel(
-      id: json['id'] as String,
-      firstName: json['firstName'] as String? ?? '',
-      lastName: json['lastName'] as String? ?? '',
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      avatarUrl: json['avatarUrl'] as String? ?? 'https://i.pravatar.cc/300?u=customer',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      firstName: firstName,
+      lastName: lastName,
+      name: computedName,
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      avatarUrl:
+          json['avatarUrl'] as String? ??
+          'https://i.pravatar.cc/300?u=customer',
       rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
       totalRides: json['totalRides'] as int? ?? 0,
-      preferredPayment: _paymentFromString(json['preferredPayment'] as String? ?? 'card'),
-      token: json['token'] as String? ?? 'jwt_customer_token_sample',
+      preferredPayment: _paymentFromString(
+        json['preferredPayment'] as String? ?? 'card',
+      ),
+      token: json['token'] as String? ?? '',
+      driverId: json['driverId'] as String?,
     );
   }
 
@@ -44,6 +59,7 @@ class CustomerModel extends CustomerEntity {
       'totalRides': totalRides,
       'preferredPayment': preferredPayment.name,
       'token': token,
+      if (driverId != null) 'driverId': driverId,
     };
   }
 
@@ -74,6 +90,7 @@ class CustomerModel extends CustomerEntity {
       totalRides: entity.totalRides,
       preferredPayment: entity.preferredPayment,
       token: entity.token,
+      driverId: entity.driverId,
     );
   }
 }

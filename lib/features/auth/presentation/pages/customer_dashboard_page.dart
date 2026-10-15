@@ -17,18 +17,19 @@ enum RideBookingState { idle, searchingDriver, driverMatched, rideInProgress }
 class CustomerDashboardPage extends StatefulWidget {
   final CustomerEntity customer;
 
-  const CustomerDashboardPage({
-    super.key,
-    required this.customer,
-  });
+  const CustomerDashboardPage({super.key, required this.customer});
 
   @override
   State<CustomerDashboardPage> createState() => _CustomerDashboardPageState();
 }
 
 class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
-  final _pickupController = TextEditingController(text: '742 Evergreen Terrace, Downtown');
-  final _destinationController = TextEditingController(text: 'International Airport Terminal 2');
+  final _pickupController = TextEditingController(
+    text: '742 Evergreen Terrace, Downtown',
+  );
+  final _destinationController = TextEditingController(
+    text: 'International Airport Terminal 2',
+  );
 
   int _selectedCabIndex = 0;
   RideBookingState _bookingState = RideBookingState.idle;
@@ -81,11 +82,17 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
         shape: RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
         title: Text(
           'Sign Out',
-          style: AppTypography.headingMedium(color: isDark ? AppColors.white : AppColors.textPrimaryLight),
+          style: AppTypography.headingMedium(
+            color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+          ),
         ),
         content: Text(
           'Are you sure you want to sign out of your passenger account?',
-          style: AppTypography.bodyMedium(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+          style: AppTypography.bodyMedium(
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+          ),
         ),
         actions: [
           TextButton(
@@ -95,7 +102,11 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
             ),
             child: Text(
               'Cancel',
-              style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
             ),
           ),
           ElevatedButton(
@@ -126,7 +137,10 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
       setState(() {
         _bookingState = RideBookingState.driverMatched;
       });
-      AppSnackBar.showSuccess(context, 'Driver Alex Martinez accepted your ride! ETA 3 mins.');
+      AppSnackBar.showSuccess(
+        context,
+        'Driver Alex Martinez accepted your ride! ETA 3 mins.',
+      );
     }
   }
 
@@ -140,10 +154,18 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryTextColor = isDark ? AppColors.white : AppColors.textPrimaryLight;
-    final secondaryTextColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-    final mutedTextColor = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
-    final dividerColor = isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder;
+    final primaryTextColor = isDark
+        ? AppColors.white
+        : AppColors.textPrimaryLight;
+    final secondaryTextColor = isDark
+        ? AppColors.textSecondaryDark
+        : AppColors.textSecondaryLight;
+    final mutedTextColor = isDark
+        ? AppColors.textMutedDark
+        : AppColors.textMutedLight;
+    final dividerColor = isDark
+        ? AppColors.darkCardBorder
+        : AppColors.lightCardBorder;
     final selectedCab = _cabTypes[_selectedCabIndex];
 
     return BlocListener<AuthBloc, AuthState>(
@@ -157,9 +179,13 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
         appBar: AppBar(
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+          backgroundColor: isDark
+              ? AppColors.darkSurface
+              : AppColors.lightSurface,
           title: Row(
             children: [
               Container(
@@ -168,7 +194,11 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                   color: const Color(0xFF10B981).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.directions_car_filled_rounded, color: Color(0xFF10B981), size: 20),
+                child: const Icon(
+                  Icons.directions_car_filled_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -198,7 +228,9 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                       CircleAvatar(
                         radius: 28,
                         backgroundColor: const Color(0xFF10B981),
-                        backgroundImage: NetworkImage(widget.customer.avatarUrl),
+                        backgroundImage: NetworkImage(
+                          widget.customer.avatarUrl,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -207,12 +239,18 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                           children: [
                             Text(
                               'Hello, ${widget.customer.name} 👋',
-                              style: AppTypography.headingMedium(color: primaryTextColor),
+                              style: AppTypography.headingMedium(
+                                color: primaryTextColor,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded, color: AppColors.primary, size: 16),
+                                const Icon(
+                                  Icons.star_rounded,
+                                  color: AppColors.primary,
+                                  size: 16,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${widget.customer.rating.toStringAsFixed(2)} Passenger Rating',
@@ -247,15 +285,23 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.my_location_rounded, color: Color(0xFF10B981), size: 20),
+                          const Icon(
+                            Icons.my_location_rounded,
+                            color: Color(0xFF10B981),
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               controller: _pickupController,
-                              style: AppTypography.inputText(color: primaryTextColor),
+                              style: AppTypography.inputText(
+                                color: primaryTextColor,
+                              ),
                               decoration: InputDecoration(
                                 hintText: 'Current Location / Pickup',
-                                hintStyle: AppTypography.inputHint(color: mutedTextColor),
+                                hintStyle: AppTypography.inputHint(
+                                  color: mutedTextColor,
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
@@ -268,20 +314,31 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                         padding: const EdgeInsets.only(left: 9),
                         child: SizedBox(
                           height: 16,
-                          child: VerticalDivider(color: dividerColor, thickness: 1.5),
+                          child: VerticalDivider(
+                            color: dividerColor,
+                            thickness: 1.5,
+                          ),
                         ),
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_rounded, color: AppColors.error, size: 20),
+                          const Icon(
+                            Icons.location_on_rounded,
+                            color: AppColors.error,
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               controller: _destinationController,
-                              style: AppTypography.inputText(color: primaryTextColor),
+                              style: AppTypography.inputText(
+                                color: primaryTextColor,
+                              ),
                               decoration: InputDecoration(
                                 hintText: 'Where to? Enter Destination',
-                                hintStyle: AppTypography.inputHint(color: mutedTextColor),
+                                hintStyle: AppTypography.inputHint(
+                                  color: mutedTextColor,
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
@@ -297,7 +354,10 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                 const SizedBox(height: 22),
 
                 // Cab Category Selection Header
-                Text('Available Cab Fleet Nearby', style: AppTypography.headingMedium(color: primaryTextColor)),
+                Text(
+                  'Available Cab Fleet Nearby',
+                  style: AppTypography.headingMedium(color: primaryTextColor),
+                ),
                 const SizedBox(height: 12),
 
                 // Cab List Selector
@@ -316,15 +376,26 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                         },
                         borderRadius: AppSpacing.roundedMd,
                         child: GlassContainer(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          borderColor: isSelected ? const Color(0xFF10B981) : null,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          borderColor: isSelected
+                              ? const Color(0xFF10B981)
+                              : null,
                           borderWidth: isSelected ? 1.8 : 1.0,
                           backgroundColor: isSelected
-                              ? (isDark ? const Color(0x3310B981) : const Color(0x1F10B981))
+                              ? (isDark
+                                    ? const Color(0x3310B981)
+                                    : const Color(0x1F10B981))
                               : null,
                           child: Row(
                             children: [
-                              Icon(cab['icon'] as IconData, size: 28, color: cab['color'] as Color),
+                              Icon(
+                                cab['icon'] as IconData,
+                                size: 28,
+                                color: cab['color'] as Color,
+                              ),
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
@@ -348,7 +419,9 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                               Text(
                                 '\$${(cab['price'] as double).toStringAsFixed(2)}',
                                 style: AppTypography.statValue(
-                                  color: isSelected ? const Color(0xFF10B981) : primaryTextColor,
+                                  color: isSelected
+                                      ? const Color(0xFF10B981)
+                                      : primaryTextColor,
                                 ),
                               ),
                             ],
@@ -379,17 +452,31 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                           height: 32,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF10B981),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Text('Contacting nearest driver...', style: AppTypography.headingSmall(color: primaryTextColor)),
+                        Text(
+                          'Contacting nearest driver...',
+                          style: AppTypography.headingSmall(
+                            color: primaryTextColor,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text('Searching within 1.5 miles of pickup point', style: AppTypography.bodySmall(color: secondaryTextColor)),
+                        Text(
+                          'Searching within 1.5 miles of pickup point',
+                          style: AppTypography.bodySmall(
+                            color: secondaryTextColor,
+                          ),
+                        ),
                         const SizedBox(height: 14),
                         OutlinedButton(
                           onPressed: _cancelRide,
-                          style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                          ),
                           child: const Text('Cancel Request'),
                         ),
                       ],
@@ -415,18 +502,38 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Alex Martinez (Driver)', style: AppTypography.headingSmall(color: primaryTextColor)),
-                                  Text('Toyota Camry Hybrid • CAB-8924', style: AppTypography.bodySmall(color: const Color(0xFF10B981))),
+                                  Text(
+                                    'Alex Martinez (Driver)',
+                                    style: AppTypography.headingSmall(
+                                      color: primaryTextColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Toyota Camry Hybrid • CAB-8924',
+                                    style: AppTypography.bodySmall(
+                                      color: const Color(0xFF10B981),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text('ETA 3 min', style: AppTypography.badgeText(color: const Color(0xFF10B981))),
+                              child: Text(
+                                'ETA 3 min',
+                                style: AppTypography.badgeText(
+                                  color: const Color(0xFF10B981),
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -434,8 +541,18 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Estimated Fare: \$${(selectedCab['price'] as double).toStringAsFixed(2)}', style: AppTypography.bodyMedium(color: primaryTextColor)),
-                            Text('Payment: Card (•••• 4242)', style: AppTypography.bodySmall(color: secondaryTextColor)),
+                            Text(
+                              'Estimated Fare: \$${(selectedCab['price'] as double).toStringAsFixed(2)}',
+                              style: AppTypography.bodyMedium(
+                                color: primaryTextColor,
+                              ),
+                            ),
+                            Text(
+                              'Payment: Card (•••• 4242)',
+                              style: AppTypography.bodySmall(
+                                color: secondaryTextColor,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -445,9 +562,14 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
                               child: OutlinedButton.icon(
                                 icon: const Icon(Icons.call_rounded, size: 18),
                                 label: const Text('Call Driver'),
-                                style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF10B981)),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF10B981),
+                                ),
                                 onPressed: () {
-                                  AppSnackBar.showInfo(context, 'Calling Alex Martinez (+1 555-019-2834)...');
+                                  AppSnackBar.showInfo(
+                                    context,
+                                    'Calling Alex Martinez (+1 555-019-2834)...',
+                                  );
                                 },
                               ),
                             ),

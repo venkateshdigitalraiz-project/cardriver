@@ -24,18 +24,22 @@ class DriverModel extends DriverEntity {
     super.drivingLicensePath,
     super.passportPath,
     super.profilePicPath,
+    super.driverId,
   });
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
     return DriverModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      avatarUrl: json['avatarUrl'] as String? ?? 'https://i.pravatar.cc/300?u=driver',
-      vehicleModel: json['vehicleModel'] as String,
-      vehiclePlate: json['vehiclePlate'] as String,
-      serviceType: _serviceTypeFromString(json['serviceType'] as String? ?? 'taxi'),
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Driver',
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      avatarUrl:
+          json['avatarUrl'] as String? ?? 'https://i.pravatar.cc/300?u=driver',
+      vehicleModel: json['vehicleModel'] as String? ?? 'Standard',
+      vehiclePlate: json['vehiclePlate'] as String? ?? '',
+      serviceType: _serviceTypeFromString(
+        json['serviceType'] as String? ?? 'taxi',
+      ),
       rating: (json['rating'] as num?)?.toDouble() ?? 4.9,
       totalTrips: json['totalTrips'] as int? ?? 0,
       todayEarnings: (json['todayEarnings'] as num?)?.toDouble() ?? 0.0,
@@ -50,6 +54,7 @@ class DriverModel extends DriverEntity {
       drivingLicensePath: json['drivingLicensePath'] as String?,
       passportPath: json['passportPath'] as String?,
       profilePicPath: json['profilePicPath'] as String?,
+      driverId: json['driverId'] as String?,
     );
   }
 
@@ -77,6 +82,7 @@ class DriverModel extends DriverEntity {
       'drivingLicensePath': drivingLicensePath,
       'passportPath': passportPath,
       'profilePicPath': profilePicPath,
+      if (driverId != null) 'driverId': driverId,
     };
   }
 
@@ -118,6 +124,7 @@ class DriverModel extends DriverEntity {
       drivingLicensePath: entity.drivingLicensePath,
       passportPath: entity.passportPath,
       profilePicPath: entity.profilePicPath,
+      driverId: entity.driverId,
     );
   }
 }

@@ -18,7 +18,8 @@ class LoginCustomerParams extends Equatable {
   List<Object?> get props => [email, password, rememberMe];
 }
 
-class LoginCustomerUseCase implements UseCase<CustomerEntity, LoginCustomerParams> {
+class LoginCustomerUseCase
+    implements UseCase<CustomerEntity, LoginCustomerParams> {
   final AuthRepository repository;
 
   LoginCustomerUseCase(this.repository);

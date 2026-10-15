@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/services/socket_service.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/usecases/login_customer_usecase.dart';
 import '../../domain/usecases/register_customer_usecase.dart';
@@ -19,6 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final RegisterDriverUseCase? registerDriverUseCase;
   final LogoutUseCase logoutUseCase;
   final AuthRepository authRepository;
+  final SocketService _socketService;
 
   AuthBloc({
     required this.loginCustomerUseCase,
@@ -28,7 +30,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     this.registerDriverUseCase,
     required this.logoutUseCase,
     required this.authRepository,
-  }) : super(const AuthState()) {
+    SocketService? socketService,
+  })  : _socketService = socketService ?? SocketService(),
+        super(const AuthState()) {
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
     on<LoginWithEmailEvent>(_onLoginWithEmail);
     on<SendOtpEvent>(_onSendOtp);
@@ -43,10 +47,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResetAuthEvent>(_onResetAuth);
   }
 
-  void _onResetAuth(
-    ResetAuthEvent event,
-    Emitter<AuthState> emit,
-  ) {
+  void _onResetAuth(ResetAuthEvent event, Emitter<AuthState> emit) {
     emit(state.copyWith(status: AuthStatus.initial, clearError: true));
   }
 
@@ -56,14 +57,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       final cachedCustomer = await authRepository.getCurrentCustomer();
-      if (cachedCustomer != null) {
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          customer: cachedCustomer,
-        ));
+      if (cachedCustomer != null && cachedCustomer.token.isNotEmpty) {
+        try {
+          _socketService.connectWithToken(cachedCustomer.token);
+        } catch (_) {}
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            customer: cachedCustomer,
+          ),
+        );
+        return;
       }
+
+      final cachedDriver = await authRepository.getCurrentDriver();
+      if (cachedDriver != null && cachedDriver.token.isNotEmpty) {
+        try {
+          _socketService.connectWithToken(cachedDriver.token);
+        } catch (_) {}
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            driver: cachedDriver,
+          ),
+        );
+        return;
+      }
+
+      emit(const AuthState(status: AuthStatus.unauthenticated));
     } catch (_) {
-      // Stay initial/unauthenticated
+      emit(const AuthState(status: AuthStatus.unauthenticated));
     }
   }
 
@@ -80,49 +103,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           rememberMe: event.rememberMe,
         ),
       );
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: customer,
-      ));
+      emit(
+        state.copyWith(status: AuthStatus.authenticated, customer: customer),
+      );
     } on AuthException catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.message,
-      ));
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } on ServerException catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.message,
-      ));
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'An unexpected error occurred. Please try again.',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'An unexpected error occurred. Please try again.',
+        ),
+      );
     }
   }
 
-  Future<void> _onSendOtp(
-    SendOtpEvent event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onSendOtp(SendOtpEvent event, Emitter<AuthState> emit) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
       await sendOtpUseCase(SendOtpParams(phone: event.phone));
-      emit(state.copyWith(
-        status: AuthStatus.otpSent,
-        pendingPhoneNumber: event.phone,
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.otpSent,
+          pendingPhoneNumber: event.phone,
+        ),
+      );
     } on AuthException catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.message,
-      ));
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Failed to send OTP. Please check your mobile number.',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Failed to send OTP. Please check your mobile number.',
+        ),
+      );
     }
   }
 
@@ -136,20 +152,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         phone: event.phone,
         otp: event.otp,
       );
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: customer,
-      ));
+      // Connect socket using the token received from the API safely.
+      if (customer.token.isNotEmpty) {
+        try {
+          _socketService.connectWithToken(customer.token);
+        } catch (_) {}
+      }
+      emit(
+        state.copyWith(status: AuthStatus.authenticated, customer: customer),
+      );
     } on AuthException catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.message,
-      ));
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
+    } on ServerException catch (e) {
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Invalid OTP code. Please try again.',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        ),
+      );
     }
   }
 
@@ -159,16 +181,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
-      final customer = await authRepository.loginCustomerWithSocial(provider: event.provider);
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: customer,
-      ));
+      final customer = await authRepository.loginCustomerWithSocial(
+        provider: event.provider,
+      );
+      emit(
+        state.copyWith(status: AuthStatus.authenticated, customer: customer),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Failed to sign in with ${event.provider}.',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Failed to sign in with ${event.provider}.',
+        ),
+      );
     }
   }
 
@@ -188,20 +213,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           preferredPayment: event.preferredPayment,
         ),
       );
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: customer,
-      ));
+      emit(
+        state.copyWith(status: AuthStatus.authenticated, customer: customer),
+      );
     } on AuthException catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.message,
-      ));
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Account creation failed. Please try again.',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Account creation failed. Please try again.',
+        ),
+      );
     }
   }
 
@@ -211,7 +234,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
-      final driverUseCase = registerDriverUseCase ?? RegisterDriverUseCase(authRepository);
+      final driverUseCase =
+          registerDriverUseCase ?? RegisterDriverUseCase(authRepository);
       final driver = await driverUseCase(
         RegisterDriverParams(
           body: event.body,
@@ -246,32 +270,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           profilePicPath: event.selfie,
         ),
       );
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        driver: driver,
-      ));
+      emit(state.copyWith(status: AuthStatus.authenticated, driver: driver));
     } on AuthException catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.message,
-      ));
+      emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Driver registration failed. Please try again.',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Driver registration failed. Please try again.',
+        ),
+      );
     }
   }
 
-  void _onSwitchLoginMode(
-    SwitchLoginModeEvent event,
-    Emitter<AuthState> emit,
-  ) {
-    emit(state.copyWith(
-      loginMode: event.mode,
-      clearError: true,
-      status: AuthStatus.initial,
-    ));
+  void _onSwitchLoginMode(SwitchLoginModeEvent event, Emitter<AuthState> emit) {
+    emit(
+      state.copyWith(
+        loginMode: event.mode,
+        clearError: true,
+        status: AuthStatus.initial,
+      ),
+    );
   }
 
   void _onToggleRememberMe(
@@ -281,19 +300,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(state.copyWith(rememberMe: event.value));
   }
 
-  Future<void> _onLogout(
-    LogoutEvent event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
     emit(state.copyWith(status: AuthStatus.loading));
+    _socketService.disconnectFully();
     await logoutUseCase(const NoParams());
     emit(const AuthState(status: AuthStatus.unauthenticated));
   }
 
-  void _onClearAuthError(
-    ClearAuthErrorEvent event,
-    Emitter<AuthState> emit,
-  ) {
+  void _onClearAuthError(ClearAuthErrorEvent event, Emitter<AuthState> emit) {
     emit(state.copyWith(clearError: true, status: AuthStatus.initial));
   }
 }

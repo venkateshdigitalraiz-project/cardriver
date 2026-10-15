@@ -197,39 +197,39 @@ class _EmergencyBanner extends StatelessWidget {
   }
 }
 
-class _SearchBar extends StatelessWidget {
-  const _SearchBar();
+// class _SearchBar extends StatelessWidget {
+//   const _SearchBar();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextField(
-        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
-        decoration: InputDecoration(
-          hintText: 'Search for issues, topics, or FAQs',
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-          prefixIcon: Icon(Icons.search_rounded, color: Colors.blue.shade600),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 16,
-            horizontal: 20,
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(16),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.03),
+//             blurRadius: 10,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//       ),
+//       child: TextField(
+//         style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
+//         decoration: InputDecoration(
+//           hintText: 'Search for issues, topics, or FAQs',
+//           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+//           prefixIcon: Icon(Icons.search_rounded, color: Colors.blue.shade600),
+//           border: InputBorder.none,
+//           contentPadding: const EdgeInsets.symmetric(
+//             vertical: 16,
+//             horizontal: 20,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class _HelpCategories extends StatelessWidget {
   final List<SupportCategory> categories;
@@ -307,7 +307,13 @@ class _CategoryCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => _showSupportTicketSheet(context, category, icon, gradientColors, iconColor),
+      onTap: () => _showSupportTicketSheet(
+        context,
+        category,
+        icon,
+        gradientColors,
+        iconColor,
+      ),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -358,7 +364,13 @@ class _CategoryCard extends StatelessWidget {
     );
   }
 
-  void _showSupportTicketSheet(BuildContext context, SupportCategory category, IconData icon, List<Color> gradientColors, Color iconColor) {
+  void _showSupportTicketSheet(
+    BuildContext context,
+    SupportCategory category,
+    IconData icon,
+    List<Color> gradientColors,
+    Color iconColor,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -430,16 +442,28 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt_rounded, color: Colors.blue),
-                  title: const Text('Take a photo', style: TextStyle(color: Color(0xFF0F172A))),
+                  leading: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.blue,
+                  ),
+                  title: const Text(
+                    'Take a photo',
+                    style: TextStyle(color: Color(0xFF0F172A)),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.camera);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_rounded, color: Colors.green),
-                  title: const Text('Choose from gallery', style: TextStyle(color: Color(0xFF0F172A))),
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Colors.green,
+                  ),
+                  title: const Text(
+                    'Choose from gallery',
+                    style: TextStyle(color: Color(0xFF0F172A)),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.gallery);
@@ -553,7 +577,10 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+                  borderSide: BorderSide(
+                    color: Colors.blue.shade400,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -577,11 +604,18 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                          style: BorderStyle.solid,
+                        ),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.add_a_photo_rounded, color: Colors.blue.shade600, size: 28),
+                          Icon(
+                            Icons.add_a_photo_rounded,
+                            color: Colors.blue.shade600,
+                            size: 28,
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             'Upload photo from Camera or Gallery',
@@ -639,7 +673,10 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
                           onPressed: () {
                             setState(() {
                               _selectedImage = null;

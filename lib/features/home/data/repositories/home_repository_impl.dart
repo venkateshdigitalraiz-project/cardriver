@@ -5,12 +5,24 @@ import '../datasources/home_remote_data_source.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
   final HomeRemoteDataSource remoteDataSource;
+  Future<List<AvailableRideEntity>>? _inFlightRequest;
 
   HomeRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<List<AvailableRideEntity>> getAvailableRides({String? token}) async {
-    return await remoteDataSource.getAvailableRides(token: token);
+    // If a request is already in progress, reuse the same future to prevent duplicate hits
+    if (_inFlightRequest != null) {
+      return await _inFlightRequest!;
+    }
+
+    _inFlightRequest = remoteDataSource.getAvailableRides(token: token);
+    try {
+      final rides = await _inFlightRequest!;
+      return rides;
+    } finally {
+      _inFlightRequest = null;
+    }
   }
 
   @override
@@ -18,23 +30,12 @@ class HomeRepositoryImpl implements HomeRepository {
     String? token,
     Duration interval = const Duration(seconds: 4),
   }) async* {
-    // Immediate initial fetch
+    // Fetch once when monitoring starts — do not repeatedly poll in an infinite loop
     try {
-      final initialRides = await remoteDataSource.getAvailableRides(token: token);
-      yield initialRides;
+      final rides = await getAvailableRides(token: token);
+      yield rides;
     } catch (_) {
-      // Continue to periodic monitoring even if initial fetch failed
-    }
-
-    // Continuous real-time monitoring loop (Rapid Capital style socket-like stream)
-    while (true) {
-      await Future.delayed(interval);
-      try {
-        final rides = await remoteDataSource.getAvailableRides(token: token);
-        yield rides;
-      } catch (e) {
-        // Yield empty or silently wait for next tick to avoid disconnecting stream
-      }
+      yield <AvailableRideEntity>[];
     }
   }
 }
