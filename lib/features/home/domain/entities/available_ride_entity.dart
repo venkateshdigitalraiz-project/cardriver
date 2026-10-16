@@ -25,6 +25,9 @@ class AvailableRideEntity extends Equatable {
   final String riderCustId;
   final double distanceKm;
   final String scheduledStartTime;
+  final String returnDate;
+  final String bookingMode;
+  final int durationDays;
   final String bookingStatus;
   final String paymentStatus;
   final String createdAt;
@@ -38,6 +41,7 @@ class AvailableRideEntity extends Equatable {
     required this.serviceType,
     required this.tripType,
     required this.durationHours,
+    this.durationDays = 0,
     required this.fare,
     required this.driverFee,
     required this.paymentMethod,
@@ -51,6 +55,8 @@ class AvailableRideEntity extends Equatable {
     this.riderCustId = '',
     this.distanceKm = 0.0,
     this.scheduledStartTime = '',
+    this.returnDate = '',
+    this.bookingMode = '',
     this.bookingStatus = 'pending',
     this.paymentStatus = 'pending',
     this.createdAt = '',
@@ -61,6 +67,65 @@ class AvailableRideEntity extends Equatable {
 
   /// Formatted driver fee with rupee symbol and 0 decimal places.
   String get formattedDriverFee => '₹${driverFee.toStringAsFixed(0)}';
+
+  /// Formatted scheduled time string (e.g. "17 Oct 2026, 11:05 AM")
+  String get formattedScheduledTime {
+    if (scheduledStartTime.isEmpty) return 'Immediate';
+    try {
+      final dt = DateTime.parse(scheduledStartTime).toLocal();
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      final month = months[dt.month - 1];
+      final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} $month ${dt.year}, $hour:$minute $period';
+    } catch (_) {
+      return scheduledStartTime;
+    }
+  }
+
+  /// Formatted return date for round trips (e.g. "19 Oct 2026, 11:05 AM")
+  String get formattedReturnDate {
+    if (returnDate.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(returnDate).toLocal();
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      final month = months[dt.month - 1];
+      final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} $month ${dt.year}, $hour:$minute $period';
+    } catch (_) {
+      return returnDate;
+    }
+  }
+
+  /// Formatted duration display based on serviceType:
+  /// Condition 1: "serviceType": "outstation" -> display "Duration: X days"
+  /// Condition 2: "serviceType": "local" -> display "Duration: X hours"
+  String get durationDisplay {
+    final sType = serviceType.trim().toLowerCase();
+    if (sType == 'outstation') {
+      final days = durationDays > 0
+          ? durationDays
+          : (durationHours > 0 ? (durationHours / 24).ceil() : 1);
+      return 'Duration: $days days';
+    } else {
+      final hours = durationHours > 0
+          ? durationHours
+          : (durationDays > 0 ? durationDays * 24 : 1);
+      return 'Duration: $hours hours';
+    }
+  }
+
+  /// Alias for durationDisplay
+  String get formattedDuration => durationDisplay;
 
   /// Alias for fare
   double get totalAmount => fare;
@@ -127,8 +192,18 @@ class AvailableRideEntity extends Equatable {
     final tripType = toS(
       json['tripType'] ?? 'one_way',
     );
+    final durationDays = toI(
+      json['durationDays'] ??
+          json['duration_days'] ??
+          json['days'] ??
+          0,
+    );
     final durationHours = toI(
-      json['durationHours'] ?? json['duration'] ?? json['estimatedDuration'] ?? 1,
+      json['durationHours'] ??
+          json['duration_hours'] ??
+          json['duration'] ??
+          json['estimatedDuration'] ??
+          (durationDays > 0 ? durationDays * 24 : 1),
     );
     final fare = toD(
       json['fare'] ??
@@ -196,6 +271,7 @@ class AvailableRideEntity extends Equatable {
       serviceType: serviceType,
       tripType: tripType,
       durationHours: durationHours,
+      durationDays: durationDays,
       fare: fare,
       driverFee: driverFee,
       paymentMethod: paymentMethod,
@@ -208,7 +284,14 @@ class AvailableRideEntity extends Equatable {
       startOtp: startOtp,
       riderCustId: toS(riderMap['custId'] ?? json['riderCustId']),
       distanceKm: toD(json['distanceKm']),
-      scheduledStartTime: toS(json['scheduledStartTime']),
+      scheduledStartTime: toS(
+        json['scheduledStartTime'] ??
+            json['scheduled_start_time'] ??
+            json['startTime'] ??
+            '',
+      ),
+      returnDate: toS(json['returnDate'] ?? json['return_date'] ?? ''),
+      bookingMode: toS(json['bookingMode'] ?? json['booking_mode'] ?? ''),
       bookingStatus: toS(json['bookingStatus'] ?? 'pending'),
       paymentStatus: toS(json['paymentStatus'] ?? 'pending'),
       createdAt: toS(json['createdAt']),
@@ -225,6 +308,7 @@ class AvailableRideEntity extends Equatable {
         serviceType,
         tripType,
         durationHours,
+        durationDays,
         fare,
         driverFee,
         paymentMethod,
@@ -238,6 +322,8 @@ class AvailableRideEntity extends Equatable {
         riderCustId,
         distanceKm,
         scheduledStartTime,
+        returnDate,
+        bookingMode,
         bookingStatus,
         paymentStatus,
         createdAt,

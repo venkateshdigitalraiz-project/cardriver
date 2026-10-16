@@ -19,6 +19,9 @@ class AvailableRideModel extends AvailableRideEntity {
     required super.tripType,
     required super.vehicleType,
     required super.durationHours,
+    super.durationDays = 0,
+    super.returnDate = '',
+    super.bookingMode = '',
     required super.distanceKm,
     required super.scheduledStartTime,
     required super.startOtp,
@@ -139,6 +142,25 @@ class AvailableRideModel extends AvailableRideEntity {
             ? 'BKG-${id.substring(0, id.length > 8 ? 8 : id.length).toUpperCase()}'
             : 'BKG-${DateTime.now().millisecondsSinceEpoch}');
 
+    final durationDays = toInt(
+      json['durationDays'] ?? json['duration_days'] ?? json['days'],
+      0,
+    );
+    final durationHours = toInt(
+      json['durationHours'] ?? json['duration_hours'] ?? json['duration'],
+      durationDays > 0 ? durationDays * 24 : 1,
+    );
+    final scheduledStartTime = json['scheduledStartTime']?.toString() ??
+        json['scheduled_start_time']?.toString() ??
+        json['startTime']?.toString() ??
+        '';
+    final returnDate = json['returnDate']?.toString() ??
+        json['return_date']?.toString() ??
+        '';
+    final bookingMode = json['bookingMode']?.toString() ??
+        json['booking_mode']?.toString() ??
+        '';
+
     return AvailableRideModel(
       id: id,
       bookingId: bookingId,
@@ -160,13 +182,14 @@ class AvailableRideModel extends AvailableRideEntity {
       serviceType: json['serviceType']?.toString() ?? json['service_type']?.toString() ?? 'local',
       tripType: json['tripType']?.toString() ?? json['trip_type']?.toString() ?? 'round_trip',
       vehicleType: json['vehicleType']?.toString() ?? json['vehicle_type']?.toString() ?? 'standard',
-      durationHours: toInt(json['durationHours'] ?? json['duration_hours'] ?? json['duration'], 1),
+      durationHours: durationHours,
+      durationDays: durationDays,
+      returnDate: returnDate,
+      bookingMode: bookingMode,
       distanceKm: toDouble(
         json['distanceKm'] ?? json['distance_km'] ?? json['estimatedDistance'] ?? json['estimated_distance'],
       ),
-      scheduledStartTime: json['scheduledStartTime']?.toString() ??
-          json['scheduled_start_time']?.toString() ??
-          '',
+      scheduledStartTime: scheduledStartTime,
       startOtp: json['startOtp']?.toString() ?? json['start_otp']?.toString() ?? json['otp']?.toString() ?? '',
       bookingStatus: json['bookingStatus']?.toString() ?? json['booking_status']?.toString() ?? 'pending',
       paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? 'online',
@@ -204,8 +227,11 @@ class AvailableRideModel extends AvailableRideEntity {
       'tripType': tripType,
       'vehicleType': vehicleType,
       'durationHours': durationHours,
+      'durationDays': durationDays,
       'distanceKm': distanceKm,
       'scheduledStartTime': scheduledStartTime,
+      'returnDate': returnDate,
+      'bookingMode': bookingMode,
       'startOtp': startOtp,
       'bookingStatus': bookingStatus,
       'paymentMethod': paymentMethod,

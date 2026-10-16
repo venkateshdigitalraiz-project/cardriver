@@ -38,6 +38,10 @@ class SocketService {
   final _disconnectedController = StreamController<String>.broadcast();
   Stream<String> get onDisconnected => _disconnectedController.stream;
 
+  /// Fires every time a new ride is available from the server ('ride:new_available').
+  final _rideNewAvailableController = StreamController<dynamic>.broadcast();
+  Stream<dynamic> get onRideNewAvailable => _rideNewAvailableController.stream;
+
   // ──────────────────────────────────────────────
   //  Accessors
   // ──────────────────────────────────────────────
@@ -141,6 +145,7 @@ class SocketService {
     disconnectFully();
     _connectedController.close();
     _disconnectedController.close();
+    _rideNewAvailableController.close();
   }
 
   // ──────────────────────────────────────────────
@@ -169,16 +174,14 @@ class SocketService {
             .setTransports(['websocket', 'polling'])
             .setAuth({'token': token})
             .setQuery({'token': token})
-            .setExtraHeaders({
-              'Authorization': 'Bearer $token',
-            })
+            .setExtraHeaders({'Authorization': 'Bearer $token'})
             // Force a brand-new socket instance every time.
             .enableForceNew()
             // Auto-reconnect configuration.
             .enableReconnection()
-            .setReconnectionDelay(1000)         // first retry after 1 s
-            .setReconnectionDelayMax(5000)      // cap at 5 s
-            .setReconnectionAttempts(999999)    // retry indefinitely
+            .setReconnectionDelay(1000) // first retry after 1 s
+            .setReconnectionDelayMax(5000) // cap at 5 s
+            .setReconnectionAttempts(999999) // retry indefinitely
             .enableAutoConnect()
             .build(),
       );
@@ -196,12 +199,21 @@ class SocketService {
     _socket!.onConnect((_) {
       log('✅ [SocketService] Connected  — id: ${_socket?.id}');
       try {
+        _socket!.emit('join:available_rides');
         _socket!.emit('driver:online', {'token': token});
         _socket!.emit('driver_online', {'token': token});
         _socket!.emit('join_driver', {'token': token});
         _socket!.emit('register', {'role': 'driver', 'token': token});
       } catch (_) {}
       _connectedController.add(null);
+    });
+
+    // Listen for new available rides broadcast from the backend
+    _socket!.on('ride:new_available', (data) {
+      log(
+        '🚗 [SocketService] Event "ride:new_available" received from server: $data',
+      );
+      _rideNewAvailableController.add(data);
     });
 
     _socket!.onDisconnect((reason) {
@@ -216,6 +228,9 @@ class SocketService {
 
     _socket!.onReconnect((attempt) {
       log('🔄 [SocketService] Reconnected after attempt $attempt');
+      try {
+        _socket!.emit('join:available_rides');
+      } catch (_) {}
       _connectedController.add(null);
     });
 

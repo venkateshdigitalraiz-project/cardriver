@@ -10,6 +10,14 @@ class ApiEndpoints {
   static const String driverVerifyOtp = '$baseUrl/driver/verify-otp';
   static const String driverRegister = '$baseUrl/driver/register';
 
-  // Driver Rides
+  // Driver Rides & Bookings
   static const String driverAvailableRides = '$baseUrl/driver/available-rides';
+  static String driverAcceptRide(String rideId) => '$driverAvailableRides/$rideId/accept';
+  static String driverRejectRide(String rideId) => '$driverAvailableRides/$rideId/reject';
+  static const String driverBookings = '$baseUrl/driver/bookings';
+  static String driverBookingDetails(String bookingId) => '$driverBookings/$bookingId';
+
+  // Driver Subscriptions
+  static const String driverSubscriptionPlans = '$baseUrl/driver/subscription-plans';
+  static const String driverSubscription = '$baseUrl/driver/subscription';
 }

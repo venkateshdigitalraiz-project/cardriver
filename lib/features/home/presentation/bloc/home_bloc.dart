@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/socket_service.dart';
 import '../../data/datasources/available_rides_remote_data_source.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/usecases/accept_ride_usecase.dart';
+import '../../domain/usecases/reject_ride_usecase.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
@@ -12,46 +14,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final AvailableRidesRemoteDataSource remoteDataSource;
   final SocketService socketService;
   final String driverToken;
+  final AcceptRideUseCase? acceptRideUseCase;
+  final RejectRideUseCase? rejectRideUseCase;
 
   StreamSubscription<void>? _connectedSubscription;
-  late final void Function(dynamic) _onNewAvailableRideHandler;
-  late final void Function(String, dynamic) _onAnySocketHandler;
+  StreamSubscription<dynamic>? _rideNewAvailableSubscription;
+  late final void Function(dynamic) _onRideNewAvailableHandler;
+  DateTime? _lastRefreshTime;
 
-  static const List<String> _socketEvents = [
-    'ride:new_available',
-    'ride:available',
-    'new_ride',
-    'new_ride_available',
-    'newRide',
-    'newRideAvailable',
-    'ride_request',
-    'rideRequest',
-    'new_booking',
-    'newBooking',
-    'booking:new',
-    'booking_request',
-    'bookingRequest',
-    'driver:ride_request',
-    'ride:requested',
-    'ride_created',
-    'booking_created',
-    'ride',
-    'booking',
-  ];
+  static const String _socketEvent = 'ride:new_available';
 
   HomeBloc({
     required this.remoteDataSource,
     required this.socketService,
     required this.driverToken,
+    this.acceptRideUseCase,
+    this.rejectRideUseCase,
   }) : super(const HomeState()) {
-    // 1. Maintain a single, stable handler reference for socket off/on
-    _onNewAvailableRideHandler = _handleSocketRidePayload;
-    _onAnySocketHandler = (event, data) {
-      final ev = event.toLowerCase();
-      if (ev.contains('ride') || ev.contains('booking') || ev.contains('request')) {
-        _handleSocketRidePayload(data);
-      }
-    };
+    // 1. Maintain a stable handler reference for socket off/on
+    _onRideNewAvailableHandler = _handleRideNewAvailable;
 
     // 2. Register Bloc event handlers
     on<ToggleOnlineStatusEvent>(_onToggleOnlineStatus);
@@ -59,122 +40,94 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<NewRideReceivedEvent>(_onNewRideReceived);
     on<ClearNewRideAlertEvent>(_onClearNewRideAlert);
     on<DeclineRideRequestEvent>(_onDeclineRideRequest);
+    on<ClearRejectedRideEvent>(_onClearRejectedRide);
+    on<AcceptRideEvent>(_onAcceptRide);
+    on<ClearAcceptedRideEvent>(_onClearAcceptedRide);
 
-    // 3. Re-attach socket listener and refresh on connect / reconnect
+    // 3. Listen to socket connection / reconnection
     _connectedSubscription = socketService.onConnected.listen((_) {
       if (state.isOnline) {
-        log('🔄 [HomeBloc] Socket connected/reconnected while online. Re-subscribing and fetching.');
+        log(
+          '🔄 [HomeBloc] Socket connected/reconnected while online. Attaching listener and refreshing home page.',
+        );
         _attachSocketListener();
         add(const LoadAvailableRidesEvent(silent: true));
+      }
+    });
+
+    // 4. Listen to onRideNewAvailable stream from SocketService
+    _rideNewAvailableSubscription = socketService.onRideNewAvailable.listen((
+      data,
+    ) {
+      if (state.isOnline) {
+        log('🚗 [HomeBloc] "ride:new_available" stream received: $data');
+        _handleRideNewAvailable(data);
       }
     });
   }
 
   void _attachSocketListener() {
-    log('🔌 [HomeBloc] Attaching listeners for: $_socketEvents');
-    for (final event in _socketEvents) {
-      socketService.off(event, _onNewAvailableRideHandler);
-      socketService.on(event, _onNewAvailableRideHandler);
-    }
-    socketService.offAny(_onAnySocketHandler);
-    socketService.onAny(_onAnySocketHandler);
+    log('🔌 [HomeBloc] Attaching socket listener for: $_socketEvent');
+    socketService.off(_socketEvent, _onRideNewAvailableHandler);
+    socketService.on(_socketEvent, _onRideNewAvailableHandler);
   }
 
   void _detachSocketListener() {
-    log('🔌 [HomeBloc] Detaching listeners for: $_socketEvents');
-    for (final event in _socketEvents) {
-      socketService.off(event, _onNewAvailableRideHandler);
-    }
-    socketService.offAny(_onAnySocketHandler);
+    log('🔌 [HomeBloc] Detaching socket listener for: $_socketEvent');
+    socketService.off(_socketEvent, _onRideNewAvailableHandler);
   }
 
-  void _handleSocketRidePayload(dynamic data) {
-    try {
-      log('📥 [HomeBloc] Socket ride event received: $data');
-      if (data == null) return;
-
-      dynamic payload = data;
-
-      // Handle stringified JSON payload
-      if (payload is String) {
-        try {
-          payload = jsonDecode(payload);
-        } catch (_) {
-          log('⚠️ [HomeBloc] Could not decode JSON string payload');
-          return;
-        }
-      }
-
-      // Handle direct list of rides
-      if (payload is List) {
-        for (final item in payload) {
-          if (item is Map) {
-            _dispatchRideIfValid(Map<String, dynamic>.from(item));
-          }
-        }
-        return;
-      }
-
-      // Handle wrapped payloads
-      if (payload is Map) {
-        if (payload['rides'] is List) {
-          for (final item in payload['rides'] as List) {
-            if (item is Map) {
-              _dispatchRideIfValid(Map<String, dynamic>.from(item));
-            }
-          }
-          return;
-        } else if (payload['data'] is List) {
-          for (final item in payload['data'] as List) {
-            if (item is Map) {
-              _dispatchRideIfValid(Map<String, dynamic>.from(item));
-            }
-          }
-          return;
-        } else if (payload['bookings'] is List) {
-          for (final item in payload['bookings'] as List) {
-            if (item is Map) {
-              _dispatchRideIfValid(Map<String, dynamic>.from(item));
-            }
-          }
-          return;
-        } else if (payload['ride'] is Map) {
-          payload = payload['ride'];
-        } else if (payload['booking'] is Map) {
-          payload = payload['booking'];
-        } else if (payload['rideRequest'] is Map) {
-          payload = payload['rideRequest'];
-        } else if (payload['request'] is Map) {
-          payload = payload['request'];
-        } else if (payload['data'] is Map) {
-          final inner = payload['data'] as Map;
-          if (inner['ride'] is Map) {
-            payload = inner['ride'];
-          } else if (inner['booking'] is Map) {
-            payload = inner['booking'];
-          } else {
-            payload = inner;
-          }
-        }
-      }
-
-      if (payload is Map) {
-        _dispatchRideIfValid(Map<String, dynamic>.from(payload));
-      } else {
-        log('⚠️ [HomeBloc] Unsupported socket ride payload format: $payload');
-      }
-    } catch (e, stack) {
-      log('❌ [HomeBloc] Failed to parse incoming socket ride: $e\n$stack');
+  /// Handles incoming 'ride:new_available' socket event.
+  /// Refreshes the driver app home page so up-to-date rides are displayed.
+  void _handleRideNewAvailable(dynamic data) {
+    // 1. Debounce rapid duplicate socket events within 1 second
+    final now = DateTime.now();
+    if (_lastRefreshTime != null &&
+        now.difference(_lastRefreshTime!).inMilliseconds < 1000) {
+      log('⏱️ [HomeBloc] Duplicate "ride:new_available" ignored within 1s');
+      return;
     }
-  }
+    _lastRefreshTime = now;
 
-  void _dispatchRideIfValid(Map<String, dynamic> map) {
-    final ride = AvailableRideEntity.fromJson(map);
-    if (ride.id.isNotEmpty) {
-      add(NewRideReceivedEvent(ride));
-    } else {
-      log('⚠️ [HomeBloc] Discarded ride with empty id from socket: $map');
+    log(
+      '🚗 [HomeBloc] "ride:new_available" event detected! Refreshing home page...',
+    );
+
+    // 2. If payload contains a valid ride entity, dispatch immediately for instant UI responsiveness
+    if (data != null) {
+      try {
+        dynamic parsed = data;
+        if (parsed is String) {
+          try {
+            parsed = jsonDecode(parsed);
+          } catch (_) {}
+        }
+
+        if (parsed is Map) {
+          Map<String, dynamic>? rideMap;
+          if (parsed['ride'] is Map) {
+            rideMap = Map<String, dynamic>.from(parsed['ride']);
+          } else if (parsed['id'] != null || parsed['_id'] != null) {
+            rideMap = Map<String, dynamic>.from(parsed);
+          }
+
+          if (rideMap != null) {
+            final ride = AvailableRideEntity.fromJson(rideMap);
+            if (ride.id.isNotEmpty) {
+              log(
+                '✨ [HomeBloc] Instant new ride alert from socket payload: ${ride.id}',
+              );
+              add(NewRideReceivedEvent(ride));
+            }
+          }
+        }
+      } catch (e) {
+        log('ℹ️ [HomeBloc] Non-critical error parsing payload ride: $e');
+      }
     }
+
+    // 3. Always refresh available rides from API so the home page is 100% up-to-date
+    add(const LoadAvailableRidesEvent(silent: true));
   }
 
   void _onToggleOnlineStatus(
@@ -185,14 +138,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     if (nextOnline) {
       emit(
-        state.copyWith(
-          isOnline: true,
-          isLoadingRides: true,
-          clearError: true,
-        ),
+        state.copyWith(isOnline: true, isLoadingRides: true, clearError: true),
       );
 
-      final cleanToken = driverToken.trim().replaceFirst(RegExp(r'^bearer\s+', caseSensitive: false), '');
+      final cleanToken = driverToken.trim().replaceFirst(
+        RegExp(r'^bearer\s+', caseSensitive: false),
+        '',
+      );
       final token = cleanToken.isNotEmpty
           ? cleanToken
           : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
@@ -226,36 +178,49 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     if (!state.isOnline) return;
 
-    if (!event.silent) {
+    if (!event.silent && state.availableRides.isEmpty) {
       emit(state.copyWith(isLoadingRides: true, clearError: true));
     }
 
     try {
-      final cleanToken = driverToken.trim().replaceFirst(RegExp(r'^bearer\s+', caseSensitive: false), '');
+      final cleanToken = driverToken.trim().replaceFirst(
+        RegExp(r'^bearer\s+', caseSensitive: false),
+        '',
+      );
       final token = cleanToken.isNotEmpty
           ? cleanToken
           : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
 
       final apiRides = await remoteDataSource.fetchAvailableRides(token);
 
-      // Merge API results with rides already received via socket
-      // Treat API order as source of truth
-      final apiIds = apiRides.map((r) => r.id).toSet();
-      final socketOnlyRides = state.availableRides
-          .where((ride) => !apiIds.contains(ride.id))
-          .toList();
+      // Check if there are newly added rides compared to previous state
+      final previousIds = state.availableRides.map((r) => r.id).toSet();
+      AvailableRideEntity? newAlert = state.newRideAlert;
 
-      final mergedRides = [...socketOnlyRides, ...apiRides];
+      // Find any newly arrived ride to trigger the alert
+      for (final ride in apiRides) {
+        if (!previousIds.contains(ride.id)) {
+          newAlert = ride;
+          break;
+        }
+      }
 
-      // If rides are present and no alert is active, set newest ride in alert
-      final newAlert = state.newRideAlert ??
-          (mergedRides.isNotEmpty ? mergedRides.first : null);
+      // If no alert is currently active and rides are available, show the newest
+      if (newAlert == null && apiRides.isNotEmpty) {
+        newAlert = apiRides.first;
+      }
+
+      // If the current alert ride is no longer in the available rides list, clear or update it
+      if (newAlert != null && !apiRides.any((r) => r.id == newAlert!.id)) {
+        newAlert = apiRides.isNotEmpty ? apiRides.first : null;
+      }
 
       emit(
         state.copyWith(
           isLoadingRides: false,
-          availableRides: mergedRides,
+          availableRides: apiRides,
           newRideAlert: newAlert,
+          clearNewRideAlert: newAlert == null,
           clearError: true,
         ),
       );
@@ -270,12 +235,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
-  void _onNewRideReceived(
-    NewRideReceivedEvent event,
-    Emitter<HomeState> emit,
-  ) {
-    final existingIndex =
-        state.availableRides.indexWhere((r) => r.id == event.ride.id);
+  void _onNewRideReceived(NewRideReceivedEvent event, Emitter<HomeState> emit) {
+    final existingIndex = state.availableRides.indexWhere(
+      (r) => r.id == event.ride.id,
+    );
 
     if (existingIndex == -1) {
       // New ride: insert at top and trigger alert banner
@@ -302,26 +265,137 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     emit(state.copyWith(clearNewRideAlert: true));
   }
 
-  void _onDeclineRideRequest(
+  Future<void> _onDeclineRideRequest(
     DeclineRideRequestEvent event,
     Emitter<HomeState> emit,
-  ) {
-    final updatedList =
-        state.availableRides.where((r) => r.id != event.rideId).toList();
-    final clearAlert = state.newRideAlert?.id == event.rideId;
+  ) async {
+    // If already in-flight for this ride, ignore duplicate taps
+    if (state.decliningRideId == event.rideId) return;
 
-    emit(
-      state.copyWith(
-        availableRides: updatedList,
-        clearNewRideAlert: clearAlert,
-      ),
-    );
+    emit(state.copyWith(
+      decliningRideId: event.rideId,
+      clearError: true,
+      clearRejectedRide: true,
+    ));
+
+    try {
+      final cleanToken = driverToken.trim().replaceFirst(
+            RegExp(r'^bearer\s+', caseSensitive: false),
+            '',
+          );
+      final token = cleanToken.isNotEmpty
+          ? cleanToken
+          : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
+
+      final rejected = rejectRideUseCase != null
+          ? await rejectRideUseCase!(
+              RejectRideParams(
+                rideId: event.rideId,
+                token: token,
+                reason: event.reason,
+              ),
+            )
+          : await remoteDataSource.rejectRide(
+              rideId: event.rideId,
+              token: token,
+              reason: event.reason,
+            );
+
+      // Remove the declined ride from availableRides list
+      final updatedList = state.availableRides
+          .where((r) => r.id != event.rideId)
+          .toList();
+      final clearAlert = state.newRideAlert?.id == event.rideId;
+
+      emit(
+        state.copyWith(
+          clearDecliningRideId: true,
+          rejectedRide: rejected,
+          availableRides: updatedList,
+          clearNewRideAlert: clearAlert,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      log('❌ [HomeBloc] Failed to decline ride: $e');
+      emit(
+        state.copyWith(
+          clearDecliningRideId: true,
+          errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        ),
+      );
+    }
+  }
+
+  void _onClearRejectedRide(
+    ClearRejectedRideEvent event,
+    Emitter<HomeState> emit,
+  ) {
+    emit(state.copyWith(clearRejectedRide: true));
+  }
+
+  Future<void> _onAcceptRide(
+    AcceptRideEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    emit(state.copyWith(acceptingRideId: event.rideId, clearError: true));
+
+    try {
+      final cleanToken = driverToken.trim().replaceFirst(
+            RegExp(r'^bearer\s+', caseSensitive: false),
+            '',
+          );
+      final token = cleanToken.isNotEmpty
+          ? cleanToken
+          : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
+
+      final accepted = acceptRideUseCase != null
+          ? await acceptRideUseCase!(
+              AcceptRideParams(rideId: event.rideId, token: token),
+            )
+          : await remoteDataSource.acceptRide(
+              rideId: event.rideId,
+              token: token,
+            );
+
+      // Remove the accepted ride from availableRides list
+      final updatedList = state.availableRides
+          .where((r) => r.id != event.rideId)
+          .toList();
+      final clearAlert = state.newRideAlert?.id == event.rideId;
+
+      emit(
+        state.copyWith(
+          clearAcceptingRideId: true,
+          acceptedRide: accepted,
+          availableRides: updatedList,
+          clearNewRideAlert: clearAlert,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      log('❌ [HomeBloc] Failed to accept ride: $e');
+      emit(
+        state.copyWith(
+          clearAcceptingRideId: true,
+          errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        ),
+      );
+    }
+  }
+
+  void _onClearAcceptedRide(
+    ClearAcceptedRideEvent event,
+    Emitter<HomeState> emit,
+  ) {
+    emit(state.copyWith(clearAcceptedRide: true));
   }
 
   @override
   Future<void> close() {
     _detachSocketListener();
     _connectedSubscription?.cancel();
+    _rideNewAvailableSubscription?.cancel();
     return super.close();
   }
 }

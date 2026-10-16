@@ -35,7 +35,7 @@ class _MainNavigatorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       HomePage(customer: customer),
-      const TripPage(),
+      TripPage(driverToken: customer.token),
       ProfilePage(userName: customer.name),
     ];
 

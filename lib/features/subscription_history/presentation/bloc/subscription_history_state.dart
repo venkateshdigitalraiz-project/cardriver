@@ -1,28 +1,68 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/subscription_transaction.dart';
+import '../../domain/entities/driver_subscription_entity.dart';
 
 abstract class SubscriptionHistoryState extends Equatable {
   const SubscriptionHistoryState();
-  
+
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-class SubscriptionHistoryLoading extends SubscriptionHistoryState {}
+class SubscriptionHistoryLoading extends SubscriptionHistoryState {
+  final bool isSilent;
 
-class SubscriptionHistoryLoaded extends SubscriptionHistoryState {
-  final List<SubscriptionTransaction> allTransactions;
-  final List<SubscriptionTransaction> filteredTransactions;
-  final String currentFilter;
-
-  const SubscriptionHistoryLoaded({
-    required this.allTransactions,
-    required this.filteredTransactions,
-    required this.currentFilter,
-  });
+  const SubscriptionHistoryLoading({this.isSilent = false});
 
   @override
-  List<Object> get props => [allTransactions, filteredTransactions, currentFilter];
+  List<Object?> get props => [isSilent];
+}
+
+class SubscriptionHistoryLoaded extends SubscriptionHistoryState {
+  final bool hasActiveSubscription;
+  final DriverSubscriptionEntity? activeSubscription;
+  final List<DriverSubscriptionEntity> allSubscriptions;
+  final List<DriverSubscriptionEntity> filteredSubscriptions;
+  final String currentFilter;
+  final bool isRefreshing;
+
+  const SubscriptionHistoryLoaded({
+    required this.hasActiveSubscription,
+    this.activeSubscription,
+    required this.allSubscriptions,
+    required this.filteredSubscriptions,
+    this.currentFilter = 'All',
+    this.isRefreshing = false,
+  });
+
+  SubscriptionHistoryLoaded copyWith({
+    bool? hasActiveSubscription,
+    DriverSubscriptionEntity? activeSubscription,
+    List<DriverSubscriptionEntity>? allSubscriptions,
+    List<DriverSubscriptionEntity>? filteredSubscriptions,
+    String? currentFilter,
+    bool? isRefreshing,
+  }) {
+    return SubscriptionHistoryLoaded(
+      hasActiveSubscription:
+          hasActiveSubscription ?? this.hasActiveSubscription,
+      activeSubscription: activeSubscription ?? this.activeSubscription,
+      allSubscriptions: allSubscriptions ?? this.allSubscriptions,
+      filteredSubscriptions:
+          filteredSubscriptions ?? this.filteredSubscriptions,
+      currentFilter: currentFilter ?? this.currentFilter,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        hasActiveSubscription,
+        activeSubscription,
+        allSubscriptions,
+        filteredSubscriptions,
+        currentFilter,
+        isRefreshing,
+      ];
 }
 
 class SubscriptionHistoryError extends SubscriptionHistoryState {
@@ -31,5 +71,5 @@ class SubscriptionHistoryError extends SubscriptionHistoryState {
   const SubscriptionHistoryError(this.message);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message];
 }

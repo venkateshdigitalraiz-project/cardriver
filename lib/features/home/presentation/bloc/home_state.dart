@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/rejected_ride_entity.dart';
 
 class HomeState extends Equatable {
   final bool isOnline;
@@ -10,6 +12,10 @@ class HomeState extends Equatable {
   final double todaysEarnings;
   final int todaysTrips;
   final double rating;
+  final String? acceptingRideId;
+  final AcceptedRideEntity? acceptedRide;
+  final String? decliningRideId;
+  final RejectedRideEntity? rejectedRide;
 
   const HomeState({
     this.isOnline = false,
@@ -20,11 +26,17 @@ class HomeState extends Equatable {
     this.todaysEarnings = 9640.0,
     this.todaysTrips = 8,
     this.rating = 4.8,
+    this.acceptingRideId,
+    this.acceptedRide,
+    this.decliningRideId,
+    this.rejectedRide,
   });
 
   /// Convenience getters for UI compatibility
   bool get hasRideRequest => availableRides.isNotEmpty;
   List<String> get activeRequestIds => availableRides.map((r) => r.id).toList();
+  bool get isAcceptingRide => acceptingRideId != null;
+  bool get isDecliningRide => decliningRideId != null;
 
   HomeState copyWith({
     bool? isOnline,
@@ -37,6 +49,14 @@ class HomeState extends Equatable {
     double? todaysEarnings,
     int? todaysTrips,
     double? rating,
+    String? acceptingRideId,
+    bool clearAcceptingRideId = false,
+    AcceptedRideEntity? acceptedRide,
+    bool clearAcceptedRide = false,
+    String? decliningRideId,
+    bool clearDecliningRideId = false,
+    RejectedRideEntity? rejectedRide,
+    bool clearRejectedRide = false,
   }) {
     return HomeState(
       isOnline: isOnline ?? this.isOnline,
@@ -48,6 +68,16 @@ class HomeState extends Equatable {
       todaysEarnings: todaysEarnings ?? this.todaysEarnings,
       todaysTrips: todaysTrips ?? this.todaysTrips,
       rating: rating ?? this.rating,
+      acceptingRideId: clearAcceptingRideId
+          ? null
+          : (acceptingRideId ?? this.acceptingRideId),
+      acceptedRide:
+          clearAcceptedRide ? null : (acceptedRide ?? this.acceptedRide),
+      decliningRideId: clearDecliningRideId
+          ? null
+          : (decliningRideId ?? this.decliningRideId),
+      rejectedRide:
+          clearRejectedRide ? null : (rejectedRide ?? this.rejectedRide),
     );
   }
 
@@ -61,5 +91,9 @@ class HomeState extends Equatable {
         todaysEarnings,
         todaysTrips,
         rating,
+        acceptingRideId,
+        acceptedRide,
+        decliningRideId,
+        rejectedRide,
       ];
 }

@@ -41,15 +41,32 @@ class NewRideReceivedEvent extends HomeEvent {
 /// Clears the prominent new ride notification alert banner.
 class ClearNewRideAlertEvent extends HomeEvent {}
 
-/// Declines / removes a ride request from the driver's list.
+/// Declines / rejects a ride request from the server.
 class DeclineRideRequestEvent extends HomeEvent {
   final String rideId;
+  final String? reason;
 
-  const DeclineRideRequestEvent(this.rideId);
+  const DeclineRideRequestEvent(this.rideId, {this.reason});
 
   /// Backwards-compatible getter
   String get requestId => rideId;
 
   @override
+  List<Object?> get props => [rideId, reason];
+}
+
+/// Dispatched when the driver accepts an available ride.
+class AcceptRideEvent extends HomeEvent {
+  final String rideId;
+
+  const AcceptRideEvent(this.rideId);
+
+  @override
   List<Object?> get props => [rideId];
 }
+
+/// Clears the accepted ride state after navigation has handled it.
+class ClearAcceptedRideEvent extends HomeEvent {}
+
+/// Clears the rejected ride notification indicator state.
+class ClearRejectedRideEvent extends HomeEvent {}
