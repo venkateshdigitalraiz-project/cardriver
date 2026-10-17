@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../injection_container.dart';
+import '../../../profile/domain/entities/driver_active_subscription_entity.dart';
 import '../../../subscription_history/presentation/pages/subscription_history_page.dart';
 import '../../domain/entities/subscription_activation_entity.dart';
 import '../../domain/entities/subscription_plan_entity.dart';
@@ -12,15 +13,23 @@ import '../bloc/subscription_state.dart';
 
 class SubscriptionPage extends StatelessWidget {
   final String? driverToken;
+  final bool? hasSubscription;
 
-  const SubscriptionPage({super.key, this.driverToken});
+  const SubscriptionPage({super.key, this.driverToken, this.hasSubscription});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => InjectionContainer.createSubscriptionBloc(
-        driverToken: driverToken,
-      )..add(LoadSubscriptionPlansEvent(token: driverToken)),
+      create: (context) =>
+          InjectionContainer.createSubscriptionBloc(
+            driverToken: driverToken,
+            initialHasSubscription: hasSubscription ?? false,
+          )..add(
+            LoadSubscriptionPlansEvent(
+              token: driverToken,
+              hasSubscription: hasSubscription,
+            ),
+          ),
       child: _SubscriptionScaffold(driverToken: driverToken),
     );
   }
@@ -137,8 +146,8 @@ class _SubscriptionScaffold extends StatelessWidget {
               errorMessage: state.errorMessage!,
               onRetry: () {
                 context.read<SubscriptionBloc>().add(
-                      const LoadSubscriptionPlansEvent(),
-                    );
+                  const LoadSubscriptionPlansEvent(),
+                );
               },
             );
           }
@@ -148,20 +157,30 @@ class _SubscriptionScaffold extends StatelessWidget {
               RefreshIndicator(
                 onRefresh: () async {
                   context.read<SubscriptionBloc>().add(
-                        const RefreshSubscriptionPlansEvent(),
-                      );
+                    const RefreshSubscriptionPlansEvent(),
+                  );
                 },
                 color: const Color(0xFF021B45),
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 1. Premium Hero Banner
                       _buildHeroBanner(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
+
+                      // Active Pass Alert (if driver has an active subscription)
+                      if (state.hasSubscription) ...[
+                        _buildActiveSubscriptionBanner(
+                          state.activeSubscription,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
 
                       // 2. Section Header
                       Row(
@@ -210,22 +229,14 @@ class _SubscriptionScaffold extends StatelessWidget {
                             isSelected: isSelected,
                             onTap: () {
                               context.read<SubscriptionBloc>().add(
-                                    SelectSubscriptionPlanEvent(plan.id),
-                                  );
+                                SelectSubscriptionPlanEvent(plan.id),
+                              );
                             },
                           ),
                         );
                       }),
 
                       const SizedBox(height: 12),
-
-                      // 4. Value Proposition / Benefits Section
-                      _buildBenefitsCard(),
-                      const SizedBox(height: 16),
-
-                      // 5. Driver Trust & Support Card
-                      _buildSupportCard(context),
-                      const SizedBox(height: 100), // Space for bottom bar
                     ],
                   ),
                 ),
@@ -246,11 +257,7 @@ class _SubscriptionScaffold extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF021B45),
-            Color(0xFF0B2C6F),
-            Color(0xFF1E3E62),
-          ],
+          colors: [Color(0xFF021B45), Color(0xFF0B2C6F), Color(0xFF1E3E62)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -302,10 +309,7 @@ class _SubscriptionScaffold extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
@@ -394,134 +398,133 @@ class _SubscriptionScaffold extends StatelessWidget {
     );
   }
 
-  // ================= 4. Value Proposition / Benefits Card =================
-  Widget _buildBenefitsCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                Icons.stars_rounded,
-                color: Color(0xFFF59E0B),
-                size: 20,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Why Subscribe to a Driver Pass?',
-                style: TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Row(
-            children: [
-              Expanded(
-                child: _BenefitTile(
-                  icon: Icons.percent_rounded,
-                  color: Color(0xFF10B981),
-                  title: 'Zero Commission',
-                  subtitle: 'Take home 100% of the passenger trip payment.',
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _BenefitTile(
-                  icon: Icons.speed_rounded,
-                  color: Color(0xFF0284C7),
-                  title: 'Priority Dispatch',
-                  subtitle: 'Get alerts before non-subscribed drivers.',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Row(
-            children: [
-              Expanded(
-                child: _BenefitTile(
-                  icon: Icons.support_agent_rounded,
-                  color: Color(0xFF8B5CF6),
-                  title: '24/7 Helpline',
-                  subtitle: 'Dedicated operations support team.',
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _BenefitTile(
-                  icon: Icons.alt_route_rounded,
-                  color: Color(0xFFD97706),
-                  title: 'Local & Outstation',
-                  subtitle: 'Full eligibility for local and outstation runs.',
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // ================= Active Subscription Alert Card =================
+  Widget _buildActiveSubscriptionBanner(DriverActiveSubscriptionEntity? sub) {
+    final planName = sub?.planName.isNotEmpty == true
+        ? sub!.planName
+        : 'Active Driver Pass';
+    final daysLeft = sub?.daysLeft ?? 29;
+    final formattedDate = sub?.formattedDateRange ?? '';
 
-  // ================= 5. Driver Trust & Support Card =================
-  Widget _buildSupportCard(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: const Color(0xFF86EFAC), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16A34A).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.shield_outlined,
-              color: Color(0xFF021B45),
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Immediate Activation',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF16A34A),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Your pass benefits apply instantly upon subscription confirmation.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
+                child: const Icon(
+                  Icons.verified_rounded,
+                  color: Colors.white,
+                  size: 18,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            planName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF14532D),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'CURRENTLY ACTIVE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$daysLeft days remaining ${formattedDate.isNotEmpty ? '• $formattedDate' : ''}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF15803D),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 10),
+
+          // Container(
+          //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          //   decoration: BoxDecoration(
+          //     color: Colors.white.withValues(alpha: 0.75),
+          //     borderRadius: BorderRadius.circular(8),
+          //   ),
+          //   child: const Row(
+          //     children: [
+          //       Icon(
+          //         Icons.lock_outline_rounded,
+          //         size: 14,
+          //         color: Color(0xFF15803D),
+          //       ),
+          //       SizedBox(width: 6),
+          //       Expanded(
+          //         child: Text(
+          //           'You currently have an active subscription pass. Pass activation is disabled to prevent duplicate charges.',
+          //           style: TextStyle(
+          //             fontSize: 11,
+          //             color: Color(0xFF14532D),
+          //             fontWeight: FontWeight.w500,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );
@@ -599,15 +602,15 @@ class _SubscriptionScaffold extends StatelessWidget {
           driverToken: driverToken,
           onDismiss: () {
             Navigator.pop(dialogContext);
-            context
-                .read<SubscriptionBloc>()
-                .add(ClearSubscriptionActivationEvent());
+            context.read<SubscriptionBloc>().add(
+              ClearSubscriptionActivationEvent(),
+            );
           },
           onViewHistory: () {
             Navigator.pop(dialogContext);
-            context
-                .read<SubscriptionBloc>()
-                .add(ClearSubscriptionActivationEvent());
+            context.read<SubscriptionBloc>().add(
+              ClearSubscriptionActivationEvent(),
+            );
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -620,14 +623,8 @@ class _SubscriptionScaffold extends StatelessWidget {
       },
       transitionBuilder: (context, anim1, anim2, child) {
         return ScaleTransition(
-          scale: CurvedAnimation(
-            parent: anim1,
-            curve: Curves.easeOutBack,
-          ),
-          child: FadeTransition(
-            opacity: anim1,
-            child: child,
-          ),
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: anim1, child: child),
         );
       },
     );
@@ -673,8 +670,8 @@ class _PlanCard extends StatelessWidget {
             BoxShadow(
               color: isSelected
                   ? (hasGold
-                      ? const Color(0xFFF59E0B).withValues(alpha: 0.18)
-                      : const Color(0xFF10B981).withValues(alpha: 0.15))
+                        ? const Color(0xFFF59E0B).withValues(alpha: 0.18)
+                        : const Color(0xFF10B981).withValues(alpha: 0.15))
                   : Colors.black.withValues(alpha: 0.03),
               blurRadius: isSelected ? 12 : 4,
               offset: const Offset(0, 4),
@@ -692,8 +689,8 @@ class _PlanCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? (hasGold
-                            ? const Color(0xFFFEF3C7)
-                            : const Color(0xFFDCFCE7))
+                              ? const Color(0xFFFEF3C7)
+                              : const Color(0xFFDCFCE7))
                         : const Color(0xFFF1F5F9),
                     shape: BoxShape.circle,
                   ),
@@ -703,8 +700,8 @@ class _PlanCard extends StatelessWidget {
                         : Icons.star_rounded,
                     color: isSelected
                         ? (hasGold
-                            ? const Color(0xFFB45309)
-                            : const Color(0xFF15803D))
+                              ? const Color(0xFFB45309)
+                              : const Color(0xFF15803D))
                         : const Color(0xFF64748B),
                     size: 22,
                   ),
@@ -774,24 +771,20 @@ class _PlanCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: isSelected
                         ? (hasGold
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFF10B981))
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF10B981))
                         : Colors.transparent,
                     border: Border.all(
                       color: isSelected
                           ? (hasGold
-                              ? const Color(0xFFF59E0B)
-                              : const Color(0xFF10B981))
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF10B981))
                           : Colors.grey.shade400,
                       width: 2,
                     ),
                   ),
                   child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 14,
-                        )
+                      ? const Icon(Icons.check, color: Colors.white, size: 14)
                       : null,
                 ),
               ],
@@ -958,65 +951,6 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
-// ================= Benefit Tile =================
-
-class _BenefitTile extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-
-  const _BenefitTile({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade600,
-              height: 1.25,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ================= Sticky Bottom Subscription Bar =================
 
 class _BottomSubscribeBar extends StatelessWidget {
@@ -1030,6 +964,8 @@ class _BottomSubscribeBar extends StatelessWidget {
       builder: (context, state) {
         final plan = state.selectedPlan;
         final isActivating = state.isActivating;
+        final hasActiveSub = state.hasSubscription;
+        final canActivate = (plan != null && !isActivating && !hasActiveSub);
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -1044,122 +980,184 @@ class _BottomSubscribeBar extends StatelessWidget {
             ],
           ),
           child: SafeArea(
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Plan info & Price summary
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        plan?.name ?? 'Select Plan',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF64748B),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                // if (hasActiveSub)
+                //   Container(
+                //     margin: const EdgeInsets.only(bottom: 10),
+                //     padding: const EdgeInsets.symmetric(
+                //       horizontal: 10,
+                //       vertical: 6,
+                //     ),
+                //     decoration: BoxDecoration(
+                //       color: const Color(0xFFF0FDF4),
+                //       borderRadius: BorderRadius.circular(8),
+                //       border: Border.all(color: const Color(0xFFBBF7D0)),
+                //     ),
+                //     child: Row(
+                //       children: [
+                //         const Icon(
+                //           Icons.verified_rounded,
+                //           size: 14,
+                //           color: Color(0xFF16A34A),
+                //         ),
+                //         const SizedBox(width: 6),
+                //         Expanded(
+                //           child: Text(
+                //             'Active pass in effect (${state.activeSubscription?.planName ?? "Driver Pass"}). New pass activation is disabled.',
+                //             style: const TextStyle(
+                //               fontSize: 11,
+                //               color: Color(0xFF15803D),
+                //               fontWeight: FontWeight.w600,
+                //             ),
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                Row(
+                  children: [
+                    // Plan info & Price summary
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            plan != null ? plan.formattedPrice : '₹0',
+                            plan?.name ?? 'Select Plan',
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF021B45),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          if (plan != null)
-                            Text(
-                              ' ${plan.formattedBillingSuffix}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w600,
+                          const SizedBox(height: 2),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                plan != null ? plan.formattedPrice : '₹0',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF021B45),
+                                ),
                               ),
-                            ),
+                              if (plan != null)
+                                Text(
+                                  ' ${plan.formattedBillingSuffix}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
+                    ),
+                    const SizedBox(width: 12),
 
-                // Subscribe CTA Button
-                Expanded(
-                  flex: 4,
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: (plan == null || isActivating)
-                          ? null
-                          : () {
-                              _showSubscribeConfirmationSheet(
-                                context,
-                                plan,
-                                driverToken: driverToken,
-                              );
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF021B45),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            const Color(0xFF021B45).withValues(alpha: 0.6),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    // Subscribe CTA Button
+                    Expanded(
+                      flex: 4,
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: canActivate
+                              ? () {
+                                  _showSubscribeConfirmationSheet(
+                                    context,
+                                    plan,
+                                    driverToken: driverToken,
+                                  );
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF021B45),
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: hasActiveSub
+                                ? const Color(0xFF94A3B8)
+                                : const Color(
+                                    0xFF021B45,
+                                  ).withValues(alpha: 0.6),
+                            disabledForegroundColor: Colors.white.withValues(
+                              alpha: 0.9,
+                            ),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isActivating
+                              ? const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Activating...',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : hasActiveSub
+                              ? const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Pass Active',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Activate Pass',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(width: 6),
+                                    Icon(Icons.arrow_forward_rounded, size: 16),
+                                  ],
+                                ),
                         ),
                       ),
-                      child: isActivating
-                          ? const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Activating...',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Activate Pass',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(width: 6),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -1185,12 +1183,12 @@ class _BottomSubscribeBar extends StatelessWidget {
           driverToken: driverToken,
           onConfirm: (selectedMethod) {
             context.read<SubscriptionBloc>().add(
-                  ActivateSubscriptionEvent(
-                    planId: plan.id,
-                    paymentMethod: selectedMethod,
-                    token: driverToken,
-                  ),
-                );
+              ActivateSubscriptionEvent(
+                planId: plan.id,
+                paymentMethod: selectedMethod,
+                token: driverToken,
+              ),
+            );
           },
         );
       },
@@ -1462,9 +1460,7 @@ class _SubscriptionConfirmationSheetState
           color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF2563EB)
-                : Colors.grey.shade300,
+            color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade300,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -1529,10 +1525,7 @@ class _SubscriptionConfirmationSheetState
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -1643,8 +1636,9 @@ class _ActivationSuccessDialog extends StatelessWidget {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981)
-                                .withValues(alpha: 0.2),
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: const Color(0xFF34D399),
@@ -1840,10 +1834,8 @@ class _ActivationSuccessDialog extends StatelessWidget {
                                     backgroundColor: const Color(0xFFE2E8F0),
                                     backgroundImage:
                                         activation.driverAvatar.isNotEmpty
-                                            ? NetworkImage(
-                                                activation.driverAvatar,
-                                              )
-                                            : null,
+                                        ? NetworkImage(activation.driverAvatar)
+                                        : null,
                                     child: activation.driverAvatar.isEmpty
                                         ? const Icon(
                                             Icons.person,
@@ -1856,7 +1848,7 @@ class _ActivationSuccessDialog extends StatelessWidget {
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           activation.driverName,
@@ -1930,7 +1922,9 @@ class _ActivationSuccessDialog extends StatelessWidget {
                           const SizedBox(height: 6),
                           ...activation.features.map(
                             (feat) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2.5),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 2.5,
+                              ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -2091,11 +2085,7 @@ class _SubscriptionSkeletonLoading extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Container(
-          width: 140,
-          height: 20,
-          color: Colors.grey.shade200,
-        ),
+        Container(width: 140, height: 20, color: Colors.grey.shade200),
         const SizedBox(height: 16),
         Container(
           height: 220,
@@ -2161,10 +2151,7 @@ class _SubscriptionErrorView extends StatelessWidget {
             Text(
               errorMessage,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(

@@ -16,8 +16,12 @@ class ApiEndpoints {
   static String driverRejectRide(String rideId) => '$driverAvailableRides/$rideId/reject';
   static const String driverBookings = '$baseUrl/driver/bookings';
   static String driverBookingDetails(String bookingId) => '$driverBookings/$bookingId';
+  static const String driverTripStatus = '$driverBookings/trip-status';
 
   // Driver Subscriptions
   static const String driverSubscriptionPlans = '$baseUrl/driver/subscription-plans';
   static const String driverSubscription = '$baseUrl/driver/subscription';
+
+  // Driver Profile
+  static const String driverProfile = '$baseUrl/driver/profile';
 }

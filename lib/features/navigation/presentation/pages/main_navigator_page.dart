@@ -36,7 +36,7 @@ class _MainNavigatorView extends StatelessWidget {
     final List<Widget> pages = [
       HomePage(customer: customer),
       TripPage(driverToken: customer.token),
-      ProfilePage(userName: customer.name),
+      ProfilePage(userName: customer.name, driverToken: customer.token),
     ];
 
     return BlocListener<AuthBloc, AuthState>(

@@ -33,6 +33,7 @@ import 'features/trip/data/repositories/trip_repository_impl.dart';
 import 'features/trip/domain/repositories/trip_repository.dart';
 import 'features/trip/domain/usecases/get_driver_booking_details_usecase.dart';
 import 'features/trip/domain/usecases/get_driver_bookings_usecase.dart';
+import 'features/trip/domain/usecases/update_trip_status_usecase.dart';
 import 'features/trip/presentation/bloc/trip_bloc.dart';
 import 'features/trip/presentation/bloc/trip_details_bloc.dart';
 import 'features/subscription/data/datasources/subscription_remote_data_source.dart';
@@ -46,6 +47,12 @@ import 'features/subscription_history/data/repositories/subscription_history_rep
 import 'features/subscription_history/domain/repositories/subscription_history_repository.dart';
 import 'features/subscription_history/domain/usecases/get_subscription_history_usecase.dart';
 import 'features/subscription_history/presentation/bloc/subscription_history_bloc.dart';
+import 'features/profile/data/datasources/profile_remote_datasource.dart';
+import 'features/profile/data/repositories/profile_repository_impl.dart';
+import 'features/profile/domain/repositories/profile_repository.dart';
+import 'features/profile/domain/usecases/get_driver_profile_usecase.dart';
+import 'features/profile/domain/usecases/get_profile_menu_usecase.dart';
+import 'features/profile/presentation/bloc/profile_bloc.dart';
 
 /// Service Locator / Dependency Injection Setup for Clean Architecture
 class InjectionContainer {
@@ -72,6 +79,7 @@ class InjectionContainer {
   // Trip UseCases
   static late final GetDriverBookingsUseCase getDriverBookingsUseCase;
   static late final GetDriverBookingDetailsUseCase getDriverBookingDetailsUseCase;
+  static late final UpdateTripStatusUseCase updateTripStatusUseCase;
 
   // Subscription Data Sources & Repositories
   static late final SubscriptionRemoteDataSource subscriptionRemoteDataSource;
@@ -110,6 +118,14 @@ class InjectionContainer {
   static late final SendNotificationUseCase sendNotificationUseCase;
   static late final GetFcmTokenUseCase getFcmTokenUseCase;
   static late final RefreshFcmTokenUseCase refreshFcmTokenUseCase;
+
+  // Profile Data Sources & Repositories
+  static late final ProfileRemoteDataSource profileRemoteDataSource;
+  static late final ProfileRepository profileRepository;
+
+  // Profile UseCases
+  static late final GetDriverProfileUseCase getDriverProfileUseCase;
+  static late final GetProfileMenuUseCase getProfileMenuUseCase;
 
   static void init() {
     // Core Services
@@ -162,6 +178,7 @@ class InjectionContainer {
     tripRepository = TripRepositoryImpl(remoteDataSource: tripRemoteDataSource);
     getDriverBookingsUseCase = GetDriverBookingsUseCase(tripRepository);
     getDriverBookingDetailsUseCase = GetDriverBookingDetailsUseCase(tripRepository);
+    updateTripStatusUseCase = UpdateTripStatusUseCase(tripRepository);
 
     // Subscription Data Sources & Repositories
     subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl();
@@ -178,6 +195,24 @@ class InjectionContainer {
     );
     getSubscriptionHistoryUseCase = GetSubscriptionHistoryUseCase(
       subscriptionHistoryRepository,
+    );
+
+    // Profile Data Sources & Repositories
+    profileRemoteDataSource = ProfileRemoteDataSourceImpl(
+      storageService: localStorageService,
+    );
+    profileRepository = ProfileRepositoryImpl(
+      remoteDataSource: profileRemoteDataSource,
+    );
+    getDriverProfileUseCase = GetDriverProfileUseCase(profileRepository);
+    getProfileMenuUseCase = GetProfileMenuUseCase();
+  }
+
+  static ProfileBloc createProfileBloc({String? driverToken}) {
+    return ProfileBloc(
+      getDriverProfileUseCase: getDriverProfileUseCase,
+      getProfileMenuUseCase: getProfileMenuUseCase,
+      driverToken: driverToken,
     );
   }
 
@@ -216,6 +251,7 @@ class InjectionContainer {
   static TripBloc createTripBloc({String? driverToken}) {
     return TripBloc(
       getDriverBookingsUseCase: getDriverBookingsUseCase,
+      updateTripStatusUseCase: updateTripStatusUseCase,
       tripRepository: tripRepository,
       remoteDataSource: tripRemoteDataSource,
       driverToken: driverToken,
@@ -231,11 +267,16 @@ class InjectionContainer {
     );
   }
 
-  static SubscriptionBloc createSubscriptionBloc({String? driverToken}) {
+  static SubscriptionBloc createSubscriptionBloc({
+    String? driverToken,
+    bool initialHasSubscription = false,
+  }) {
     return SubscriptionBloc(
       getSubscriptionPlansUseCase: getSubscriptionPlansUseCase,
       activateSubscriptionUseCase: activateSubscriptionUseCase,
+      getDriverProfileUseCase: getDriverProfileUseCase,
       driverToken: driverToken,
+      initialHasSubscription: initialHasSubscription,
     );
   }
 

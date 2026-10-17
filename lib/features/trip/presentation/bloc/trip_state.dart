@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/trip_entity.dart';
+import '../../domain/entities/trip_status_update_result.dart';
 
 class TripState extends Equatable {
   final bool isLoading;
@@ -9,6 +10,10 @@ class TripState extends Equatable {
   final String filterType;
   final String searchQuery;
   final String? errorMessage;
+  final String? updatingBookingId;
+  final String? statusSuccessMessage;
+  final String? statusErrorMessage;
+  final TripStatusUpdateResult? lastCompletedTripResult;
 
   const TripState({
     this.isLoading = false,
@@ -18,6 +23,10 @@ class TripState extends Equatable {
     this.filterType = 'All',
     this.searchQuery = '',
     this.errorMessage,
+    this.updatingBookingId,
+    this.statusSuccessMessage,
+    this.statusErrorMessage,
+    this.lastCompletedTripResult,
   });
 
   // Category counts
@@ -35,6 +44,13 @@ class TripState extends Equatable {
     String? searchQuery,
     String? errorMessage,
     bool clearError = false,
+    String? updatingBookingId,
+    bool clearUpdatingBookingId = false,
+    String? statusSuccessMessage,
+    String? statusErrorMessage,
+    bool clearStatusMessages = false,
+    TripStatusUpdateResult? lastCompletedTripResult,
+    bool clearLastCompletedTripResult = false,
   }) {
     return TripState(
       isLoading: isLoading ?? this.isLoading,
@@ -44,6 +60,18 @@ class TripState extends Equatable {
       filterType: filterType ?? this.filterType,
       searchQuery: searchQuery ?? this.searchQuery,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      updatingBookingId: clearUpdatingBookingId
+          ? null
+          : (updatingBookingId ?? this.updatingBookingId),
+      statusSuccessMessage: clearStatusMessages
+          ? null
+          : (statusSuccessMessage ?? this.statusSuccessMessage),
+      statusErrorMessage: clearStatusMessages
+          ? null
+          : (statusErrorMessage ?? this.statusErrorMessage),
+      lastCompletedTripResult: clearLastCompletedTripResult
+          ? null
+          : (lastCompletedTripResult ?? this.lastCompletedTripResult),
     );
   }
 
@@ -56,5 +84,9 @@ class TripState extends Equatable {
         filterType,
         searchQuery,
         errorMessage,
+        updatingBookingId,
+        statusSuccessMessage,
+        statusErrorMessage,
+        lastCompletedTripResult,
       ];
 }

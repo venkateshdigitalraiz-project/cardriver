@@ -43,3 +43,31 @@ class SearchTripsEvent extends TripEvent {
   @override
   List<Object?> get props => [query];
 }
+
+class UpdateTripStatusEvent extends TripEvent {
+  final String bookingId;
+  final String action;
+  final String? otp;
+  final double? actualDistance;
+  final String? token;
+
+  const UpdateTripStatusEvent({
+    required this.bookingId,
+    required this.action,
+    this.otp,
+    this.actualDistance,
+    this.token,
+  });
+
+  @override
+  List<Object?> get props => [bookingId, action, otp, actualDistance, token];
+}
+
+class DismissTripCompletionDialogEvent extends TripEvent {
+  const DismissTripCompletionDialogEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+

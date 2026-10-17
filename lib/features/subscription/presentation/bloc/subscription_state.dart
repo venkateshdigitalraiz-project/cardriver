@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../profile/domain/entities/driver_active_subscription_entity.dart';
 import '../../domain/entities/subscription_activation_entity.dart';
 import '../../domain/entities/subscription_plan_entity.dart';
 
@@ -12,6 +13,8 @@ class SubscriptionState extends Equatable {
   final bool isActivating;
   final SubscriptionActivationEntity? activationResult;
   final String? activationErrorMessage;
+  final bool hasSubscription;
+  final DriverActiveSubscriptionEntity? activeSubscription;
 
   const SubscriptionState({
     this.isLoading = false,
@@ -23,6 +26,8 @@ class SubscriptionState extends Equatable {
     this.isActivating = false,
     this.activationResult,
     this.activationErrorMessage,
+    this.hasSubscription = false,
+    this.activeSubscription,
   });
 
   /// Returns the currently selected plan object, or the first plan if available
@@ -51,6 +56,9 @@ class SubscriptionState extends Equatable {
     bool clearActivationResult = false,
     String? activationErrorMessage,
     bool clearActivationError = false,
+    bool? hasSubscription,
+    DriverActiveSubscriptionEntity? activeSubscription,
+    bool clearActiveSubscription = false,
   }) {
     return SubscriptionState(
       isLoading: isLoading ?? this.isLoading,
@@ -67,6 +75,10 @@ class SubscriptionState extends Equatable {
       activationErrorMessage: clearActivationError
           ? null
           : (activationErrorMessage ?? this.activationErrorMessage),
+      hasSubscription: hasSubscription ?? this.hasSubscription,
+      activeSubscription: clearActiveSubscription
+          ? null
+          : (activeSubscription ?? this.activeSubscription),
     );
   }
 
@@ -81,5 +93,7 @@ class SubscriptionState extends Equatable {
         isActivating,
         activationResult,
         activationErrorMessage,
+        hasSubscription,
+        activeSubscription,
       ];
 }

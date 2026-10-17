@@ -1,5 +1,8 @@
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../profile/domain/entities/driver_active_subscription_entity.dart';
+import '../../../profile/domain/entities/driver_profile_entity.dart';
+import '../../../profile/domain/usecases/get_driver_profile_usecase.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../../domain/usecases/activate_subscription_usecase.dart';
 import '../../domain/usecases/get_subscription_plans_usecase.dart';
@@ -9,13 +12,19 @@ import 'subscription_state.dart';
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final GetSubscriptionPlansUseCase getSubscriptionPlansUseCase;
   final ActivateSubscriptionUseCase activateSubscriptionUseCase;
+  final GetDriverProfileUseCase? getDriverProfileUseCase;
   final String? driverToken;
 
   SubscriptionBloc({
     required this.getSubscriptionPlansUseCase,
     required this.activateSubscriptionUseCase,
+    this.getDriverProfileUseCase,
     this.driverToken,
-  }) : super(const SubscriptionState(isLoading: true)) {
+    bool initialHasSubscription = false,
+  }) : super(SubscriptionState(
+          isLoading: true,
+          hasSubscription: initialHasSubscription,
+        )) {
     on<LoadSubscriptionPlansEvent>(_onLoadSubscriptionPlans);
     on<SelectSubscriptionPlanEvent>(_onSelectSubscriptionPlan);
     on<RefreshSubscriptionPlansEvent>(_onRefreshSubscriptionPlans);
@@ -28,7 +37,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     Emitter<SubscriptionState> emit,
   ) async {
     if (!event.silent) {
-      emit(state.copyWith(isLoading: true, clearError: true));
+      emit(state.copyWith(
+        isLoading: true,
+        clearError: true,
+        hasSubscription: event.hasSubscription ?? state.hasSubscription,
+      ));
     }
 
     try {
@@ -36,14 +49,36 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           driverToken ??
           SubscriptionRemoteDataSourceImpl.defaultDriverToken;
 
-      final plans = await getSubscriptionPlansUseCase(
+      final plansFuture = getSubscriptionPlansUseCase(
         GetSubscriptionPlansParams(token: token),
       );
 
+      final profileFuture = getDriverProfileUseCase != null
+          ? getDriverProfileUseCase!(GetDriverProfileParams(token: token))
+          : null;
+
+      final plans = await plansFuture;
+
+      DriverProfileEntity? profile;
+      if (profileFuture != null) {
+        try {
+          profile = await profileFuture;
+        } catch (e) {
+          log('⚠️ [SubscriptionBloc] Could not fetch profile status: $e');
+        }
+      }
+
+      final bool hasSub = profile?.hasSubscription ??
+          event.hasSubscription ??
+          state.hasSubscription;
+      final DriverActiveSubscriptionEntity? activeSub =
+          profile?.activeSubscription ?? state.activeSubscription;
+
       String? selectedId = state.selectedPlanId;
       if (selectedId == null || !plans.any((p) => p.id == selectedId)) {
-        // Default to first active plan or first available plan
-        if (plans.isNotEmpty) {
+        if (activeSub != null && plans.any((p) => p.id == activeSub.planId)) {
+          selectedId = activeSub.planId;
+        } else if (plans.isNotEmpty) {
           final firstActive = plans.firstWhere(
             (p) => p.isActive,
             orElse: () => plans.first,
@@ -58,6 +93,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           isRefreshing: false,
           plans: plans,
           selectedPlanId: selectedId,
+          hasSubscription: hasSub,
+          activeSubscription: activeSub,
           clearError: true,
         ),
       );
@@ -85,7 +122,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     Emitter<SubscriptionState> emit,
   ) async {
     emit(state.copyWith(isRefreshing: true, clearError: true));
-    add(LoadSubscriptionPlansEvent(token: event.token, silent: true));
+    add(LoadSubscriptionPlansEvent(
+      token: event.token,
+      silent: true,
+      hasSubscription: event.hasSubscription,
+    ));
   }
 
   Future<void> _onActivateSubscription(
@@ -111,9 +152,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         ),
       );
 
+      // Once activation succeeds, hasSubscription is true so "Activate Pass" is disabled
       emit(state.copyWith(
         clearIsActivating: true,
         activationResult: result,
+        hasSubscription: true,
         clearActivationError: true,
       ));
     } catch (e) {

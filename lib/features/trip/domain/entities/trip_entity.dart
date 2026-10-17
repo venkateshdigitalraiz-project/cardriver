@@ -49,6 +49,9 @@ class TripEntity extends Equatable {
   final String vehicleNumber;
   final bool isKmBased;
   final double distanceKm;
+  final double actualDistance;
+  final String tripStartedAt;
+  final String tripCompletedAt;
 
   const TripEntity({
     required this.id,
@@ -96,6 +99,9 @@ class TripEntity extends Equatable {
     this.vehicleNumber = '',
     this.isKmBased = false,
     this.distanceKm = 0.0,
+    this.actualDistance = 0.0,
+    this.tripStartedAt = '',
+    this.tripCompletedAt = '',
   });
 
   // ================= Backwards Compatibility Getters =================
@@ -176,17 +182,21 @@ class TripEntity extends Equatable {
   /// High-level filter status string: 'Upcoming', 'Completed', 'Cancelled', or other
   String get status {
     final s = bookingStatus.toLowerCase();
-    if (s == 'driver_assigned' || s == 'assigned' || s == 'accepted') {
+    if (s == 'driver_assigned' ||
+        s == 'assigned' ||
+        s == 'accepted' ||
+        s == 'reached' ||
+        s == 'driver_arrived' ||
+        s == 'started' ||
+        s == 'in_progress' ||
+        s == 'trip_started') {
       return 'Upcoming';
     }
-    if (s == 'completed') {
+    if (s == 'completed' || s == 'trip_completed') {
       return 'Completed';
     }
     if (s == 'cancelled' || s == 'canceled') {
       return 'Cancelled';
-    }
-    if (s == 'started' || s == 'in_progress' || s == 'trip_started') {
-      return 'In Progress';
     }
     return 'Upcoming';
   }
@@ -194,22 +204,101 @@ class TripEntity extends Equatable {
   // ================= Rich Display Getters =================
 
   /// Formatted total fare with currency symbol
-  String get formattedTotalFare => '₹${fare.toStringAsFixed(0)}';
+  String get formattedTotalFare {
+    if (fare <= 0) return '₹0';
+    if (fare == fare.roundToDouble()) {
+      return '₹${fare.toInt()}';
+    }
+    return '₹${fare.toStringAsFixed(1)}';
+  }
+
+  /// Formatted actual distance in km
+  String get formattedActualDistance =>
+      actualDistance > 0 ? '${actualDistance.toStringAsFixed(1)} km' : '';
+
+  /// Formatted trip completed time
+  String get formattedCompletedAt {
+    if (tripCompletedAt.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(tripCompletedAt).toLocal();
+      final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '$hour:$minute $period';
+    } catch (_) {
+      return tripCompletedAt;
+    }
+  }
+
+  /// Formatted trip started time
+  String get formattedStartedAt {
+    if (tripStartedAt.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(tripStartedAt).toLocal();
+      final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '$hour:$minute $period';
+    } catch (_) {
+      return tripStartedAt;
+    }
+  }
+
+  /// Formatted duration between tripStartedAt and tripCompletedAt
+  String get formattedCompletedDuration {
+    if (tripStartedAt.isNotEmpty && tripCompletedAt.isNotEmpty) {
+      try {
+        final start = DateTime.parse(tripStartedAt);
+        final end = DateTime.parse(tripCompletedAt);
+        final diff = end.difference(start);
+        final mins = diff.inMinutes;
+        if (mins < 60) {
+          return '$mins min${mins == 1 ? '' : 's'}';
+        }
+        final hours = mins ~/ 60;
+        final remMins = mins % 60;
+        return '${hours}h ${remMins}m';
+      } catch (_) {}
+    }
+    return durationHours > 0 ? '$durationHours hrs' : '';
+  }
 
   /// Formatted driver fee/earnings with currency symbol
   String get formattedDriverFee => '₹${driverFee.toStringAsFixed(0)}';
+
+  /// True if the driver has already reached / arrived at pickup
+  bool get isDriverArrived =>
+      bookingStatus.toLowerCase() == 'driver_arrived' ||
+      bookingStatus.toLowerCase() == 'reached';
+
+  /// True if the trip has started / is in progress
+  bool get isTripStarted =>
+      bookingStatus.toLowerCase() == 'trip_started' ||
+      bookingStatus.toLowerCase() == 'started' ||
+      bookingStatus.toLowerCase() == 'in_progress';
+
+  /// True if the trip is completed
+  bool get isTripCompleted =>
+      bookingStatus.toLowerCase() == 'completed' ||
+      bookingStatus.toLowerCase() == 'trip_completed';
 
   /// Human-friendly status badge label
   String get statusBadgeLabel {
     switch (bookingStatus.toLowerCase()) {
       case 'driver_assigned':
         return 'Driver Assigned';
+      case 'driver_arrived':
+      case 'reached':
+        return 'Reached';
       case 'started':
       case 'in_progress':
+      case 'trip_started':
         return 'Trip In Progress';
       case 'completed':
+      case 'trip_completed':
         return 'Completed';
       case 'cancelled':
+      case 'canceled':
         return 'Cancelled';
       default:
         return bookingStatus.replaceAll('_', ' ').toUpperCase();
@@ -242,6 +331,108 @@ class TripEntity extends Equatable {
       dropLng: dropLng,
       totalAmount: totalAmount,
       message: 'Active trip loaded',
+    );
+  }
+
+  TripEntity copyWith({
+    String? id,
+    String? bookingId,
+    String? userId,
+    String? driverId,
+    String? bookingMode,
+    String? serviceType,
+    String? tripType,
+    String? scheduledStartTime,
+    int? durationHours,
+    String? pickupAddress,
+    double? pickupLat,
+    double? pickupLng,
+    String? dropAddress,
+    double? dropLat,
+    double? dropLng,
+    String? vehicleType,
+    String? transmission,
+    String? vehicleOwnership,
+    int? numberOfPassengers,
+    double? baseAmount,
+    double? driverFee,
+    double? taxAmount,
+    double? totalAmount,
+    String? paymentMethod,
+    String? paymentStatus,
+    String? bookingStatus,
+    String? startOtp,
+    String? createdAt,
+    String? customerFirstName,
+    String? customerLastName,
+    String? customerPhone,
+    String? customerEmail,
+    String? customerAddress,
+    String? custId,
+    double? extraKmAmount,
+    double? driverAllowance,
+    double? platformFee,
+    double? discountAmount,
+    String? cancellationReason,
+    String? userNotes,
+    String? adminNotes,
+    String? updatedAt,
+    String? vehicleNumber,
+    bool? isKmBased,
+    double? distanceKm,
+    double? actualDistance,
+    String? tripStartedAt,
+    String? tripCompletedAt,
+  }) {
+    return TripEntity(
+      id: id ?? this.id,
+      bookingId: bookingId ?? this.bookingId,
+      userId: userId ?? this.userId,
+      driverId: driverId ?? this.driverId,
+      bookingMode: bookingMode ?? this.bookingMode,
+      serviceType: serviceType ?? this.serviceType,
+      tripType: tripType ?? this.tripType,
+      scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
+      durationHours: durationHours ?? this.durationHours,
+      pickupAddress: pickupAddress ?? this.pickupAddress,
+      pickupLat: pickupLat ?? this.pickupLat,
+      pickupLng: pickupLng ?? this.pickupLng,
+      dropAddress: dropAddress ?? this.dropAddress,
+      dropLat: dropLat ?? this.dropLat,
+      dropLng: dropLng ?? this.dropLng,
+      vehicleType: vehicleType ?? this.vehicleType,
+      transmission: transmission ?? this.transmission,
+      vehicleOwnership: vehicleOwnership ?? this.vehicleOwnership,
+      numberOfPassengers: numberOfPassengers ?? this.numberOfPassengers,
+      baseAmount: baseAmount ?? this.baseAmount,
+      driverFee: driverFee ?? this.driverFee,
+      taxAmount: taxAmount ?? this.taxAmount,
+      totalAmount: totalAmount ?? this.totalAmount,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      bookingStatus: bookingStatus ?? this.bookingStatus,
+      startOtp: startOtp ?? this.startOtp,
+      createdAt: createdAt ?? this.createdAt,
+      customerFirstName: customerFirstName ?? this.customerFirstName,
+      customerLastName: customerLastName ?? this.customerLastName,
+      customerPhone: customerPhone ?? this.customerPhone,
+      customerEmail: customerEmail ?? this.customerEmail,
+      customerAddress: customerAddress ?? this.customerAddress,
+      custId: custId ?? this.custId,
+      extraKmAmount: extraKmAmount ?? this.extraKmAmount,
+      driverAllowance: driverAllowance ?? this.driverAllowance,
+      platformFee: platformFee ?? this.platformFee,
+      discountAmount: discountAmount ?? this.discountAmount,
+      cancellationReason: cancellationReason ?? this.cancellationReason,
+      userNotes: userNotes ?? this.userNotes,
+      adminNotes: adminNotes ?? this.adminNotes,
+      updatedAt: updatedAt ?? this.updatedAt,
+      vehicleNumber: vehicleNumber ?? this.vehicleNumber,
+      isKmBased: isKmBased ?? this.isKmBased,
+      distanceKm: distanceKm ?? this.distanceKm,
+      actualDistance: actualDistance ?? this.actualDistance,
+      tripStartedAt: tripStartedAt ?? this.tripStartedAt,
+      tripCompletedAt: tripCompletedAt ?? this.tripCompletedAt,
     );
   }
 
@@ -351,6 +542,9 @@ class TripEntity extends Equatable {
       vehicleNumber: toS(json['vehicleNumber']),
       isKmBased: json['isKmBased'] == true,
       distanceKm: toD(json['distanceKm']),
+      actualDistance: toD(json['actualDistance']),
+      tripStartedAt: toS(json['tripStartedAt']),
+      tripCompletedAt: toS(json['tripCompletedAt']),
     );
   }
 
@@ -401,5 +595,8 @@ class TripEntity extends Equatable {
         vehicleNumber,
         isKmBased,
         distanceKm,
+        actualDistance,
+        tripStartedAt,
+        tripCompletedAt,
       ];
 }
