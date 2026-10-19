@@ -1,4 +1,4 @@
-import 'package:cardriver/features/onboarding/presentation/pages/welcome_page.dart';
+import 'package:cardriver/features/navigation/presentation/pages/main_navigator_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +9,7 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import 'driver_dashboard_page.dart';
 import 'register_page.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -61,9 +62,14 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _isOtpSentLocal = true;
       });
-      // Always send the digits-only phone to ensure server-side OTP is stored
-      // against the same format that verifyOtp will use.
-      context.read<AuthBloc>().add(SendOtpEvent(phone: phone));
+      // Send the digits-only phone and device FCM token for push notifications
+      final fcmToken = FirebaseMessagingService.cachedToken ?? '';
+      context.read<AuthBloc>().add(
+        SendOtpEvent(
+          phone: phone,
+          fcmToken: fcmToken,
+        ),
+      );
     }
   }
 
@@ -75,9 +81,7 @@ class _LoginPageState extends State<LoginPage> {
     }
     // Use digits-only phone — must match what was sent in sendOtp.
     final phone = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
-    context.read<AuthBloc>().add(
-      VerifyOtpEvent(phone: phone, otp: otp),
-    );
+    context.read<AuthBloc>().add(VerifyOtpEvent(phone: phone, otp: otp));
   }
 
   @override
@@ -117,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
             );
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (_) => WelcomePage(customer: state.customer!),
+                builder: (_) => MainNavigatorPage(customer: state.customer!),
               ),
               (route) => false,
             );

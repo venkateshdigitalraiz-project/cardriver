@@ -55,7 +55,7 @@ ThemeData createLightTheme() {
       style: AppButtonStyles.primaryDriverButton,
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: AppButtonStyles.outlinedDriverButton,
+      style: AppButtonStyles.outlinedDriverButtonLight,
     ),
     textButtonTheme: TextButtonThemeData(
       style: AppButtonStyles.secondaryGhostButton,

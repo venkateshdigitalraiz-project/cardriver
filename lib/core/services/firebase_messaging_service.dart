@@ -3,9 +3,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../firebase/firebase_options.dart';
 
-/// Top-level background message handler required by Firebase Messaging
+/// Top-level background message handler required by Firebase Messaging.
+/// Handles background and terminated state pushes for both data-only and notification messages.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -20,16 +22,78 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     } catch (_) {}
   }
 
-  final title = message.notification?.title ?? message.data['title'] ?? 'New Ride Notification';
-  final body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? '';
-  debugPrint('🔔 [Background FCM] Received: $title - $body');
+  final title = message.notification?.title ??
+      message.data['title']?.toString() ??
+      message.data['heading']?.toString() ??
+      message.data['subject']?.toString() ??
+      'New Ride Notification';
+
+  final body = message.notification?.body ??
+      message.data['body']?.toString() ??
+      message.data['message']?.toString() ??
+      message.data['content']?.toString() ??
+      message.data['description']?.toString() ??
+      'You have received an update';
+
+  debugPrint('🔔 [Background FCM] Received: id=${message.messageId}, title=$title, body=$body');
+
+  // If the push message is data-only (no system 'notification' object in FCM payload),
+  // Android will NOT display a status-bar notification by default.
+  // We trigger it via FlutterLocalNotificationsPlugin so the driver receives an alert banner, sound, & vibration.
+  if (message.notification == null) {
+    try {
+      final localNotifications = FlutterLocalNotificationsPlugin();
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwinSettings = DarwinInitializationSettings();
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+      );
+      await localNotifications.initialize(settings: initSettings);
+
+      final androidDetails = AndroidNotificationDetails(
+        'high_importance_channel',
+        'High Importance Notifications',
+        channelDescription: 'This channel is used for important ride alerts, updates, and messages.',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        channelShowBadge: true,
+        visibility: NotificationVisibility.public,
+        category: AndroidNotificationCategory.message,
+        styleInformation: BigTextStyleInformation(body),
+      );
+
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
+
+      await localNotifications.show(
+        id: message.hashCode,
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: message.data['type']?.toString() ?? 'general',
+      );
+    } catch (e) {
+      debugPrint('⚠️ [Background FCM Notification Error] $e');
+    }
+  }
 }
 
 /// Core service encapsulating Firebase Cloud Messaging (FCM) operations:
 /// - Safe multiplatform initialization with driverbooking-4b700 credentials
 /// - High-importance notification channel registration for Android
-/// - Local heads-up notifications display for foreground messages
+/// - Local heads-up notifications display for foreground and background messages
 /// - Device FCM push token retrieval and token refresh stream
+/// - Topic subscriptions ('drivers', 'all', 'driver', 'rides') for ride dispatches
 /// - Receiving foreground, background, and opened-app messages
 class FirebaseMessagingService {
   static final FirebaseMessagingService _instance = FirebaseMessagingService._internal();
@@ -92,10 +156,10 @@ class FirebaseMessagingService {
 
     if (_isInitialized) {
       try {
-        // 3. Register background message handler
+        // 3. Register top-level background message handler
         FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-        // 4. Request user notification permissions
+        // 4. Request user notification permissions (including Android 13+)
         await requestPermission();
 
         // 5. Set foreground presentation options
@@ -105,10 +169,21 @@ class FirebaseMessagingService {
           sound: true,
         );
 
-        // 6. Retrieve device FCM token
+        // 6. Subscribe to broadcast topics for dispatch alerts
+        try {
+          await FirebaseMessaging.instance.subscribeToTopic('all');
+          await FirebaseMessaging.instance.subscribeToTopic('drivers');
+          await FirebaseMessaging.instance.subscribeToTopic('driver');
+          await FirebaseMessaging.instance.subscribeToTopic('rides');
+          debugPrint('✅ [FCM Topics] Subscribed to "all", "drivers", "driver", and "rides"');
+        } catch (e) {
+          debugPrint('⚠️ [FCM Topics] Failed to subscribe: $e');
+        }
+
+        // 7. Retrieve device FCM token
         await _retrieveFcmToken();
 
-        // 7. Setup listeners for foreground, background tap, and token refresh
+        // 8. Setup listeners for foreground, background tap, and token refresh
         _setupListeners();
       } catch (e) {
         debugPrint('⚠️ [FCM setup notice]: $e');
@@ -116,7 +191,7 @@ class FirebaseMessagingService {
     }
   }
 
-  /// Initialize local notification channels
+  /// Initialize local notification channels and permissions
   Future<void> _initLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwinSettings = DarwinInitializationSettings(
@@ -142,6 +217,11 @@ class FirebaseMessagingService {
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidImplementation != null) {
       await androidImplementation.createNotificationChannel(_channel);
+      try {
+        await androidImplementation.requestNotificationsPermission();
+      } catch (e) {
+        debugPrint('⚠️ [LocalNotification Permission notice]: $e');
+      }
     }
   }
 
@@ -152,38 +232,45 @@ class FirebaseMessagingService {
     required String body,
     String? payload,
   }) async {
-    final notificationId = id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    try {
+      final notificationId = id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
 
-    final androidDetails = AndroidNotificationDetails(
-      _channel.id,
-      _channel.name,
-      channelDescription: _channel.description,
-      importance: Importance.max,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-      playSound: true,
-      enableVibration: true,
-      styleInformation: BigTextStyleInformation(body),
-    );
+      final androidDetails = AndroidNotificationDetails(
+        _channel.id,
+        _channel.name,
+        channelDescription: _channel.description,
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        channelShowBadge: true,
+        visibility: NotificationVisibility.public,
+        category: AndroidNotificationCategory.message,
+        styleInformation: BigTextStyleInformation(body),
+      );
 
-    const darwinDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+      const darwinDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
 
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: darwinDetails,
-    );
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: darwinDetails,
+      );
 
-    await _localNotificationsPlugin.show(
-      id: notificationId,
-      title: title,
-      body: body,
-      notificationDetails: details,
-      payload: payload,
-    );
+      await _localNotificationsPlugin.show(
+        id: notificationId,
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('⚠️ [showNotification Error]: $e');
+    }
   }
 
   static bool _isRequestingPermission = false;
@@ -196,11 +283,23 @@ class FirebaseMessagingService {
       final messaging = FirebaseMessaging.instance;
       final settings = await messaging.requestPermission(
         alert: true,
+        announcement: false,
         badge: true,
-        sound: true,
+        carPlay: false,
+        criticalAlert: true,
         provisional: false,
+        sound: true,
       );
       debugPrint('🔔 [FCM Permission] Authorization status: ${settings.authorizationStatus}');
+
+      final androidImplementation = _localNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        try {
+          await androidImplementation.requestNotificationsPermission();
+        } catch (_) {}
+      }
+
       return settings;
     } catch (e) {
       debugPrint('Error requesting notification permission: $e');
@@ -212,29 +311,60 @@ class FirebaseMessagingService {
 
   /// Retrieve the device's FCM push token
   Future<String?> getFcmToken() async {
-    if (_cachedToken != null) return _cachedToken;
+    if (_cachedToken != null && _cachedToken!.isNotEmpty) return _cachedToken;
     return await _retrieveFcmToken();
   }
 
   Future<String?> _retrieveFcmToken() async {
+    // 1. Try reading stored token from SharedPreferences first
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString('fcm_token') ?? prefs.getString('fcmToken');
+      if (stored != null && stored.isNotEmpty) {
+        _cachedToken = stored;
+      }
+    } catch (_) {}
+
     if (!_isInitialized) {
-      _cachedToken = 'fcm_mock_token_${DateTime.now().millisecondsSinceEpoch}';
       return _cachedToken;
     }
 
+    // 2. Fetch live token from Firebase Messaging
     try {
       final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         _cachedToken = token;
         debugPrint('🔑 [FCM Token] $token');
-      } else {
-        _cachedToken = 'fcm_local_token_${DateTime.now().millisecondsSinceEpoch}';
+        await _saveTokenToPreferences(token);
       }
       return _cachedToken;
     } catch (e) {
       debugPrint('⚠️ Error getting FCM token: $e');
-      _cachedToken = 'fcm_local_token_${DateTime.now().millisecondsSinceEpoch}';
       return _cachedToken;
+    }
+  }
+
+  /// Persists the active FCM token into SharedPreferences under 'fcm_token' and 'fcmToken'
+  static Future<void> _saveTokenToPreferences(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_token', token);
+      await prefs.setString('fcmToken', token);
+      debugPrint('💾 [FCM] Saved FCM token to SharedPreferences: $token');
+    } catch (e) {
+      debugPrint('⚠️ [FCM] Error saving token to SharedPreferences: $e');
+    }
+  }
+
+  /// Removes the stored FCM token from SharedPreferences
+  static Future<void> _clearTokenFromPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('fcm_token');
+      await prefs.remove('fcmToken');
+      debugPrint('🗑️ [FCM] Cleared FCM token from SharedPreferences');
+    } catch (e) {
+      debugPrint('⚠️ [FCM] Error clearing token from SharedPreferences: $e');
     }
   }
 
@@ -243,20 +373,35 @@ class FirebaseMessagingService {
     try {
       // 1. Foreground message stream
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        final title = message.notification?.title ?? message.data['title'] ?? 'New Notification';
-        final body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? '';
-        debugPrint('🔔 [Foreground FCM]: $title - $body');
+        try {
+          final title = message.notification?.title ??
+              message.data['title']?.toString() ??
+              message.data['heading']?.toString() ??
+              message.data['subject']?.toString() ??
+              'New Notification';
 
-        // Show heads-up alert banner on device
-        showNotification(
-          id: message.hashCode,
-          title: title,
-          body: body,
-          payload: message.data['type'] ?? 'general',
-        );
+          final body = message.notification?.body ??
+              message.data['body']?.toString() ??
+              message.data['message']?.toString() ??
+              message.data['content']?.toString() ??
+              message.data['description']?.toString() ??
+              '';
 
-        // Broadcast to stream listeners (NotificationBloc)
-        _messageStreamController.add(message);
+          debugPrint('🔔 [Foreground FCM]: $title - $body');
+
+          // Show heads-up alert banner on device
+          showNotification(
+            id: message.hashCode,
+            title: title,
+            body: body,
+            payload: message.data['type']?.toString() ?? 'general',
+          );
+
+          // Broadcast to stream listeners (NotificationBloc)
+          _messageStreamController.add(message);
+        } catch (e) {
+          debugPrint('⚠️ [Foreground FCM listen error]: $e');
+        }
       });
 
       // 2. Message opened app from background
@@ -265,11 +410,12 @@ class FirebaseMessagingService {
         _messageStreamController.add(message);
       });
 
-      // 3. Token refresh
-      FirebaseMessaging.instance.onTokenRefresh.listen((String newToken) {
+      // 3. Token refresh stream
+      FirebaseMessaging.instance.onTokenRefresh.listen((String newToken) async {
         _cachedToken = newToken;
         _tokenRefreshStreamController.add(newToken);
         debugPrint('🔑 [FCM Token Refreshed]: $newToken');
+        await _saveTokenToPreferences(newToken);
       });
 
       // 4. Initial message when launched from terminated state
@@ -299,11 +445,14 @@ class FirebaseMessagingService {
     }
 
     _cachedToken = null;
+    await _clearTokenFromPreferences();
+
     final newToken = await _retrieveFcmToken();
-    if (newToken != null) {
+    if (newToken != null && newToken.isNotEmpty) {
       _tokenRefreshStreamController.add(newToken);
+      await _saveTokenToPreferences(newToken);
     }
-    debugPrint('🔄 [FCM] New token generated after logout: $newToken');
+    debugPrint('🔄 [FCM] New token generated and saved in SharedPreferences after logout: $newToken');
     return newToken;
   }
 

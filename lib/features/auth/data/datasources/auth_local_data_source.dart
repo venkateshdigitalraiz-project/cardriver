@@ -10,6 +10,9 @@ abstract class AuthLocalDataSource {
   Future<void> cacheDriver(DriverModel driver);
   Future<DriverModel?> getCachedDriver();
   Future<void> clearCache();
+  Future<void> saveFcmToken(String fcmToken);
+  Future<String?> getFcmToken();
+  Future<void> clearFcmToken();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -135,5 +138,20 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     _cachedCustomer = null;
     _cachedDriver = null;
     await _storageService.clearLoginData();
+  }
+
+  @override
+  Future<void> saveFcmToken(String fcmToken) async {
+    await _storageService.saveFcmToken(fcmToken);
+  }
+
+  @override
+  Future<String?> getFcmToken() async {
+    return await _storageService.getFcmToken();
+  }
+
+  @override
+  Future<void> clearFcmToken() async {
+    await _storageService.clearFcmToken();
   }
 }

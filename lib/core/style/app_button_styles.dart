@@ -38,6 +38,16 @@ class AppButtonStyles {
     textStyle: AppTypography.buttonSecondary(color: AppColors.textPrimaryDark).copyWith(inherit: true),
   );
 
+  static ButtonStyle outlinedDriverButtonLight = OutlinedButton.styleFrom(
+    foregroundColor: AppColors.textPrimaryLight,
+    side: const BorderSide(color: AppColors.lightCardBorder, width: 1.5),
+    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+    shape: RoundedRectangleBorder(
+      borderRadius: AppSpacing.roundedMd,
+    ),
+    textStyle: AppTypography.buttonSecondary(color: AppColors.textPrimaryLight).copyWith(inherit: true),
+  );
+
   static ButtonStyle socialAuthButton = OutlinedButton.styleFrom(
     backgroundColor: AppColors.darkCard,
     foregroundColor: AppColors.textPrimaryDark,

@@ -33,11 +33,12 @@ class LoginWithEmailEvent extends AuthEvent {
 
 class SendOtpEvent extends AuthEvent {
   final String phone;
+  final String? fcmToken;
 
-  const SendOtpEvent({required this.phone});
+  const SendOtpEvent({required this.phone, this.fcmToken});
 
   @override
-  List<Object?> get props => [phone];
+  List<Object?> get props => [phone, fcmToken];
 }
 
 class VerifyOtpEvent extends AuthEvent {

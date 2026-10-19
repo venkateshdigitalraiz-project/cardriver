@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_typography.dart';
 import '../../../../injection_container.dart';
-import '../../../active_ride/presentation/pages/active_ride_page.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../bloc/trip_details_bloc.dart';
 import '../bloc/trip_details_event.dart';
@@ -171,15 +170,10 @@ class _TripDetailsView extends StatelessWidget {
                   // 6. Detailed Fare Breakdown Card
                   _buildFareBreakdownCard(trip),
 
-                  const SizedBox(height: 16),
-
-                  // 7. Booking Timestamps & Audit Card
-                  _buildAuditCard(trip),
-
                   const SizedBox(height: 24),
 
                   // 8. Action Buttons
-                  _buildActionButtons(context, trip),
+                  //    _buildActionButtons(context, trip),
                 ],
               ),
             ),
@@ -320,31 +314,31 @@ class _TripDetailsView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total Customer Fare',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      trip.formattedTotalFare,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Expanded(
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       Text(
+              //         'Total Customer Fare',
+              //         style: TextStyle(
+              //           fontSize: 12,
+              //           fontWeight: FontWeight.w500,
+              //           color: Colors.grey.shade600,
+              //         ),
+              //       ),
+              //       const SizedBox(height: 4),
+              //       Text(
+              //         trip.formattedTotalFare,
+              //         style: const TextStyle(
+              //           fontSize: 28,
+              //           fontWeight: FontWeight.w800,
+              //           color: AppColors.primary,
+              //           height: 1.1,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
               if (trip.driverFee > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -360,7 +354,7 @@ class _TripDetailsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       const Text(
-                        'Your Earnings',
+                        'Trip Earnings',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -720,88 +714,88 @@ class _TripDetailsView extends StatelessWidget {
           const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
           const SizedBox(height: 10),
 
-          if (trip.customerPhone.isNotEmpty)
-            _buildCustomerDetailRow(
-              Icons.phone_outlined,
-              'Phone',
-              trip.customerPhone,
-              trailing: TextButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Calling ${trip.customerPhone}...'),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.call, size: 14),
-                label: const Text('Call'),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF10B981),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                ),
-              ),
-            ),
-          if (trip.customerEmail.isNotEmpty)
-            _buildCustomerDetailRow(
-              Icons.email_outlined,
-              'Email',
-              trip.customerEmail,
-            ),
-          if (trip.customerAddress.isNotEmpty)
-            _buildCustomerDetailRow(
-              Icons.location_city_rounded,
-              'City/Location',
-              trip.customerAddress.trim(),
-            ),
-          if (trip.userNotes.isNotEmpty)
-            _buildCustomerDetailRow(
-              Icons.note_alt_outlined,
-              'Notes',
-              trip.userNotes,
-            ),
+          // if (trip.customerPhone.isNotEmpty)
+          //   _buildCustomerDetailRow(
+          //     Icons.phone_outlined,
+          //     'Phone',
+          //     trip.customerPhone,
+          //     trailing: TextButton.icon(
+          //       onPressed: () {
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           SnackBar(
+          //             content: Text('Calling ${trip.customerPhone}...'),
+          //             behavior: SnackBarBehavior.floating,
+          //             duration: const Duration(seconds: 1),
+          //           ),
+          //         );
+          //       },
+          //       icon: const Icon(Icons.call, size: 14),
+          //       label: const Text('Call'),
+          //       style: TextButton.styleFrom(
+          //         foregroundColor: const Color(0xFF10B981),
+          //         padding: const EdgeInsets.symmetric(
+          //           horizontal: 10,
+          //           vertical: 4,
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // if (trip.customerEmail.isNotEmpty)
+          //   _buildCustomerDetailRow(
+          //     Icons.email_outlined,
+          //     'Email',
+          //     trip.customerEmail,
+          //   ),
+          // if (trip.customerAddress.isNotEmpty)
+          //   _buildCustomerDetailRow(
+          //     Icons.location_city_rounded,
+          //     'City/Location',
+          //     trip.customerAddress.trim(),
+          //   ),
+          // if (trip.userNotes.isNotEmpty)
+          //   _buildCustomerDetailRow(
+          //     Icons.note_alt_outlined,
+          //     'Notes',
+          //     trip.userNotes,
+          //   ),
         ],
       ),
     );
   }
 
-  Widget _buildCustomerDetailRow(
-    IconData icon,
-    String label,
-    String value, {
-    Widget? trailing,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, size: 15, color: Colors.grey.shade500),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimaryLight,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          ?trailing,
-        ],
-      ),
-    );
-  }
+  // Widget _buildCustomerDetailRow(
+  //   IconData icon,
+  //   String label,
+  //   String value, {
+  //   Widget? trailing,
+  // }) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 4),
+  //     child: Row(
+  //       crossAxisAlignment: CrossAxisAlignment.center,
+  //       children: [
+  //         Icon(icon, size: 15, color: Colors.grey.shade500),
+  //         const SizedBox(width: 8),
+  //         Text(
+  //           '$label: ',
+  //           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+  //         ),
+  //         Expanded(
+  //           child: Text(
+  //             value,
+  //             style: const TextStyle(
+  //               fontSize: 12,
+  //               fontWeight: FontWeight.w600,
+  //               color: AppColors.textPrimaryLight,
+  //             ),
+  //             overflow: TextOverflow.ellipsis,
+  //           ),
+  //         ),
+  //         ?trailing,
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // ================= 5. Vehicle Specifications Card =================
 
@@ -1067,149 +1061,75 @@ class _TripDetailsView extends StatelessWidget {
     );
   }
 
-  // ================= 7. Audit & Timestamps Card =================
-
-  Widget _buildAuditCard(TripEntity trip) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.history_toggle_off_rounded,
-                size: 16,
-                color: Colors.grey.shade600,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Booking Information',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (trip.formattedCreatedAt.isNotEmpty)
-            _buildAuditRow('Created On', trip.formattedCreatedAt),
-          if (trip.formattedUpdatedAt.isNotEmpty)
-            _buildAuditRow('Last Updated', trip.formattedUpdatedAt),
-          _buildAuditRow(
-            'Booking Mode',
-            '${trip.bookingMode.toUpperCase()} (${trip.isKmBased ? "KM Based" : "Hourly"})',
-          ),
-          if (trip.cancellationReason.isNotEmpty)
-            _buildAuditRow('Cancellation Reason', trip.cancellationReason),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAuditRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimaryLight,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ================= 8. Actions =================
 
-  Widget _buildActionButtons(BuildContext context, TripEntity trip) {
-    final isUpcoming = trip.status == 'Upcoming';
+  // Widget _buildActionButtons(BuildContext context, TripEntity trip) {
+  //   final isUpcoming = trip.status == 'Upcoming';
 
-    return Column(
-      children: [
-        if (isUpcoming) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ActiveRidePage(
-                      acceptedRide: trip.toAcceptedRideEntity(),
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.navigation_rounded, size: 20),
-              label: const Text(
-                'Start Trip / Open Live Navigation',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
+  //   return Column(
+  //     children: [
+  //       if (isUpcoming) ...[
+  //         SizedBox(
+  //           width: double.infinity,
+  //           child: ElevatedButton.icon(
+  //             onPressed: () {
+  //               Navigator.push(
+  //                 context,
+  //                 MaterialPageRoute(
+  //                   builder: (_) => ActiveRidePage(
+  //                     acceptedRide: trip.toAcceptedRideEntity(),
+  //                   ),
+  //                 ),
+  //               );
+  //             },
+  //             icon: const Icon(Icons.navigation_rounded, size: 20),
+  //             label: const Text(
+  //               'Start Trip / Open Live Navigation',
+  //               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+  //             ),
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: AppColors.primary,
+  //               foregroundColor: Colors.white,
+  //               padding: const EdgeInsets.symmetric(vertical: 14),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               elevation: 0,
+  //             ),
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //       ],
 
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Support ticket feature opened.'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            icon: const Icon(Icons.help_outline_rounded, size: 18),
-            label: const Text(
-              'Report an Issue / Help Support',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              foregroundColor: AppColors.textPrimaryLight,
-              side: BorderSide(color: Colors.grey.shade300),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  //       SizedBox(
+  //         width: double.infinity,
+  //         child: OutlinedButton.icon(
+  //           onPressed: () {
+  //             ScaffoldMessenger.of(context).showSnackBar(
+  //               const SnackBar(
+  //                 content: Text('Support ticket feature opened.'),
+  //                 behavior: SnackBarBehavior.floating,
+  //               ),
+  //             );
+  //           },
+  //           icon: const Icon(Icons.help_outline_rounded, size: 18),
+  //           label: const Text(
+  //             'Report an Issue / Help Support',
+  //             style: TextStyle(fontWeight: FontWeight.w600),
+  //           ),
+  //           style: OutlinedButton.styleFrom(
+  //             padding: const EdgeInsets.symmetric(vertical: 14),
+  //             foregroundColor: AppColors.textPrimaryLight,
+  //             side: BorderSide(color: Colors.grey.shade300),
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   // ================= Skeletons & Errors =================
 

@@ -123,7 +123,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onSendOtp(SendOtpEvent event, Emitter<AuthState> emit) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
-      await sendOtpUseCase(SendOtpParams(phone: event.phone));
+      await sendOtpUseCase(
+        SendOtpParams(
+          phone: event.phone,
+          fcmToken: event.fcmToken,
+        ),
+      );
       emit(
         state.copyWith(
           status: AuthStatus.otpSent,

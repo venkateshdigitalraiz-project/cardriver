@@ -42,9 +42,19 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> sendOtp({required String phone}) async {
+  Future<void> sendOtp({required String phone, String? fcmToken}) async {
     try {
-      await remoteDataSource.sendOtp(phone: phone);
+      String? token = fcmToken;
+      if (token == null || token.isEmpty) {
+        try {
+          token = await messagingService?.getFcmToken() ??
+              FirebaseMessagingService.cachedToken ??
+              '';
+        } catch (_) {
+          token = '';
+        }
+      }
+      await remoteDataSource.sendOtp(phone: phone, fcmToken: token);
     } on AuthException {
       rethrow;
     } catch (e) {
@@ -230,9 +240,15 @@ class AuthRepositoryImpl implements AuthRepository {
     await localDataSource.clearCache();
     try {
       debugPrint(
-        '🔒 [AuthRepository] Logging out and refreshing device push token...',
+        '🔒 [AuthRepository] Logging out, clearing old FCM token and generating a new token...',
       );
-      await messagingService?.refreshFcmToken();
+      final newToken = await messagingService?.refreshFcmToken();
+      if (newToken != null && newToken.isNotEmpty) {
+        await localDataSource.saveFcmToken(newToken);
+        debugPrint(
+          '💾 [AuthRepository] Saved new FCM token into SharedPreferences: $newToken',
+        );
+      }
     } catch (e) {
       debugPrint('⚠️ [AuthRepository] Notice refreshing token on logout: $e');
     }

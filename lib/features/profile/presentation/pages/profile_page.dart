@@ -30,9 +30,9 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => InjectionContainer.createProfileBloc(
-        driverToken: driverToken,
-      )..add(LoadProfileEvent(token: driverToken)),
+      create: (context) =>
+          InjectionContainer.createProfileBloc(driverToken: driverToken)
+            ..add(LoadProfileEvent(token: driverToken)),
       child: _ProfileView(userName: userName, driverToken: driverToken),
     );
   }
@@ -63,10 +63,12 @@ class _ProfileView extends StatelessWidget {
         final displayName = profile?.fullName ?? userName;
         final driverId = profile?.displayDriverId ?? '';
         final isVerified = profile?.isVerified ?? true;
-        final hasSubscription =
-            (state is ProfileLoaded) ? state.hasSubscription : false;
-        final activeSub =
-            (state is ProfileLoaded) ? state.activeSubscription : null;
+        final hasSubscription = (state is ProfileLoaded)
+            ? state.hasSubscription
+            : false;
+        final activeSub = (state is ProfileLoaded)
+            ? state.activeSubscription
+            : null;
 
         return Container(
           color: const Color(0xFF0066FF), // Dark blue background for header
@@ -94,11 +96,14 @@ class _ProfileView extends StatelessWidget {
                     const Spacer(),
                     IconButton(
                       tooltip: 'Refresh Profile',
-                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                      ),
                       onPressed: () {
                         context.read<ProfileBloc>().add(
-                              RefreshProfileEvent(token: driverToken),
-                            );
+                          RefreshProfileEvent(token: driverToken),
+                        );
                       },
                     ),
                   ],
@@ -205,447 +210,465 @@ class _ProfileView extends StatelessWidget {
                             ),
                           ],
                           const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 18),
-                              const SizedBox(width: 4),
-                              const Text(
-                                '4.8',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '(124 rides)',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Safe Rides  •  Punctual  •  Professional',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
+
+                          //   children: [
+                          //     const Icon(Icons.star,
+                          //         color: Colors.amber, size: 18),
+                          //     const SizedBox(width: 4),
+                          //     const Text(
+                          //       '4.8',
+                          //       style: TextStyle(
+                          //         color: Colors.white,
+                          //         fontWeight: FontWeight.bold,
+                          //         fontSize: 16,
+                          //       ),
+                          //     ),
+                          //     const SizedBox(width: 4),
+                          //     Text(
+                          //       '(124 rides)',
+                          //       style: TextStyle(
+                          //         color: Colors.white70,
+                          //         fontSize: 12,
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
+                          // const SizedBox(height: 6),
+                          // const Text(
+                          //   'Safe Rides  •  Punctual  •  Professional',
+                          //   style: TextStyle(
+                          //     color: Colors.white70,
+                          //     fontSize: 12,
+                          //   ),
+                          // ),
                         ],
                       ),
-                    ),
+                    ), // Row(
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-          // White Content Area
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC), // light grey/white background
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  context.read<ProfileBloc>().add(
+              // White Content Area
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8FAFC), // light grey/white background
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<ProfileBloc>().add(
                         RefreshProfileEvent(token: driverToken),
                       );
-                },
-                color: const Color(0xFF0066FF),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Stats Row
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                    },
+                    color: const Color(0xFF0066FF),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          // Stats Row
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildStatItem(
-                              Icons.directions_car,
-                              'Total Rides',
-                              '124',
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildStatItem(
+                                  Icons.directions_car,
+                                  'Total Rides',
+                                  '124',
+                                ),
+                                _buildStatItem(Icons.star, 'Rating', '4.8'),
+                                _buildStatItem(
+                                  Icons.calendar_today,
+                                  'Experience',
+                                  '3 Years',
+                                ),
+                                _buildStatItem(
+                                  Icons.verified_user,
+                                  'Verification',
+                                  isVerified ? 'Completed' : 'Pending',
+                                  valueColor: isVerified
+                                      ? const Color(0xFF10B981)
+                                      : Colors.orange,
+                                ),
+                              ],
                             ),
-                            _buildStatItem(Icons.star, 'Rating', '4.8'),
-                            _buildStatItem(
-                              Icons.calendar_today,
-                              'Experience',
-                              '3 Years',
-                            ),
-                            _buildStatItem(
-                              Icons.verified_user,
-                              'Verification',
-                              isVerified ? 'Completed' : 'Pending',
-                              valueColor: isVerified
-                                  ? const Color(0xFF10B981)
-                                  : Colors.orange,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                          ),
+                          const SizedBox(height: 16),
 
-                      // Subscription Pass Status Card
-                      _buildSubscriptionCard(
-                        context,
-                        hasSubscription: hasSubscription,
-                        sub: activeSub,
-                        driverToken: driverToken,
-                      ),
-                      const SizedBox(height: 20),
+                          // Subscription Pass Status Card
+                          _buildSubscriptionCard(
+                            context,
+                            hasSubscription: hasSubscription,
+                            sub: activeSub,
+                            driverToken: driverToken,
+                          ),
+                          const SizedBox(height: 20),
 
-                      // Menu List (BlocBuilder)
-                      BlocBuilder<ProfileBloc, ProfileState>(
-                        builder: (context, menuState) {
-                          final items = (menuState is ProfileLoaded)
-                              ? menuState.menuItems
-                              : (state is ProfileLoaded)
+                          // Menu List (BlocBuilder)
+                          BlocBuilder<ProfileBloc, ProfileState>(
+                            builder: (context, menuState) {
+                              final items = (menuState is ProfileLoaded)
+                                  ? menuState.menuItems
+                                  : (state is ProfileLoaded)
                                   ? state.menuItems
                                   : const [];
 
-                          if (items.isNotEmpty) {
-                            return Column(
-                              children: items.map((item) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Material(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: Colors.grey.shade200,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                              if (items.isNotEmpty) {
+                                return Column(
+                                  children: items.map((item) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
                                       ),
-                                      child: ListTile(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 4,
-                                        ),
-                                        leading: Icon(
-                                          item.icon,
-                                          color: const Color(0xFF0066FF),
-                                        ),
-                                        title: Text(
-                                          item.title,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E293B),
+                                      child: Material(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.grey.shade200,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: ListTile(
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 4,
+                                                ),
+                                            leading: Icon(
+                                              item.icon,
+                                              color: const Color(0xFF0066FF),
+                                            ),
+                                            title: Text(
+                                              item.title,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF1E293B),
+                                              ),
+                                            ),
+                                            subtitle: Text(
+                                              item.subtitle,
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            trailing: const Icon(
+                                              Icons.chevron_right,
+                                              color: Colors.grey,
+                                            ),
+                                            onTap: () {
+                                              if (item.title == 'Documents') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const DocumentsPage(),
+                                                  ),
+                                                );
+                                              } else if (item.title ==
+                                                  'Notifications') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const NotificationsPage(),
+                                                  ),
+                                                );
+                                              } else if (item.title ==
+                                                  'Rewards') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const RewardsPage(),
+                                                  ),
+                                                );
+                                              } else if (item.title ==
+                                                  'Subscription') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SubscriptionPage(
+                                                          hasSubscription:
+                                                              hasSubscription,
+                                                          driverToken:
+                                                              driverToken,
+                                                        ),
+                                                  ),
+                                                ).then((_) {
+                                                  context
+                                                      .read<ProfileBloc>()
+                                                      .add(
+                                                        RefreshProfileEvent(
+                                                          token: driverToken,
+                                                        ),
+                                                      );
+                                                });
+                                              } else if (item.title ==
+                                                  'Subscription History') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SubscriptionHistoryPage(
+                                                          driverToken:
+                                                              driverToken,
+                                                        ),
+                                                  ),
+                                                ).then((_) {
+                                                  context
+                                                      .read<ProfileBloc>()
+                                                      .add(
+                                                        RefreshProfileEvent(
+                                                          token: driverToken,
+                                                        ),
+                                                      );
+                                                });
+                                              } else if (item.title ==
+                                                  'My Tickets') {
+                                                _showMyTicketsSheet(context);
+                                              } else if (item.title ==
+                                                  'Terms & Conditions') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const LegalPage(
+                                                          pageType:
+                                                              LegalPageType
+                                                                  .terms,
+                                                        ),
+                                                  ),
+                                                );
+                                              } else if (item.title ==
+                                                  'Privacy Policy') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const LegalPage(
+                                                          pageType:
+                                                              LegalPageType
+                                                                  .privacy,
+                                                        ),
+                                                  ),
+                                                );
+                                              }
+                                            },
                                           ),
                                         ),
-                                        subtitle: Text(
-                                          item.subtitle,
-                                          style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        trailing: const Icon(
-                                          Icons.chevron_right,
-                                          color: Colors.grey,
-                                        ),
-                                        onTap: () {
-                                          if (item.title == 'Documents') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const DocumentsPage(),
-                                              ),
-                                            );
-                                          } else if (item.title ==
-                                              'Notifications') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const NotificationsPage(),
-                                              ),
-                                            );
-                                          } else if (item.title == 'Rewards') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const RewardsPage(),
-                                              ),
-                                            );
-                                          } else if (item.title ==
-                                              'Subscription') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    SubscriptionPage(
-                                                  hasSubscription:
-                                                      hasSubscription,
-                                                  driverToken: driverToken,
-                                                ),
-                                              ),
-                                            ).then((_) {
-                                              context.read<ProfileBloc>().add(
-                                                    RefreshProfileEvent(
-                                                      token: driverToken,
-                                                    ),
-                                                  );
-                                            });
-                                          } else if (item.title ==
-                                              'Subscription History') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    SubscriptionHistoryPage(
-                                                  driverToken: driverToken,
-                                                ),
-                                              ),
-                                            ).then((_) {
-                                              context.read<ProfileBloc>().add(
-                                                    RefreshProfileEvent(
-                                                      token: driverToken,
-                                                    ),
-                                                  );
-                                            });
-                                          } else if (item.title ==
-                                              'My Tickets') {
-                                            _showMyTicketsSheet(context);
-                                          } else if (item.title ==
-                                              'Terms & Conditions') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const LegalPage(
-                                                  pageType:
-                                                      LegalPageType.terms,
-                                                ),
-                                              ),
-                                            );
-                                          } else if (item.title ==
-                                              'Privacy Policy') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const LegalPage(
-                                                  pageType:
-                                                      LegalPageType.privacy,
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
                                       ),
-                                    ),
-                                  ),
+                                    );
+                                  }).toList(),
                                 );
-                              }).toList(),
-                            );
-                          }
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        },
-                      ),
-
-                    const SizedBox(height: 12),
-
-                    // Account Status
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDF4), // Light green bg
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Color(0xFF10B981),
-                            size: 32,
+                              }
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(24.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                          const SizedBox(height: 12),
+
+                          // Account Status
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4), // Light green bg
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
                               children: [
-                                const Text(
-                                  'Account Status',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF064E3B),
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF10B981),
+                                  size: 32,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Account Status',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF064E3B),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Your profile is verified and active',
+                                        style: TextStyle(
+                                          color: Colors.green.shade700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  'Your profile is verified and active',
-                                  style: TextStyle(
-                                    color: Colors.green.shade700,
-                                    fontSize: 12,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD1FAE5),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    'Active',
+                                    style: TextStyle(
+                                      color: Color(0xFF059669),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD1FAE5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Active',
+
+                          const SizedBox(height: 24),
+
+                          // Quick Actions
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Quick Actions',
                               style: TextStyle(
-                                color: Color(0xFF059669),
                                 fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
                               ),
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildActionCard(
+                                Icons.account_balance_wallet,
+                                'View\nEarnings',
+                                Colors.blue,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const EarningsPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionCard(
+                                Icons.history,
+                                'Ride\nHistory',
+                                Colors.purple,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const RideHistoryPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionCard(
+                                Icons.headset_mic,
+                                'Help &\nSupport',
+                                Colors.orange,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const SupportPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionCard(
+                                Icons.logout,
+                                'Logout',
+                                Colors.red,
+                                onTap: () => _handleLogout(context),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // Edit Profile Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EditProfilePage(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0066FF),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.edit, color: Colors.white),
+                              label: const Text(
+                                'Edit Profile',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Quick Actions
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Quick Actions',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildActionCard(
-                          Icons.account_balance_wallet,
-                          'View\nEarnings',
-                          Colors.blue,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EarningsPage(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildActionCard(
-                          Icons.history,
-                          'Ride\nHistory',
-                          Colors.purple,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RideHistoryPage(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildActionCard(
-                          Icons.headset_mic,
-                          'Help &\nSupport',
-                          Colors.orange,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SupportPage(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildActionCard(
-                          Icons.logout,
-                          'Logout',
-                          Colors.red,
-                          onTap: () => _handleLogout(context),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Edit Profile Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const EditProfilePage(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0066FF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.edit, color: Colors.white),
-                        label: const Text(
-                          'Edit Profile',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ),
-      ],
-    ),
-  );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Widget _buildSubscriptionCard(
     BuildContext context, {
@@ -654,8 +677,9 @@ class _ProfileView extends StatelessWidget {
     String? driverToken,
   }) {
     if (hasSubscription) {
-      final planName =
-          sub?.planName.isNotEmpty == true ? sub!.planName : 'Gold Pro Pass';
+      final planName = sub?.planName.isNotEmpty == true
+          ? sub!.planName
+          : 'Gold Pro Pass';
       final daysLeft = sub?.daysLeft ?? 29;
       final expiry = sub?.formattedDateRange ?? '';
 
@@ -778,8 +802,8 @@ class _ProfileView extends StatelessWidget {
                     ),
                   ).then((_) {
                     context.read<ProfileBloc>().add(
-                          RefreshProfileEvent(token: driverToken),
-                        );
+                      RefreshProfileEvent(token: driverToken),
+                    );
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -845,10 +869,7 @@ class _ProfileView extends StatelessWidget {
                   SizedBox(height: 2),
                   Text(
                     '0% commission & unlimited rides',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF64748B),
-                    ),
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ],
               ),
@@ -865,16 +886,18 @@ class _ProfileView extends StatelessWidget {
                   ),
                 ).then((_) {
                   context.read<ProfileBloc>().add(
-                        RefreshProfileEvent(token: driverToken),
-                      );
+                    RefreshProfileEvent(token: driverToken),
+                  );
                 });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0066FF),
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -920,9 +943,7 @@ class _ProfileView extends StatelessWidget {
               context.read<AuthBloc>().add(const LogoutEvent());
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginPage(),
-                ),
+                MaterialPageRoute(builder: (context) => const LoginPage()),
                 (route) => false,
               );
             },

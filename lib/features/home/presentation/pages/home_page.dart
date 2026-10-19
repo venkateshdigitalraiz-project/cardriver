@@ -6,7 +6,6 @@ import '../../../../core/style/app_spacing.dart';
 import '../../../../core/style/app_typography.dart';
 import '../../../../core/utils/map_launcher_utils.dart';
 import '../../../../injection_container.dart';
-import '../../../active_ride/presentation/pages/active_ride_page.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
 import '../../../navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../navigation/presentation/bloc/navigation_event.dart';
@@ -151,12 +150,9 @@ class _HomeView extends StatelessWidget {
             ),
           );
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ActiveRidePage(acceptedRide: accepted),
-            ),
-          );
+          try {
+            context.read<NavigationBloc>().add(const NavigationTabChanged(1));
+          } catch (_) {}
         }
       },
       child: BlocBuilder<HomeBloc, HomeState>(
@@ -188,7 +184,7 @@ class _HomeView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Captain ${customer.name}',
+                          customer.name,
                           style: AppTypography.headingSmall(
                             color: primaryTextColor,
                           ),
@@ -267,53 +263,6 @@ class _HomeView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Live Radar Online Status Alert Banner (Rapid Capital style)
-                    if (state.isOnline) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(
-                              0xFF10B981,
-                            ).withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.sensors_rounded,
-                              color: Color(0xFF10B981),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'LIVE MONITORING • Rapid live sync watching for ride requests in real-time',
-                                style: AppTypography.bodySmall(
-                                  color: const Color(0xFF047857),
-                                ).copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            if (state.isLoadingRides)
-                              const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFF10B981),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
                     // Stats Row
                     Row(
                       children: [
@@ -918,6 +867,9 @@ class _HomeView extends StatelessWidget {
     required Color primaryTextColor,
     required Color secondaryTextColor,
   }) {
+    final isThisRideAccepting = state.acceptingRideId == ride.id;
+    final isThisRideDeclining = state.decliningRideId == ride.id;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1182,7 +1134,7 @@ class _HomeView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Driver Fee',
+                        'Trip Earning',
                         style: AppTypography.bodySmall(
                           color: secondaryTextColor,
                         ),
@@ -1281,7 +1233,7 @@ class _HomeView extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: (state.isDecliningRide || state.isAcceptingRide)
+                  onPressed: (isThisRideDeclining || isThisRideAccepting)
                       ? null
                       : () {
                           context.read<HomeBloc>().add(
@@ -1290,13 +1242,20 @@ class _HomeView extends StatelessWidget {
                         },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
+                    disabledForegroundColor:
+                        AppColors.error.withValues(alpha: 0.5),
+                    side: BorderSide(
+                      color: (isThisRideDeclining || isThisRideAccepting)
+                          ? AppColors.error.withValues(alpha: 0.4)
+                          : AppColors.error,
+                      width: 1.5,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: state.decliningRideId == ride.id
+                  child: isThisRideDeclining
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -1305,16 +1264,22 @@ class _HomeView extends StatelessWidget {
                             color: AppColors.error,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Decline',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: (isThisRideDeclining || isThisRideAccepting)
+                                ? AppColors.error.withValues(alpha: 0.5)
+                                : AppColors.error,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: (state.isAcceptingRide || state.isDecliningRide)
+                  onPressed: (isThisRideAccepting || isThisRideDeclining)
                       ? null
                       : () {
                           context.read<HomeBloc>().add(
@@ -1327,12 +1292,14 @@ class _HomeView extends StatelessWidget {
                     disabledBackgroundColor: const Color(
                       0xFF10B981,
                     ).withValues(alpha: 0.6),
+                    disabledForegroundColor:
+                        Colors.white.withValues(alpha: 0.8),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: state.acceptingRideId == ride.id
+                  child: isThisRideAccepting
                       ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -1346,10 +1313,18 @@ class _HomeView extends StatelessWidget {
                           children: [
                             Text(
                               'Accept',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
                             ),
                             SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_rounded, size: 16),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
                           ],
                         ),
                 ),

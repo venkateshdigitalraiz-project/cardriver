@@ -29,7 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  //final _passwordController = TextEditingController();
   final _addressController = TextEditingController();
 
   // Legal & ID Numbers
@@ -47,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
   File? _passportFile;
 
   // Validation state flags
-  bool _obscurePassword = true;
+  //bool _obscurePassword = true;
   bool _termsAgreed = true;
 
   @override
@@ -56,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _lastNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
+    //_passwordController.dispose();
     _addressController.dispose();
     _licenseNumberController.dispose();
     _aadharController.dispose();
@@ -89,7 +89,7 @@ class _RegisterPageState extends State<RegisterPage> {
       drivingLicense: _drivingLicenseFile?.path,
       selfie: _profilePicFile?.path,
       passport: _passportFile?.path,
-      password: _passwordController.text,
+      //  password: _passwordController.text,
     );
   }
 
@@ -137,13 +137,13 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    final passwordErr = InputValidators.validatePassword(
-      _passwordController.text,
-    );
-    if (passwordErr != null) {
-      AppSnackBar.showError(context, passwordErr);
-      return;
-    }
+    // final passwordErr = InputValidators.validatePassword(
+    //   //  _passwordController.text,
+    // );
+    // if (passwordErr != null) {
+    //   AppSnackBar.showError(context, passwordErr);
+    //   return;
+    // }
 
     final addressErr = InputValidators.validateAddress(_addressController.text);
     if (addressErr != null) {
@@ -814,31 +814,30 @@ class _RegisterPageState extends State<RegisterPage> {
                           validator: InputValidators.validateEmail,
                         ),
                         const SizedBox(height: 16),
-
-                        // Password
-                        _buildTextField(
-                          controller: _passwordController,
-                          labelText: 'Password *',
-                          hintText: '••••••••',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscurePassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: Colors.grey[600],
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          validator: InputValidators.validatePassword,
-                        ),
-                        const SizedBox(height: 16),
+                        // // Password
+                        // _buildTextField(
+                        //   controller: _passwordController,
+                        //   labelText: 'Password *',
+                        //   hintText: '••••••••',
+                        //   prefixIcon: Icons.lock_outline_rounded,
+                        //   obscureText: _obscurePassword,
+                        //   suffixIcon: IconButton(
+                        //     icon: Icon(
+                        //       _obscurePassword
+                        //           ? Icons.visibility_off_outlined
+                        //           : Icons.visibility_outlined,
+                        //       color: Colors.grey[600],
+                        //       size: 20,
+                        //     ),
+                        //     onPressed: () {
+                        //       setState(() {
+                        //         _obscurePassword = !_obscurePassword;
+                        //       });
+                        //     },
+                        //   ),
+                        //   validator: InputValidators.validatePassword,
+                        // ),
+                        // const SizedBox(height: 16),
 
                         // Address
                         _buildTextField(
@@ -906,7 +905,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         // Passport ID *
                         _buildTextField(
                           controller: _passportController,
-                          labelText: 'Passport ID *',
+                          labelText: 'Passport Number',
                           hintText: 'e.g. A1234567',
                           prefixIcon: Icons.flight_takeoff_rounded,
                           textCapitalization: TextCapitalization.characters,

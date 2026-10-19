@@ -208,4 +208,43 @@ class LocalStorageService {
       debugPrint('⚠️ [LocalStorageService] Error clearing login data: $e');
     }
   }
+
+  /// Key names for FCM push token in SharedPreferences
+  static const String keyFcmToken = 'fcm_token';
+  static const String keyFcmTokenCamel = 'fcmToken';
+
+  /// Persists device FCM push token into SharedPreferences.
+  Future<void> saveFcmToken(String fcmToken) async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setString(keyFcmToken, fcmToken);
+      await prefs.setString(keyFcmTokenCamel, fcmToken);
+      debugPrint('💾 [LocalStorageService] Saved FCM token to SharedPreferences: $fcmToken');
+    } catch (e) {
+      debugPrint('⚠️ [LocalStorageService] Error saving FCM token: $e');
+    }
+  }
+
+  /// Retrieves stored FCM push token from SharedPreferences.
+  Future<String?> getFcmToken() async {
+    try {
+      final prefs = await _getPrefs();
+      return prefs.getString(keyFcmToken) ?? prefs.getString(keyFcmTokenCamel);
+    } catch (e) {
+      debugPrint('⚠️ [LocalStorageService] Error getting FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Clears stored FCM token from SharedPreferences.
+  Future<void> clearFcmToken() async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.remove(keyFcmToken);
+      await prefs.remove(keyFcmTokenCamel);
+      debugPrint('🗑️ [LocalStorageService] Cleared FCM token from SharedPreferences');
+    } catch (e) {
+      debugPrint('⚠️ [LocalStorageService] Error clearing FCM token: $e');
+    }
+  }
 }

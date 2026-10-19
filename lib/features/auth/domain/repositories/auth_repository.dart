@@ -33,7 +33,7 @@ abstract class AuthRepository {
     bool rememberMe = true,
   });
 
-  Future<void> sendOtp({required String phone});
+  Future<void> sendOtp({required String phone, String? fcmToken});
 
   Future<DriverEntity> verifyOtp({required String phone, required String otp});
 

@@ -33,10 +33,19 @@ class NotificationModel extends NotificationEntity {
     final notification = message.notification;
     final data = message.data;
 
-    final title = notification?.title ?? data['title'] ?? 'New Message';
-    final body = notification?.body ?? data['body'] ?? data['message'] ?? '';
-    final type = data['type'] ?? 'general';
-    final sender = data['sender'] ?? 'Server';
+    final title = notification?.title ??
+        data['title']?.toString() ??
+        data['heading']?.toString() ??
+        data['subject']?.toString() ??
+        'New Notification';
+    final body = notification?.body ??
+        data['body']?.toString() ??
+        data['message']?.toString() ??
+        data['content']?.toString() ??
+        data['description']?.toString() ??
+        '';
+    final type = data['type']?.toString() ?? 'general';
+    final sender = data['sender']?.toString() ?? 'Server';
 
     return NotificationModel(
       id: message.messageId ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}',

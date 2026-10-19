@@ -7,6 +7,7 @@ import '../models/driver_register_body.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 import 'package:dio/dio.dart';
 
 abstract class AuthRemoteDataSource {
@@ -15,7 +16,7 @@ abstract class AuthRemoteDataSource {
     required String password,
   });
 
-  Future<void> sendOtp({required String phone});
+  Future<void> sendOtp({required String phone, String? fcmToken});
 
   Future<CustomerModel> verifyCustomerOtp({
     required String phone,
@@ -185,7 +186,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> sendOtp({required String phone}) async {
+  Future<void> sendOtp({required String phone, String? fcmToken}) async {
     final dio = Dio()
       ..interceptors.add(
         LogInterceptor(
@@ -201,7 +202,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await dio.post(
         ApiEndpoints.driverLogin,
         options: Options(headers: {'content-type': 'application/json'}),
-        data: {'phone': phone.replaceAll(RegExp(r'\D'), '')},
+        data: {
+          'phone': phone.replaceAll(RegExp(r'\D'), ''),
+          'fcmToken': fcmToken ?? '',
+        },
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -239,12 +243,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ),
       );
     try {
+      final fcm = FirebaseMessagingService.cachedToken ?? '';
       final response = await dio.post(
         ApiEndpoints.driverVerifyOtp,
         options: Options(headers: {'content-type': 'application/json'}),
         data: {
           'phone': phone.replaceAll(RegExp(r'\D'), ''),
           'otp': otp.trim(),
+          if (fcm.isNotEmpty) 'fcmToken': fcm,
         },
       );
 
@@ -406,10 +412,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ),
       );
     try {
+      final fcm = FirebaseMessagingService.cachedToken ?? '';
       final response = await dio.post(
         ApiEndpoints.driverVerifyOtp,
         options: Options(headers: {'content-type': 'application/json'}),
-        data: {'phone': phone, 'otp': otp},
+        data: {
+          'phone': phone,
+          'otp': otp,
+          if (fcm.isNotEmpty) 'fcmToken': fcm,
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

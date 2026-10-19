@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/socket_service.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 import '../../data/datasources/available_rides_remote_data_source.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../../domain/usecases/accept_ride_usecase.dart';
@@ -118,6 +119,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
                 '✨ [HomeBloc] Instant new ride alert from socket payload: ${ride.id}',
               );
               add(NewRideReceivedEvent(ride));
+              try {
+                FirebaseMessagingService().showNotification(
+                  title: '🚗 New Ride Available!',
+                  body: ride.pickupAddress.isNotEmpty
+                      ? 'Pickup: ${ride.pickupAddress}'
+                      : 'A new ride request is ready to accept.',
+                  payload: 'ride_request',
+                );
+              } catch (_) {}
             }
           }
         }
@@ -269,8 +279,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     DeclineRideRequestEvent event,
     Emitter<HomeState> emit,
   ) async {
-    // If already in-flight for this ride, ignore duplicate taps
-    if (state.decliningRideId == event.rideId) return;
+    // If an accept or decline is already in-flight, ignore concurrent taps
+    if (state.isAcceptingRide || state.isDecliningRide) return;
 
     emit(state.copyWith(
       decliningRideId: event.rideId,
@@ -338,6 +348,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     AcceptRideEvent event,
     Emitter<HomeState> emit,
   ) async {
+    // If an accept or decline is already in-flight, ignore concurrent taps
+    if (state.isAcceptingRide || state.isDecliningRide) return;
+
     emit(state.copyWith(acceptingRideId: event.rideId, clearError: true));
 
     try {
