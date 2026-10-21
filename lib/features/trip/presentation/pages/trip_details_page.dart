@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_typography.dart';
 import '../../../../injection_container.dart';
@@ -65,7 +66,7 @@ class _TripDetailsView extends StatelessWidget {
             color: AppColors.textPrimaryLight,
             size: 20,
           ),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'Booking Details',

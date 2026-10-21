@@ -1,0 +1,431 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../features/auth/domain/entities/customer_entity.dart';
+import '../../features/auth/domain/entities/driver_entity.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/auth/presentation/bloc/auth_state.dart';
+import '../../features/auth/presentation/pages/customer_dashboard_page.dart';
+import '../../features/auth/presentation/pages/driver_dashboard_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/register_page.dart';
+import '../../features/documents/presentation/pages/documents_page.dart';
+import '../../features/earnings/presentation/pages/earnings_page.dart';
+import '../../features/legal/presentation/pages/legal_page.dart';
+import '../../features/navigation/presentation/pages/main_navigator_page.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
+import '../../features/profile/presentation/pages/location_picker_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/rewards/presentation/pages/rewards_page.dart';
+import '../../features/ride_history/presentation/pages/ride_history_page.dart';
+import '../../features/subscription/presentation/pages/subscription_page.dart';
+import '../../features/subscription_history/presentation/pages/subscription_history_page.dart';
+import '../../features/support/presentation/pages/support_page.dart';
+import '../../features/trip/domain/entities/trip_entity.dart';
+import '../../features/trip/presentation/pages/trip_details_page.dart';
+import '../../features/trip/presentation/pages/trip_page.dart';
+import '../style/app_colors.dart';
+
+/// Centralized route paths for the application
+class AppRoutes {
+  static const String splash = '/';
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String customerHome = '/home';
+  static const String customerDashboard = '/customer-dashboard';
+  static const String driverDashboard = '/driver-dashboard';
+  static const String documents = '/documents';
+  static const String earnings = '/earnings';
+  static const String rideHistory = '/ride-history';
+  static const String support = '/support';
+  static const String rewards = '/rewards';
+  static const String notifications = '/notifications';
+  static const String subscription = '/subscription';
+  static const String subscriptionHistory = '/subscription-history';
+  static const String legal = '/legal';
+  static const String editProfile = '/edit-profile';
+  static const String locationPicker = '/location-picker';
+  static const String trips = '/trips';
+  static const String tripDetails = '/trip-details';
+  static const String profile = '/profile';
+}
+
+/// Centralized route names for named navigation
+class AppRouteNames {
+  static const String splash = 'splash';
+  static const String login = 'login';
+  static const String register = 'register';
+  static const String customerHome = 'customerHome';
+  static const String customerDashboard = 'customerDashboard';
+  static const String driverDashboard = 'driverDashboard';
+  static const String documents = 'documents';
+  static const String earnings = 'earnings';
+  static const String rideHistory = 'rideHistory';
+  static const String support = 'support';
+  static const String rewards = 'rewards';
+  static const String notifications = 'notifications';
+  static const String subscription = 'subscription';
+  static const String subscriptionHistory = 'subscriptionHistory';
+  static const String legal = 'legal';
+  static const String editProfile = 'editProfile';
+  static const String locationPicker = 'locationPicker';
+  static const String trips = 'trips';
+  static const String tripDetails = 'tripDetails';
+  static const String profile = 'profile';
+}
+
+/// Helper that converts any Stream into a Listenable for GoRouter
+class GoRouterRefreshStream extends ChangeNotifier {
+  late final StreamSubscription<dynamic> _subscription;
+
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+      (dynamic _) => notifyListeners(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+
+/// Centralized Router Configuration using go_router
+class AppRouter {
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
+
+  static GoRouter createRouter(AuthBloc authBloc) {
+    return GoRouter(
+      navigatorKey: rootNavigatorKey,
+      initialLocation: AppRoutes.splash,
+      refreshListenable: GoRouterRefreshStream(authBloc.stream),
+      redirect: (BuildContext context, GoRouterState state) {
+        final authState = authBloc.state;
+        final status = authState.status;
+        final location = state.uri.path;
+
+        final isSplash = location == AppRoutes.splash;
+        final isLogin = location == AppRoutes.login;
+        final isRegister = location == AppRoutes.register;
+
+        // 1. Initial local authentication verification
+        if (status == AuthStatus.initial) {
+          return isSplash ? null : AppRoutes.splash;
+        }
+
+        // 2. Unauthenticated check
+        final isUnauthenticated = status == AuthStatus.unauthenticated ||
+            (status == AuthStatus.error && !authState.isAuthenticated);
+
+        if (isUnauthenticated) {
+          if (isLogin || isRegister) {
+            return null;
+          }
+          return AppRoutes.login;
+        }
+
+        // 3. Authenticated check - redirect away from auth gates / login / splash
+        if (status == AuthStatus.authenticated || authState.isAuthenticated) {
+          if (isSplash || isLogin || isRegister) {
+            if (authState.driver != null) {
+              return AppRoutes.driverDashboard;
+            } else if (authState.customer != null) {
+              return AppRoutes.customerHome;
+            }
+          }
+        }
+
+        return null;
+      },
+      routes: [
+        GoRoute(
+          path: AppRoutes.splash,
+          name: AppRouteNames.splash,
+          builder: (context, state) => const AuthSplashScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.login,
+          name: AppRouteNames.login,
+          builder: (context, state) => const LoginPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.register,
+          name: AppRouteNames.register,
+          builder: (context, state) => const RegisterPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.customerHome,
+          name: AppRouteNames.customerHome,
+          builder: (context, state) {
+            final customer =
+                (state.extra as CustomerEntity?) ?? authBloc.state.customer;
+            if (customer == null) {
+              return const LoginPage();
+            }
+            return MainNavigatorPage(customer: customer);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.customerDashboard,
+          name: AppRouteNames.customerDashboard,
+          builder: (context, state) {
+            final customer =
+                (state.extra as CustomerEntity?) ?? authBloc.state.customer;
+            if (customer == null) {
+              return const LoginPage();
+            }
+            return CustomerDashboardPage(customer: customer);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.driverDashboard,
+          name: AppRouteNames.driverDashboard,
+          builder: (context, state) {
+            final driver =
+                (state.extra as DriverEntity?) ?? authBloc.state.driver;
+            if (driver == null) {
+              return const LoginPage();
+            }
+            return DriverDashboardPage(driver: driver);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.documents,
+          name: AppRouteNames.documents,
+          builder: (context, state) => const DocumentsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.earnings,
+          name: AppRouteNames.earnings,
+          builder: (context, state) => const EarningsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.rideHistory,
+          name: AppRouteNames.rideHistory,
+          builder: (context, state) => const RideHistoryPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.support,
+          name: AppRouteNames.support,
+          builder: (context, state) => const SupportPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.rewards,
+          name: AppRouteNames.rewards,
+          builder: (context, state) => const RewardsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.notifications,
+          name: AppRouteNames.notifications,
+          builder: (context, state) => const NotificationsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.subscription,
+          name: AppRouteNames.subscription,
+          builder: (context, state) {
+            String? driverToken;
+            bool? hasSubscription;
+
+            if (state.extra is Map) {
+              final map = state.extra as Map;
+              driverToken = map['driverToken'] as String?;
+              hasSubscription = map['hasSubscription'] as bool?;
+            } else if (state.extra is bool) {
+              hasSubscription = state.extra as bool;
+            }
+
+            driverToken ??= state.uri.queryParameters['driverToken'] ??
+                authBloc.state.driver?.token;
+            if (hasSubscription == null &&
+                state.uri.queryParameters.containsKey('hasSubscription')) {
+              hasSubscription =
+                  state.uri.queryParameters['hasSubscription'] == 'true';
+            }
+
+            return SubscriptionPage(
+              driverToken: driverToken,
+              hasSubscription: hasSubscription,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.subscriptionHistory,
+          name: AppRouteNames.subscriptionHistory,
+          builder: (context, state) {
+            String? driverToken;
+            if (state.extra is String) {
+              driverToken = state.extra as String;
+            } else if (state.extra is Map) {
+              driverToken = (state.extra as Map)['driverToken'] as String?;
+            }
+            driverToken ??= state.uri.queryParameters['driverToken'] ??
+                authBloc.state.driver?.token;
+
+            return SubscriptionHistoryPage(driverToken: driverToken);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.legal,
+          name: AppRouteNames.legal,
+          builder: (context, state) {
+            LegalPageType pageType = LegalPageType.terms;
+            if (state.extra is LegalPageType) {
+              pageType = state.extra as LegalPageType;
+            } else if (state.uri.queryParameters['type'] == 'privacy') {
+              pageType = LegalPageType.privacy;
+            }
+            return LegalPage(pageType: pageType);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.editProfile,
+          name: AppRouteNames.editProfile,
+          builder: (context, state) => const EditProfilePage(),
+        ),
+        GoRoute(
+          path: AppRoutes.locationPicker,
+          name: AppRouteNames.locationPicker,
+          builder: (context, state) => const LocationPickerPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.trips,
+          name: AppRouteNames.trips,
+          builder: (context, state) {
+            final driverToken = state.uri.queryParameters['driverToken'] ??
+                (state.extra as String?) ??
+                authBloc.state.driver?.token ??
+                authBloc.state.customer?.token;
+            return TripPage(driverToken: driverToken);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.profile,
+          name: AppRouteNames.profile,
+          builder: (context, state) {
+            final userName = state.uri.queryParameters['userName'] ??
+                authBloc.state.customer?.name ??
+                authBloc.state.driver?.name ??
+                'Driver';
+            final driverToken = state.uri.queryParameters['driverToken'] ??
+                authBloc.state.driver?.token ??
+                authBloc.state.customer?.token;
+            return ProfilePage(
+              userName: userName,
+              driverToken: driverToken,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.tripDetails,
+          name: AppRouteNames.tripDetails,
+          builder: (context, state) {
+            TripEntity? trip;
+            String? bookingId = state.uri.queryParameters['bookingId'];
+            String? driverToken = state.uri.queryParameters['driverToken'] ??
+                authBloc.state.driver?.token;
+
+            if (state.extra is TripEntity) {
+              trip = state.extra as TripEntity;
+            } else if (state.extra is Map) {
+              final map = state.extra as Map;
+              trip = map['trip'] as TripEntity?;
+              bookingId ??= map['bookingId'] as String?;
+              driverToken ??= map['driverToken'] as String?;
+            }
+
+            if (trip != null) {
+              return TripDetailsPage(
+                trip: trip,
+                bookingId: bookingId,
+                driverToken: driverToken,
+              );
+            } else if (bookingId != null && bookingId.isNotEmpty) {
+              return TripDetailsPage.fromId(
+                bookingId: bookingId,
+                driverToken: driverToken,
+              );
+            }
+
+            return const Scaffold(
+              body: Center(child: Text('Invalid booking details')),
+            );
+          },
+          routes: [
+            GoRoute(
+              path: ':bookingId',
+              builder: (context, state) {
+                final bookingId = state.pathParameters['bookingId'] ?? '';
+                final driverToken =
+                    state.uri.queryParameters['driverToken'] ??
+                        authBloc.state.driver?.token;
+                TripEntity? trip;
+
+                if (state.extra is TripEntity) {
+                  trip = state.extra as TripEntity;
+                } else if (state.extra is Map) {
+                  final map = state.extra as Map;
+                  trip = map['trip'] as TripEntity?;
+                }
+
+                if (trip != null) {
+                  return TripDetailsPage(
+                    trip: trip,
+                    bookingId: bookingId,
+                    driverToken: driverToken,
+                  );
+                }
+                return TripDetailsPage.fromId(
+                  bookingId: bookingId,
+                  driverToken: driverToken,
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      errorBuilder: (context, state) => Scaffold(
+        backgroundColor: AppColors.darkBackground,
+        body: Center(
+          child: Text(
+            'Route not found: ${state.uri}',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Seamless splash screen during session verification
+class AuthSplashScreen extends StatelessWidget {
+  const AuthSplashScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.darkBackground,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.local_taxi_rounded,
+              size: 64,
+              color: AppColors.primary,
+            ),
+            SizedBox(height: 24),
+            CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

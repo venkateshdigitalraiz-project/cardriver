@@ -10,7 +10,8 @@ import '../../domain/entities/driver_entity.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
-import 'login_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 enum TripState { idle, requestReceived, headingToPickup, onTrip, completed }
 
@@ -132,10 +133,7 @@ class _DriverDashboardPageState extends State<DriverDashboardPage> {
       listener: (context, state) {
         if (state.status == AuthStatus.unauthenticated) {
           AppSnackBar.showInfo(context, 'You have signed out successfully.');
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-            (route) => false,
-          );
+          context.go(AppRoutes.login);
         }
       },
       child: Scaffold(

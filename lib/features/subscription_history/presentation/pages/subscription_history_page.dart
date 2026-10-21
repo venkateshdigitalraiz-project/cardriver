@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../injection_container.dart';
-import '../../../subscription/presentation/pages/subscription_page.dart';
 import '../../domain/entities/driver_subscription_entity.dart';
 import '../bloc/subscription_history_bloc.dart';
 import '../bloc/subscription_history_event.dart';
@@ -40,7 +41,7 @@ class _SubscriptionHistoryScaffold extends StatelessWidget {
             color: Color(0xFF0F172A),
             size: 18,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,12 +67,7 @@ class _SubscriptionHistoryScaffold extends StatelessWidget {
         actions: [
           TextButton.icon(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const SubscriptionPage(),
-                ),
-              );
+              context.push(AppRoutes.subscription);
             },
             icon: const Icon(
               Icons.add_circle_outline_rounded,
@@ -458,10 +454,7 @@ class _SubscriptionHistoryScaffold extends StatelessWidget {
           const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SubscriptionPage()),
-              );
+              context.push(AppRoutes.subscription);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF021B45),

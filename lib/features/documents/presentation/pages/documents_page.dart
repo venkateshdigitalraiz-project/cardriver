@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/documents_bloc.dart';
 import '../bloc/documents_event.dart';
@@ -23,7 +24,7 @@ class DocumentsPage extends StatelessWidget {
               color: Colors.black,
               size: 20,
             ),
-            onPressed: () => Navigator.maybePop(context),
+            onPressed: () => context.pop(),
           ),
           centerTitle: true,
           title: const Text(

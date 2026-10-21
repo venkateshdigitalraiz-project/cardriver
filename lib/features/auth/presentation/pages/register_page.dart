@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/utils/input_validators.dart';
@@ -12,7 +14,6 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import '../widgets/document_upload_tile.dart';
-import '../../../documents/presentation/pages/documents_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -486,9 +487,7 @@ class _RegisterPageState extends State<RegisterPage> {
             context,
             'Registration successful! Welcome, $driverName!',
           );
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DocumentsPage()),
-          );
+          context.go(AppRoutes.documents);
         }
       },
       builder: (context, state) {
@@ -535,7 +534,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           // Back Button
                           GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
+                            onTap: () => context.pop(),
                             child: Container(
                               width: 42,
                               height: 42,
@@ -1215,7 +1214,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () => Navigator.of(context).pop(),
+                              onTap: () => context.pop(),
                               child: const Text(
                                 'Login',
                                 style: TextStyle(

@@ -7,7 +7,8 @@ import '../../domain/usecases/pick_image_usecase.dart';
 import '../bloc/edit_profile_bloc.dart';
 import '../bloc/edit_profile_event.dart';
 import '../bloc/edit_profile_state.dart';
-import 'location_picker_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 import 'package:latlong2/latlong.dart';
 import '../../domain/usecases/get_address_usecase.dart';
@@ -234,11 +235,8 @@ class _EditProfileView extends StatelessWidget {
     return TextFormField(
       readOnly: true,
       onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LocationPickerPage()),
-        );
-        if (result != null && result is LatLng) {
+        final result = await context.push<LatLng?>(AppRoutes.locationPicker);
+        if (result != null && context.mounted) {
           context.read<EditProfileBloc>().add(
                 FetchAddressEvent(result.latitude, result.longitude),
               );

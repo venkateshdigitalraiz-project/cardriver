@@ -10,7 +10,8 @@ import '../../domain/entities/customer_entity.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
-import 'login_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 enum RideBookingState { idle, searchingDriver, driverMatched, rideInProgress }
 
@@ -172,10 +173,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
       listener: (context, state) {
         if (state.status == AuthStatus.unauthenticated) {
           AppSnackBar.showInfo(context, 'Signed out successfully.');
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-            (route) => false,
-          );
+          context.go(AppRoutes.login);
         }
       },
       child: Scaffold(

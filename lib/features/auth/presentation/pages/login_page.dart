@@ -1,14 +1,13 @@
-import 'package:cardriver/features/navigation/presentation/pages/main_navigator_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
-import 'driver_dashboard_page.dart';
-import 'register_page.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -108,23 +107,13 @@ class _LoginPageState extends State<LoginPage> {
         } else if (state.status == AuthStatus.authenticated) {
           if (state.driver != null) {
             AppSnackBar.showSuccess(context, 'Welcome, ${state.driver!.name}!');
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (_) => DriverDashboardPage(driver: state.driver!),
-              ),
-              (route) => false,
-            );
+            context.go(AppRoutes.driverDashboard, extra: state.driver);
           } else if (state.customer != null) {
             AppSnackBar.showSuccess(
               context,
               'Welcome back, ${state.customer!.name}!',
             );
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (_) => MainNavigatorPage(customer: state.customer!),
-              ),
-              (route) => false,
-            );
+            context.go(AppRoutes.customerHome, extra: state.customer);
           }
         }
       },
@@ -670,12 +659,7 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                       GestureDetector(
                                         onTap: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const RegisterPage(),
-                                            ),
-                                          );
+                                          context.push(AppRoutes.register);
                                         },
                                         child: const Text(
                                           'Register',

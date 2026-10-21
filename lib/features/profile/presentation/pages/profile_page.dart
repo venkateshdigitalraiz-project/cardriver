@@ -1,25 +1,18 @@
 import 'dart:io';
-import 'package:cardriver/features/documents/presentation/pages/documents_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/driver_active_subscription_entity.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
-import 'edit_profile_page.dart';
-import '../../../earnings/presentation/pages/earnings_page.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
-import '../../../auth/presentation/pages/login_page.dart';
-import '../../../ride_history/presentation/pages/ride_history_page.dart';
-import '../../../rewards/presentation/pages/rewards_page.dart';
-import '../../../support/presentation/pages/support_page.dart';
 import '../../../legal/presentation/pages/legal_page.dart';
-import '../../../notifications/presentation/pages/notifications_page.dart';
-import '../../../subscription/presentation/pages/subscription_page.dart';
-import '../../../subscription_history/presentation/pages/subscription_history_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final String userName;
@@ -381,101 +374,71 @@ class _ProfileView extends StatelessWidget {
                                             ),
                                             onTap: () {
                                               if (item.title == 'Documents') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const DocumentsPage(),
-                                                  ),
+                                                context.push(
+                                                  AppRoutes.documents,
                                                 );
                                               } else if (item.title ==
                                                   'Notifications') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const NotificationsPage(),
-                                                  ),
+                                                context.push(
+                                                  AppRoutes.notifications,
                                                 );
                                               } else if (item.title ==
                                                   'Rewards') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const RewardsPage(),
-                                                  ),
-                                                );
+                                                context.push(AppRoutes.rewards);
                                               } else if (item.title ==
                                                   'Subscription') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        SubscriptionPage(
-                                                          hasSubscription:
-                                                              hasSubscription,
-                                                          driverToken:
-                                                              driverToken,
-                                                        ),
-                                                  ),
-                                                ).then((_) {
-                                                  context
-                                                      .read<ProfileBloc>()
-                                                      .add(
-                                                        RefreshProfileEvent(
-                                                          token: driverToken,
-                                                        ),
-                                                      );
-                                                });
+                                                context
+                                                    .push(
+                                                      AppRoutes.subscription,
+                                                      extra: {
+                                                        'hasSubscription':
+                                                            hasSubscription,
+                                                        'driverToken':
+                                                            driverToken,
+                                                      },
+                                                    )
+                                                    .then((_) {
+                                                      context
+                                                          .read<ProfileBloc>()
+                                                          .add(
+                                                            RefreshProfileEvent(
+                                                              token:
+                                                                  driverToken,
+                                                            ),
+                                                          );
+                                                    });
                                               } else if (item.title ==
                                                   'Subscription History') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        SubscriptionHistoryPage(
-                                                          driverToken:
-                                                              driverToken,
-                                                        ),
-                                                  ),
-                                                ).then((_) {
-                                                  context
-                                                      .read<ProfileBloc>()
-                                                      .add(
-                                                        RefreshProfileEvent(
-                                                          token: driverToken,
-                                                        ),
-                                                      );
-                                                });
+                                                context
+                                                    .push(
+                                                      AppRoutes
+                                                          .subscriptionHistory,
+                                                      extra: driverToken,
+                                                    )
+                                                    .then((_) {
+                                                      context
+                                                          .read<ProfileBloc>()
+                                                          .add(
+                                                            RefreshProfileEvent(
+                                                              token:
+                                                                  driverToken,
+                                                            ),
+                                                          );
+                                                    });
                                               } else if (item.title ==
                                                   'My Tickets') {
                                                 _showMyTicketsSheet(context);
                                               } else if (item.title ==
                                                   'Terms & Conditions') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const LegalPage(
-                                                          pageType:
-                                                              LegalPageType
-                                                                  .terms,
-                                                        ),
-                                                  ),
+                                                context.push(
+                                                  AppRoutes.legal,
+                                                  extra: LegalPageType.terms,
                                                 );
                                               } else if (item.title ==
                                                   'Privacy Policy') {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const LegalPage(
-                                                          pageType:
-                                                              LegalPageType
-                                                                  .privacy,
-                                                        ),
-                                                  ),
+                                                context.push(
+                                                  AppRoutes.legal,
+                                                  extra: LegalPageType.privacy,
                                                 );
                                               }
                                             },
@@ -577,13 +540,7 @@ class _ProfileView extends StatelessWidget {
                                 'View\nEarnings',
                                 Colors.blue,
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const EarningsPage(),
-                                    ),
-                                  );
+                                  context.push(AppRoutes.earnings);
                                 },
                               ),
                               _buildActionCard(
@@ -591,13 +548,7 @@ class _ProfileView extends StatelessWidget {
                                 'Ride\nHistory',
                                 Colors.purple,
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const RideHistoryPage(),
-                                    ),
-                                  );
+                                  context.push(AppRoutes.rideHistory);
                                 },
                               ),
                               _buildActionCard(
@@ -605,12 +556,7 @@ class _ProfileView extends StatelessWidget {
                                 'Help &\nSupport',
                                 Colors.orange,
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const SupportPage(),
-                                    ),
-                                  );
+                                  context.push(AppRoutes.support);
                                 },
                               ),
                               _buildActionCard(
@@ -630,13 +576,7 @@ class _ProfileView extends StatelessWidget {
                             height: 50,
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const EditProfilePage(),
-                                  ),
-                                );
+                                context.push(AppRoutes.editProfile);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0066FF),
@@ -792,19 +732,19 @@ class _ProfileView extends StatelessWidget {
               height: 38,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SubscriptionPage(
-                        hasSubscription: true,
-                        driverToken: driverToken,
-                      ),
-                    ),
-                  ).then((_) {
-                    context.read<ProfileBloc>().add(
-                      RefreshProfileEvent(token: driverToken),
-                    );
-                  });
+                  context
+                      .push(
+                        AppRoutes.subscription,
+                        extra: {
+                          'hasSubscription': true,
+                          'driverToken': driverToken,
+                        },
+                      )
+                      .then((_) {
+                        context.read<ProfileBloc>().add(
+                          RefreshProfileEvent(token: driverToken),
+                        );
+                      });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFCD34D),
@@ -876,19 +816,19 @@ class _ProfileView extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SubscriptionPage(
-                      hasSubscription: false,
-                      driverToken: driverToken,
-                    ),
-                  ),
-                ).then((_) {
-                  context.read<ProfileBloc>().add(
-                    RefreshProfileEvent(token: driverToken),
-                  );
-                });
+                context
+                    .push(
+                      AppRoutes.subscription,
+                      extra: {
+                        'hasSubscription': false,
+                        'driverToken': driverToken,
+                      },
+                    )
+                    .then((_) {
+                      context.read<ProfileBloc>().add(
+                        RefreshProfileEvent(token: driverToken),
+                      );
+                    });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0066FF),
@@ -941,11 +881,7 @@ class _ProfileView extends StatelessWidget {
             onPressed: () {
               Navigator.of(dialogContext).pop();
               context.read<AuthBloc>().add(const LogoutEvent());
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-                (route) => false,
-              );
+              context.go(AppRoutes.login);
             },
             child: const Text('Sign Out'),
           ),

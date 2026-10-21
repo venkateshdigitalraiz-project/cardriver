@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../injection_container.dart';
 import '../../../profile/domain/entities/driver_active_subscription_entity.dart';
-import '../../../subscription_history/presentation/pages/subscription_history_page.dart';
 import '../../domain/entities/subscription_activation_entity.dart';
 import '../../domain/entities/subscription_plan_entity.dart';
 import '../bloc/subscription_bloc.dart';
@@ -53,7 +54,7 @@ class _SubscriptionScaffold extends StatelessWidget {
             color: Color(0xFF0F172A),
             size: 18,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,12 +86,9 @@ class _SubscriptionScaffold extends StatelessWidget {
               size: 22,
             ),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      SubscriptionHistoryPage(driverToken: driverToken),
-                ),
+              context.push(
+                AppRoutes.subscriptionHistory,
+                extra: driverToken,
               );
             },
           ),
@@ -611,12 +609,9 @@ class _SubscriptionScaffold extends StatelessWidget {
             context.read<SubscriptionBloc>().add(
               ClearSubscriptionActivationEvent(),
             );
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    SubscriptionHistoryPage(driverToken: driverToken),
-              ),
+            context.push(
+              AppRoutes.subscriptionHistory,
+              extra: driverToken,
             );
           },
         );

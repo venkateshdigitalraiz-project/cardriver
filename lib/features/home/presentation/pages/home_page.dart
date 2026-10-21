@@ -1242,8 +1242,9 @@ class _HomeView extends StatelessWidget {
                         },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    disabledForegroundColor:
-                        AppColors.error.withValues(alpha: 0.5),
+                    disabledForegroundColor: AppColors.error.withValues(
+                      alpha: 0.5,
+                    ),
                     side: BorderSide(
                       color: (isThisRideDeclining || isThisRideAccepting)
                           ? AppColors.error.withValues(alpha: 0.4)
@@ -1292,8 +1293,9 @@ class _HomeView extends StatelessWidget {
                     disabledBackgroundColor: const Color(
                       0xFF10B981,
                     ).withValues(alpha: 0.6),
-                    disabledForegroundColor:
-                        Colors.white.withValues(alpha: 0.8),
+                    disabledForegroundColor: Colors.white.withValues(
+                      alpha: 0.8,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

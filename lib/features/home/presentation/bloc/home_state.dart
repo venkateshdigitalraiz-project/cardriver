@@ -62,8 +62,9 @@ class HomeState extends Equatable {
       isOnline: isOnline ?? this.isOnline,
       isLoadingRides: isLoadingRides ?? this.isLoadingRides,
       availableRides: availableRides ?? this.availableRides,
-      newRideAlert:
-          clearNewRideAlert ? null : (newRideAlert ?? this.newRideAlert),
+      newRideAlert: clearNewRideAlert
+          ? null
+          : (newRideAlert ?? this.newRideAlert),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       todaysEarnings: todaysEarnings ?? this.todaysEarnings,
       todaysTrips: todaysTrips ?? this.todaysTrips,
@@ -71,29 +72,31 @@ class HomeState extends Equatable {
       acceptingRideId: clearAcceptingRideId
           ? null
           : (acceptingRideId ?? this.acceptingRideId),
-      acceptedRide:
-          clearAcceptedRide ? null : (acceptedRide ?? this.acceptedRide),
+      acceptedRide: clearAcceptedRide
+          ? null
+          : (acceptedRide ?? this.acceptedRide),
       decliningRideId: clearDecliningRideId
           ? null
           : (decliningRideId ?? this.decliningRideId),
-      rejectedRide:
-          clearRejectedRide ? null : (rejectedRide ?? this.rejectedRide),
+      rejectedRide: clearRejectedRide
+          ? null
+          : (rejectedRide ?? this.rejectedRide),
     );
   }
 
   @override
   List<Object?> get props => [
-        isOnline,
-        isLoadingRides,
-        availableRides,
-        newRideAlert,
-        errorMessage,
-        todaysEarnings,
-        todaysTrips,
-        rating,
-        acceptingRideId,
-        acceptedRide,
-        decliningRideId,
-        rejectedRide,
-      ];
+    isOnline,
+    isLoadingRides,
+    availableRides,
+    newRideAlert,
+    errorMessage,
+    todaysEarnings,
+    todaysTrips,
+    rating,
+    acceptingRideId,
+    acceptedRide,
+    decliningRideId,
+    rejectedRide,
+  ];
 }

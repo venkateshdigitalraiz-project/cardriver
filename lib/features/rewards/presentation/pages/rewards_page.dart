@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/rewards_bloc.dart';
 import '../bloc/rewards_event.dart';
@@ -18,7 +19,7 @@ class RewardsPage extends StatelessWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
           ),
           centerTitle: true,
           title: const Text(

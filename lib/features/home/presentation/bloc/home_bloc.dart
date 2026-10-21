@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/socket_service.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
@@ -22,6 +23,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   StreamSubscription<dynamic>? _rideNewAvailableSubscription;
   late final void Function(dynamic) _onRideNewAvailableHandler;
   DateTime? _lastRefreshTime;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  String? _lastSoundEventRideId;
+  DateTime? _lastSoundPlayedTime;
 
   static const String _socketEvent = 'ride:new_available';
 
@@ -94,7 +98,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       '🚗 [HomeBloc] "ride:new_available" event detected! Refreshing home page...',
     );
 
-    // 2. If payload contains a valid ride entity, dispatch immediately for instant UI responsiveness
+    // 2. Play short notification sound safely for new incoming event
+    _playNotificationSound(data);
+
+    // 3. If payload contains a valid ride entity, dispatch immediately for instant UI responsiveness
     if (data != null) {
       try {
         dynamic parsed = data;
@@ -136,8 +143,48 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
     }
 
-    // 3. Always refresh available rides from API so the home page is 100% up-to-date
+    // 4. Always refresh available rides from API so the home page is 100% up-to-date
     add(const LoadAvailableRidesEvent(silent: true));
+  }
+
+  /// Plays short notification sound safely without disrupting event processing or UI.
+  void _playNotificationSound([dynamic data]) {
+    try {
+      final now = DateTime.now();
+      // Guard against rapid duplicate playback within 1 second
+      if (_lastSoundPlayedTime != null &&
+          now.difference(_lastSoundPlayedTime!).inMilliseconds < 1000) {
+        return;
+      }
+
+      String? rideId;
+      if (data is Map) {
+        if (data['ride'] is Map) {
+          rideId =
+              data['ride']['id']?.toString() ??
+              data['ride']['_id']?.toString();
+        } else {
+          rideId = data['id']?.toString() ?? data['_id']?.toString();
+        }
+      }
+
+      // Prevent duplicate sound for the same ride ID
+      if (rideId != null &&
+          rideId.isNotEmpty &&
+          rideId == _lastSoundEventRideId) {
+        return;
+      }
+
+      if (rideId != null && rideId.isNotEmpty) {
+        _lastSoundEventRideId = rideId;
+      }
+      _lastSoundPlayedTime = now;
+
+      _audioPlayer.stop();
+      _audioPlayer.play(AssetSource('sounds/notification.mp3'));
+    } catch (e) {
+      log('ℹ️ [HomeBloc] Notification sound skipped/failed: $e');
+    }
   }
 
   void _onToggleOnlineStatus(
@@ -282,17 +329,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     // If an accept or decline is already in-flight, ignore concurrent taps
     if (state.isAcceptingRide || state.isDecliningRide) return;
 
-    emit(state.copyWith(
-      decliningRideId: event.rideId,
-      clearError: true,
-      clearRejectedRide: true,
-    ));
+    emit(
+      state.copyWith(
+        decliningRideId: event.rideId,
+        clearError: true,
+        clearRejectedRide: true,
+      ),
+    );
 
     try {
       final cleanToken = driverToken.trim().replaceFirst(
-            RegExp(r'^bearer\s+', caseSensitive: false),
-            '',
-          );
+        RegExp(r'^bearer\s+', caseSensitive: false),
+        '',
+      );
       final token = cleanToken.isNotEmpty
           ? cleanToken
           : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
@@ -355,9 +404,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     try {
       final cleanToken = driverToken.trim().replaceFirst(
-            RegExp(r'^bearer\s+', caseSensitive: false),
-            '',
-          );
+        RegExp(r'^bearer\s+', caseSensitive: false),
+        '',
+      );
       final token = cleanToken.isNotEmpty
           ? cleanToken
           : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
@@ -409,6 +458,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _detachSocketListener();
     _connectedSubscription?.cancel();
     _rideNewAvailableSubscription?.cancel();
+    _audioPlayer.dispose();
     return super.close();
   }
 }

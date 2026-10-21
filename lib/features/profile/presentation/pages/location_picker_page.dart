@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -60,7 +61,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
 
   void _confirmLocation() {
     if (_selectedLocation != null) {
-      Navigator.pop(context, _selectedLocation);
+      context.pop(_selectedLocation);
     }
   }
 

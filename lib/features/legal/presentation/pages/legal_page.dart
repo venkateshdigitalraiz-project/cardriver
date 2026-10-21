@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/legal_bloc.dart';
 import '../bloc/legal_event.dart';
@@ -39,7 +40,7 @@ class LegalPage extends StatelessWidget {
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
           ),
         ),
         body: BlocBuilder<LegalBloc, LegalState>(

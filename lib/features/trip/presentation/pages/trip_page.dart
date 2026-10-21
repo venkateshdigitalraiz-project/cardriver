@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_typography.dart';
 import '../../../../injection_container.dart';
@@ -9,7 +11,6 @@ import '../../domain/entities/trip_status_update_result.dart';
 import '../bloc/trip_bloc.dart';
 import '../bloc/trip_event.dart';
 import '../bloc/trip_state.dart';
-import 'trip_details_page.dart';
 
 class TripPage extends StatelessWidget {
   final String? driverToken;
@@ -1684,14 +1685,12 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                     flex: 2,
                     child: OutlinedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TripDetailsPage(
-                              trip: trip,
-                              driverToken: widget.driverToken,
-                            ),
-                          ),
+                        context.push(
+                          AppRoutes.tripDetails,
+                          extra: {
+                            'trip': trip,
+                            'driverToken': widget.driverToken,
+                          },
                         );
                       },
                       style: OutlinedButton.styleFrom(
