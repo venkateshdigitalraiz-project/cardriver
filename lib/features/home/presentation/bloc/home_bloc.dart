@@ -8,6 +8,7 @@ import '../../../../core/services/firebase_messaging_service.dart';
 import '../../data/datasources/available_rides_remote_data_source.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../../domain/usecases/accept_ride_usecase.dart';
+import '../../domain/usecases/create_manual_ride_usecase.dart';
 import '../../domain/usecases/reject_ride_usecase.dart';
 import 'home_event.dart';
 import 'home_state.dart';
@@ -18,6 +19,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final String driverToken;
   final AcceptRideUseCase? acceptRideUseCase;
   final RejectRideUseCase? rejectRideUseCase;
+  final CreateManualRideUseCase createManualRideUseCase;
 
   StreamSubscription<void>? _connectedSubscription;
   StreamSubscription<dynamic>? _rideNewAvailableSubscription;
@@ -35,7 +37,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required this.driverToken,
     this.acceptRideUseCase,
     this.rejectRideUseCase,
-  }) : super(const HomeState()) {
+    CreateManualRideUseCase? createManualRideUseCase,
+  })  : createManualRideUseCase =
+            createManualRideUseCase ?? const CreateManualRideUseCase(),
+        super(const HomeState()) {
     // 1. Maintain a stable handler reference for socket off/on
     _onRideNewAvailableHandler = _handleRideNewAvailable;
 
@@ -48,6 +53,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<ClearRejectedRideEvent>(_onClearRejectedRide);
     on<AcceptRideEvent>(_onAcceptRide);
     on<ClearAcceptedRideEvent>(_onClearAcceptedRide);
+    on<CreateManualRideEvent>(_onCreateManualRide);
 
     // 3. Listen to socket connection / reconnection
     _connectedSubscription = socketService.onConnected.listen((_) {
@@ -451,6 +457,30 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) {
     emit(state.copyWith(clearAcceptedRide: true));
+  }
+
+  void _onCreateManualRide(
+    CreateManualRideEvent event,
+    Emitter<HomeState> emit,
+  ) {
+    final newRide = createManualRideUseCase(
+      userName: event.userName,
+      mobileNumber: event.mobileNumber,
+      fromAddress: event.fromAddress,
+      toAddress: event.toAddress,
+      price: event.price,
+      dateTime: event.dateTime,
+      pickupLat: event.pickupLat,
+      pickupLng: event.pickupLng,
+      dropLat: event.dropLat,
+      dropLng: event.dropLng,
+    );
+
+    final updatedRides = [newRide, ...state.availableRides];
+    emit(state.copyWith(
+      availableRides: updatedRides,
+      newRideAlert: newRide,
+    ));
   }
 
   @override

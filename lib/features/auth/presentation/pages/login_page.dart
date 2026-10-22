@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/utils/app_snackbar.dart';
@@ -27,9 +29,38 @@ class _LoginPageState extends State<LoginPage> {
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   bool _isOtpSentLocal = false;
   bool _keepMeSignedIn = true;
+  late final PageController _pageController;
+  Timer? _autoScrollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AuthBloc>().add(const LoadIntroBannersEvent());
+      }
+    });
+  }
+
+  void _startAutoScroll(int bannerCount) {
+    if (bannerCount <= 1) return;
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!_pageController.hasClients) return;
+      final nextPage = (_pageController.page?.round() ?? 0) + 1;
+      _pageController.animateToPage(
+        nextPage % bannerCount,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
 
   @override
   void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
     _phoneController.dispose();
     for (var c in _otpControllers) {
       c.dispose();
@@ -90,6 +121,10 @@ class _LoginPageState extends State<LoginPage> {
 
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
+        if (state.introBanners.isNotEmpty && _autoScrollTimer == null) {
+          _startAutoScroll(state.introBanners.length);
+        }
+
         if (state.status == AuthStatus.error && state.errorMessage != null) {
           AppSnackBar.showError(context, state.errorMessage!);
         } else if (state.status == AuthStatus.otpSent &&
@@ -129,98 +164,241 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   height: size.height * 0.5,
                   width: double.infinity,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/car_driver.jpg'),
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.6),
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.2),
-                          ],
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 60,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Stack(
-                                children: [
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFE94E34),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: 8,
-                                    child: Container(
-                                      width: 20,
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        color: const Color(
-                                          0xFFF2A33A,
-                                        ).withValues(alpha: 0.9),
-                                        shape: BoxShape.circle,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // 1. PageView / Background Image from API
+                      if (state.introBanners.isNotEmpty)
+                        PageView.builder(
+                          controller: _pageController,
+                          itemCount: state.introBanners.length,
+                          onPageChanged: (index) {
+                            context
+                                .read<AuthBloc>()
+                                .add(IntroBannerPageChangedEvent(index));
+                          },
+                          itemBuilder: (context, index) {
+                            final banner = state.introBanners[index];
+                            final fullUrl =
+                                ApiEndpoints.resolveImageUrl(banner.imageUrl);
+
+                            return Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              color: const Color(0xFF1B2838),
+                              child: fullUrl.isNotEmpty
+                                  ? Image.network(
+                                      fullUrl,
+                                      fit: BoxFit.cover,
+                                      alignment: Alignment.center,
+                                      gaplessPlayback: true,
+                                      filterQuality: FilterQuality.medium,
+                                      frameBuilder: (context, child, frame,
+                                          wasSynchronouslyLoaded) {
+                                        if (wasSynchronouslyLoaded ||
+                                            frame != null) {
+                                          return child;
+                                        }
+                                        return Container(
+                                          color: const Color(0xFF1B2838),
+                                        );
+                                      },
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+                                        return Container(
+                                          color: const Color(0xFF1B2838),
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              value: loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
+                                              valueColor:
+                                                  const AlwaysStoppedAnimation<
+                                                      Color>(
+                                                Colors.white54,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Image.asset(
+                                        'assets/images/car_driver.jpg',
+                                        fit: BoxFit.cover,
+                                        alignment: Alignment.topCenter,
+                                        gaplessPlayback: true,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                          color: const Color(0xFF1B2838),
+                                        ),
+                                      ),
+                                    )
+                                  : Image.asset(
+                                      'assets/images/car_driver.jpg',
+                                      fit: BoxFit.cover,
+                                      alignment: Alignment.topCenter,
+                                      gaplessPlayback: true,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                        color: const Color(0xFF1B2838),
                                       ),
                                     ),
+                            );
+                          },
+                        )
+                      else
+                        // Fallback while loading or offline
+                        Image.asset(
+                          'assets/images/car_driver.jpg',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          gaplessPlayback: true,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(color: const Color(0xFF1B2838)),
+                        ),
+
+                      // 2. Gradient overlay to ensure text is readable
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.6),
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.2),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // 3. Branding Header (Logo and "Ready to Drive?" text)
+                      Positioned(
+                        top: 60,
+                        left: 24,
+                        right: 24,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ],
                               ),
+                              child: Center(
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFE94E34),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      left: 8,
+                                      child: Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: const Color(
+                                            0xFFF2A33A,
+                                          ).withValues(alpha: 0.9),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            "Ready to Drive?",
-                            style:
-                                const TextStyle(
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                "Ready to Drive?",
+                                style: const TextStyle(
                                   fontSize: 32,
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,
                                 ).copyWith(
                                   shadows: [
                                     Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.3,
-                                      ),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.3),
                                       blurRadius: 10,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
-                          ),
-                        ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+
+                      // 4. Animated Page Indicator Dots (positioned just above the form sheet)
+                      if (state.introBanners.length > 1)
+                        Positioned(
+                          top: (size.height * 0.4) - 24,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              state.introBanners.length,
+                              (index) {
+                                final isActive =
+                                    index == state.currentBannerIndex;
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOutCubic,
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  width: isActive ? 22 : 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? Colors.white
+                                        : Colors.white
+                                            .withValues(alpha: 0.45),
+                                    borderRadius: BorderRadius.circular(3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            Colors.black.withValues(alpha: 0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 

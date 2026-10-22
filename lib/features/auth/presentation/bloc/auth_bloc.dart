@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/socket_service.dart';
 import '../../../../core/usecase/usecase.dart';
+import '../../domain/usecases/get_intro_banners_usecase.dart';
 import '../../domain/usecases/login_customer_usecase.dart';
 import '../../domain/usecases/register_customer_usecase.dart';
 import '../../domain/usecases/register_driver_usecase.dart';
@@ -19,6 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final RegisterCustomerUseCase registerCustomerUseCase;
   final RegisterDriverUseCase? registerDriverUseCase;
   final LogoutUseCase logoutUseCase;
+  final GetIntroBannersUseCase? getIntroBannersUseCase;
   final AuthRepository authRepository;
   final SocketService _socketService;
 
@@ -29,11 +31,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.registerCustomerUseCase,
     this.registerDriverUseCase,
     required this.logoutUseCase,
+    this.getIntroBannersUseCase,
     required this.authRepository,
     SocketService? socketService,
   })  : _socketService = socketService ?? SocketService(),
         super(const AuthState()) {
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
+    on<LoadIntroBannersEvent>(_onLoadIntroBanners);
+    on<IntroBannerPageChangedEvent>(_onIntroBannerPageChanged);
     on<LoginWithEmailEvent>(_onLoginWithEmail);
     on<SendOtpEvent>(_onSendOtp);
     on<VerifyOtpEvent>(_onVerifyOtp);
@@ -45,6 +50,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutEvent>(_onLogout);
     on<ClearAuthErrorEvent>(_onClearAuthError);
     on<ResetAuthEvent>(_onResetAuth);
+  }
+
+  Future<void> _onLoadIntroBanners(
+    LoadIntroBannersEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final useCase = getIntroBannersUseCase;
+    if (useCase == null) return;
+    emit(state.copyWith(isLoadingBanners: true));
+    try {
+      final banners = await useCase();
+      emit(state.copyWith(
+        introBanners: banners,
+        isLoadingBanners: false,
+      ));
+    } catch (_) {
+      emit(state.copyWith(isLoadingBanners: false));
+    }
+  }
+
+  void _onIntroBannerPageChanged(
+    IntroBannerPageChangedEvent event,
+    Emitter<AuthState> emit,
+  ) {
+    emit(state.copyWith(currentBannerIndex: event.pageIndex));
   }
 
   void _onResetAuth(ResetAuthEvent event, Emitter<AuthState> emit) {

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
+import '../../domain/entities/intro_banner.dart';
 import 'auth_event.dart';
 
 enum AuthStatus {
@@ -20,6 +21,9 @@ class AuthState extends Equatable {
   final AuthLoginMode loginMode;
   final bool rememberMe;
   final String? pendingPhoneNumber;
+  final List<IntroBanner> introBanners;
+  final int currentBannerIndex;
+  final bool isLoadingBanners;
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -29,6 +33,9 @@ class AuthState extends Equatable {
     this.loginMode = AuthLoginMode.email,
     this.rememberMe = true,
     this.pendingPhoneNumber,
+    this.introBanners = const [],
+    this.currentBannerIndex = 0,
+    this.isLoadingBanners = false,
   });
 
   bool get isLoading => status == AuthStatus.loading;
@@ -46,6 +53,9 @@ class AuthState extends Equatable {
     AuthLoginMode? loginMode,
     bool? rememberMe,
     String? pendingPhoneNumber,
+    List<IntroBanner>? introBanners,
+    int? currentBannerIndex,
+    bool? isLoadingBanners,
     bool clearError = false,
   }) {
     return AuthState(
@@ -56,6 +66,9 @@ class AuthState extends Equatable {
       loginMode: loginMode ?? this.loginMode,
       rememberMe: rememberMe ?? this.rememberMe,
       pendingPhoneNumber: pendingPhoneNumber ?? this.pendingPhoneNumber,
+      introBanners: introBanners ?? this.introBanners,
+      currentBannerIndex: currentBannerIndex ?? this.currentBannerIndex,
+      isLoadingBanners: isLoadingBanners ?? this.isLoadingBanners,
     );
   }
 
@@ -68,5 +81,8 @@ class AuthState extends Equatable {
     loginMode,
     rememberMe,
     pendingPhoneNumber,
+    introBanners,
+    currentBannerIndex,
+    isLoadingBanners,
   ];
 }

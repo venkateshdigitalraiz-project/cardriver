@@ -6,6 +6,7 @@ import '../../domain/entities/driver_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
+import '../../domain/entities/intro_banner.dart';
 import '../models/driver_register_body.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -251,6 +252,15 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } catch (e) {
       debugPrint('⚠️ [AuthRepository] Notice refreshing token on logout: $e');
+    }
+  }
+
+  @override
+  Future<List<IntroBanner>> getIntroBanners() async {
+    try {
+      return await remoteDataSource.getIntroBanners();
+    } catch (_) {
+      return [];
     }
   }
 }

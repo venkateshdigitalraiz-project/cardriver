@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/domain/entities/customer_entity.dart';
@@ -12,6 +13,9 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/documents/presentation/pages/documents_page.dart';
 import '../../features/earnings/presentation/pages/earnings_page.dart';
+import '../../features/home/presentation/bloc/home_bloc.dart';
+import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/home/presentation/widgets/create_ride_widget.dart';
 import '../../features/legal/presentation/pages/legal_page.dart';
 import '../../features/navigation/presentation/pages/main_navigator_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
@@ -26,6 +30,7 @@ import '../../features/support/presentation/pages/support_page.dart';
 import '../../features/trip/domain/entities/trip_entity.dart';
 import '../../features/trip/presentation/pages/trip_details_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
+import '../../injection_container.dart';
 import '../style/app_colors.dart';
 
 /// Centralized route paths for the application
@@ -50,6 +55,7 @@ class AppRoutes {
   static const String trips = '/trips';
   static const String tripDetails = '/trip-details';
   static const String profile = '/profile';
+  static const String createRide = '/create-ride';
 }
 
 /// Centralized route names for named navigation
@@ -74,6 +80,7 @@ class AppRouteNames {
   static const String trips = 'trips';
   static const String tripDetails = 'tripDetails';
   static const String profile = 'profile';
+  static const String createRide = 'createRide';
 }
 
 /// Helper that converts any Stream into a Listenable for GoRouter
@@ -387,6 +394,37 @@ class AppRouter {
             ),
           ],
         ),
+        GoRoute(
+          path: AppRoutes.createRide,
+          name: AppRouteNames.createRide,
+          builder: (context, state) {
+            HomeBloc? homeBloc;
+            CustomerEntity? customer;
+
+            if (state.extra is Map) {
+              final map = state.extra as Map;
+              homeBloc = map['homeBloc'] as HomeBloc?;
+              customer = map['customer'] as CustomerEntity?;
+            } else if (state.extra is HomeBloc) {
+              homeBloc = state.extra as HomeBloc;
+            } else if (state.extra is CustomerEntity) {
+              customer = state.extra as CustomerEntity;
+            }
+
+            customer ??= authBloc.state.customer;
+            final token = customer?.token ??
+                authBloc.state.driver?.token ??
+                authBloc.state.customer?.token ??
+                '';
+
+            return CreateRideRouteScreen(
+              key: const ValueKey('create_ride_route_screen'),
+              passedBloc: homeBloc,
+              customer: customer,
+              driverToken: token,
+            );
+          },
+        ),
       ],
       errorBuilder: (context, state) => Scaffold(
         backgroundColor: AppColors.darkBackground,
@@ -425,6 +463,62 @@ class AuthSplashScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Route screen wrapper that stably holds and provides HomeBloc
+/// using a single consistent BlocProvider constructor.
+class CreateRideRouteScreen extends StatefulWidget {
+  final HomeBloc? passedBloc;
+  final CustomerEntity? customer;
+  final String driverToken;
+
+  const CreateRideRouteScreen({
+    super.key,
+    this.passedBloc,
+    this.customer,
+    required this.driverToken,
+  });
+
+  @override
+  State<CreateRideRouteScreen> createState() => _CreateRideRouteScreenState();
+}
+
+class _CreateRideRouteScreenState extends State<CreateRideRouteScreen> {
+  late HomeBloc _bloc;
+  late bool _ownsBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.passedBloc != null) {
+      _bloc = widget.passedBloc!;
+      _ownsBloc = false;
+    } else {
+      _bloc = InjectionContainer.createHomeBloc(
+        driverToken: widget.driverToken,
+      );
+      _ownsBloc = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsBloc) {
+      _bloc.close();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<HomeBloc>.value(
+      value: _bloc,
+      child: CreateRidePage(
+        customer: widget.customer,
+        homeBloc: _bloc,
       ),
     );
   }

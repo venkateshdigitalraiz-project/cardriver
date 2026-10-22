@@ -1,8 +1,12 @@
 import '../../data/models/driver_register_body.dart';
 import '../entities/customer_entity.dart';
 import '../entities/driver_entity.dart';
+import '../entities/intro_banner.dart';
 
 abstract class AuthRepository {
+  // Intro Banners
+  Future<List<IntroBanner>> getIntroBanners();
+
   // Customer Auth
   Future<CustomerEntity> loginCustomerWithEmail({
     required String email,

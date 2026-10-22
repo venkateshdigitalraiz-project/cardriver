@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/router/app_router.dart';
 
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_spacing.dart';
@@ -13,6 +16,8 @@ import '../../domain/entities/available_ride_entity.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+
+export '../widgets/create_ride_widget.dart';
 
 class HomePage extends StatelessWidget {
   final CustomerEntity customer;
@@ -787,9 +792,26 @@ class _HomeView extends StatelessWidget {
                 ),
               ),
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => _openCreateRide(context),
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.black87,
+              elevation: 4,
+              shape: const CircleBorder(),
+              tooltip: 'Add',
+              child: const Icon(Icons.add, size: 28),
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           );
         },
       ),
+    );
+  }
+
+  void _openCreateRide(BuildContext context) {
+    context.push(
+      AppRoutes.createRide,
+      extra: {'homeBloc': context.read<HomeBloc>(), 'customer': customer},
     );
   }
 

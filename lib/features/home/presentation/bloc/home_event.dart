@@ -70,3 +70,44 @@ class ClearAcceptedRideEvent extends HomeEvent {}
 
 /// Clears the rejected ride notification indicator state.
 class ClearRejectedRideEvent extends HomeEvent {}
+
+/// Dispatched when creating a new manual ride entry.
+class CreateManualRideEvent extends HomeEvent {
+  final String userName;
+  final String mobileNumber;
+  final String fromAddress;
+  final String toAddress;
+  final double price;
+  final DateTime dateTime;
+  final double? pickupLat;
+  final double? pickupLng;
+  final double? dropLat;
+  final double? dropLng;
+
+  const CreateManualRideEvent({
+    required this.userName,
+    required this.mobileNumber,
+    required this.fromAddress,
+    required this.toAddress,
+    required this.price,
+    required this.dateTime,
+    this.pickupLat,
+    this.pickupLng,
+    this.dropLat,
+    this.dropLng,
+  });
+
+  @override
+  List<Object?> get props => [
+        userName,
+        mobileNumber,
+        fromAddress,
+        toAddress,
+        price,
+        dateTime,
+        pickupLat,
+        pickupLng,
+        dropLat,
+        dropLng,
+      ];
+}

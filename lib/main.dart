@@ -69,7 +69,8 @@ class _CarDriverAppState extends State<CarDriverApp> {
     super.initState();
     _themeCubit = ThemeCubit(initialMode: ThemeMode.dark);
     _authBloc = InjectionContainer.createAuthBloc()
-      ..add(const CheckAuthStatusEvent());
+      ..add(const CheckAuthStatusEvent())
+      ..add(const LoadIntroBannersEvent());
     _notificationBloc = InjectionContainer.createNotificationBloc()
       ..add(const LoadNotifications());
     _router = AppRouter.createRouter(_authBloc);

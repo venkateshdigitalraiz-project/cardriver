@@ -16,6 +16,19 @@ class CheckAuthStatusEvent extends AuthEvent {
   const CheckAuthStatusEvent();
 }
 
+class LoadIntroBannersEvent extends AuthEvent {
+  const LoadIntroBannersEvent();
+}
+
+class IntroBannerPageChangedEvent extends AuthEvent {
+  final int pageIndex;
+
+  const IntroBannerPageChangedEvent(this.pageIndex);
+
+  @override
+  List<Object?> get props => [pageIndex];
+}
+
 class LoginWithEmailEvent extends AuthEvent {
   final String email;
   final String password;

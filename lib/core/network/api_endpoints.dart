@@ -1,9 +1,14 @@
 class ApiEndpoints {
+  // Main Application Server
   static const String _host = 'http://192.168.0.161:3000';
   static const String baseUrl = '$_host/api';
 
   // Socket.IO server root (no /api prefix)
   static const String socketUrl = _host;
+
+  // Login & Driver Settings Server (Only for login screen intro banners & assets)
+  static const String serverBaseUrl = 'http://192.168.0.115:3000';
+  static const String driverSettings = '$serverBaseUrl/api/driver/settings';
 
   // Driver Authentication
   static const String driverLogin = '$baseUrl/driver/login';
@@ -24,4 +29,14 @@ class ApiEndpoints {
 
   // Driver Profile
   static const String driverProfile = '$baseUrl/driver/profile';
+
+  /// Helper to convert relative server paths (like /uploads/xyz.jpg) to full URLs
+  static String resolveImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return '$serverBaseUrl$cleanPath';
+  }
 }

@@ -8,9 +8,11 @@ import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/driver_entity.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
+import '../models/intro_banner_model.dart';
 import 'package:dio/dio.dart';
 
 abstract class AuthRemoteDataSource {
+  Future<List<IntroBannerModel>> getIntroBanners();
   Future<CustomerModel> loginCustomerWithEmail({
     required String email,
     required String password,
@@ -825,6 +827,50 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         return 'No internet connection. Please connect to the internet and try again.';
       default:
         return 'An unexpected network error occurred. Please try again.';
+    }
+  }
+
+  @override
+  Future<List<IntroBannerModel>> getIntroBanners() async {
+    final dio = Dio();
+    try {
+      final response = await dio.get(
+        ApiEndpoints.driverSettings,
+        options: Options(
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      final dynamic resData = response.data;
+      Map<dynamic, dynamic> body = {};
+      if (resData is Map) {
+        body = resData;
+      } else if (resData is String) {
+        try {
+          final decoded = jsonDecode(resData);
+          if (decoded is Map) body = decoded;
+        } catch (_) {}
+      }
+
+      final data = body['data'];
+      if (data is Map) {
+        final banners = data['banners'];
+        if (banners is Map) {
+          final introList = banners['intro_screen'];
+          if (introList is List) {
+            final list = introList
+                .whereType<Map>()
+                .map((item) => IntroBannerModel.fromJson(Map<String, dynamic>.from(item)))
+                .toList();
+            list.sort((a, b) => a.order.compareTo(b.order));
+            return list;
+          }
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 }
