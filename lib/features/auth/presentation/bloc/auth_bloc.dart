@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/socket_service.dart';
@@ -58,6 +59,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final useCase = getIntroBannersUseCase;
     if (useCase == null) return;
+    // Don't fetch again if banners are already loaded into memory
+    if (state.introBanners.isNotEmpty) return;
+
     emit(state.copyWith(isLoadingBanners: true));
     try {
       final banners = await useCase();
@@ -78,7 +82,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onResetAuth(ResetAuthEvent event, Emitter<AuthState> emit) {
-    emit(state.copyWith(status: AuthStatus.initial, clearError: true));
+    emit(state.copyWith(
+      status: AuthStatus.unauthenticated,
+      clearError: true,
+      clearPendingPhoneNumber: true,
+    ));
   }
 
   Future<void> _onCheckAuthStatus(
@@ -183,18 +191,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
-      final customer = await authRepository.verifyCustomerOtp(
-        phone: event.phone,
-        otp: event.otp,
+      final driver = await verifyOtpUseCase(
+        VerifyOtpParams(
+          phone: event.phone,
+          otp: event.otp,
+        ),
       );
       // Connect socket using the token received from the API safely.
-      if (customer.token.isNotEmpty) {
+      if (driver.token.isNotEmpty) {
         try {
-          _socketService.connectWithToken(customer.token);
+          _socketService.connectWithToken(driver.token);
         } catch (_) {}
       }
       emit(
-        state.copyWith(status: AuthStatus.authenticated, customer: customer),
+        state.copyWith(status: AuthStatus.authenticated, driver: driver),
       );
     } on AuthException catch (e) {
       emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
@@ -267,6 +277,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     RegisterDriverEvent event,
     Emitter<AuthState> emit,
   ) async {
+    debugPrint('🔄 [AuthBloc] Starting _onRegisterDriver...');
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
       final driverUseCase =
@@ -305,10 +316,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           profilePicPath: event.selfie,
         ),
       );
-      emit(state.copyWith(status: AuthStatus.authenticated, driver: driver));
+      debugPrint('✅ [AuthBloc] Driver registration successful for ID: ${driver.id}, Name: ${driver.name}');
+      emit(
+        state.copyWith(
+          status: AuthStatus.registered,
+          driver: driver,
+          clearError: true,
+        ),
+      );
     } on AuthException catch (e) {
+      debugPrint('❌ [AuthBloc] Driver registration AuthException: ${e.message}');
       emit(state.copyWith(status: AuthStatus.error, errorMessage: e.message));
     } catch (e) {
+      debugPrint('❌ [AuthBloc] Driver registration unexpected error: $e');
       emit(
         state.copyWith(
           status: AuthStatus.error,
@@ -339,7 +359,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(state.copyWith(status: AuthStatus.loading));
     _socketService.disconnectFully();
     await logoutUseCase(const NoParams());
-    emit(const AuthState(status: AuthStatus.unauthenticated));
+    emit(AuthState(
+      status: AuthStatus.unauthenticated,
+      introBanners: state.introBanners,
+    ));
   }
 
   void _onClearAuthError(ClearAuthErrorEvent event, Emitter<AuthState> emit) {

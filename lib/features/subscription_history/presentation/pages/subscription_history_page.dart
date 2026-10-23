@@ -41,7 +41,7 @@ class _SubscriptionHistoryScaffold extends StatelessWidget {
             color: Color(0xFF0F172A),
             size: 18,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(),
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'driver_active_subscription_entity.dart';
+import 'driver_documents_entity.dart';
 
 /// Clean Architecture Entity representing the driver profile from /api/driver/profile
 class DriverProfileEntity extends Equatable {
@@ -19,9 +20,11 @@ class DriverProfileEntity extends Equatable {
   final bool isVerified;
   final String createdAt;
   final String updatedAt;
+  final String? fcmToken;
   final bool hasSubscription;
   final DriverActiveSubscriptionEntity? activeSubscription;
   final List<DriverActiveSubscriptionEntity> allSubscriptions;
+  final DriverDocumentsEntity? documents;
 
   const DriverProfileEntity({
     required this.id,
@@ -40,9 +43,11 @@ class DriverProfileEntity extends Equatable {
     required this.isVerified,
     required this.createdAt,
     required this.updatedAt,
+    this.fcmToken,
     required this.hasSubscription,
     this.activeSubscription,
     this.allSubscriptions = const [],
+    this.documents,
   });
 
   /// Full display name
@@ -78,8 +83,10 @@ class DriverProfileEntity extends Equatable {
         isVerified,
         createdAt,
         updatedAt,
+        fcmToken,
         hasSubscription,
         activeSubscription,
         allSubscriptions,
+        documents,
       ];
 }

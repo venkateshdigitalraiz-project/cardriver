@@ -22,6 +22,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _phoneFormKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
+  final _phoneFocusNode = FocusNode();
   final List<TextEditingController> _otpControllers = List.generate(
     4,
     (_) => TextEditingController(),
@@ -38,7 +39,10 @@ class _LoginPageState extends State<LoginPage> {
     _pageController = PageController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<AuthBloc>().add(const LoadIntroBannersEvent());
+        final authBloc = context.read<AuthBloc>();
+        if (authBloc.state.introBanners.isEmpty) {
+          authBloc.add(const LoadIntroBannersEvent());
+        }
       }
     });
   }
@@ -62,6 +66,7 @@ class _LoginPageState extends State<LoginPage> {
     _autoScrollTimer?.cancel();
     _pageController.dispose();
     _phoneController.dispose();
+    _phoneFocusNode.dispose();
     for (var c in _otpControllers) {
       c.dispose();
     }
@@ -69,6 +74,36 @@ class _LoginPageState extends State<LoginPage> {
       f.dispose();
     }
     super.dispose();
+  }
+
+  void _returnToPhoneInput() {
+    for (final f in _focusNodes) {
+      f.unfocus();
+    }
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isOtpSentLocal = false;
+      for (var c in _otpControllers) {
+        c.clear();
+      }
+    });
+
+    context.read<AuthBloc>().add(
+      const ResetAuthEvent(),
+    );
+
+    if (_phoneController.text.isNotEmpty) {
+      _phoneController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _phoneController.text.length),
+      );
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _phoneFocusNode.requestFocus();
+      }
+    });
   }
 
   void _onSendOtp() {
@@ -89,6 +124,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (_phoneFormKey.currentState?.validate() ?? false) {
+      _phoneFocusNode.unfocus();
       setState(() {
         _isOtpSentLocal = true;
       });
@@ -155,8 +191,16 @@ class _LoginPageState extends State<LoginPage> {
       builder: (context, state) {
         final isOtpSent = _isOtpSentLocal || state.status == AuthStatus.otpSent;
 
-        return Scaffold(
-          backgroundColor: AppColors.darkBackground,
+        return PopScope(
+          canPop: !isOtpSent,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            if (isOtpSent) {
+              _returnToPhoneInput();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.darkBackground,
           body: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Stack(
@@ -509,6 +553,7 @@ class _LoginPageState extends State<LoginPage> {
                                   const SizedBox(height: 24),
                                   TextFormField(
                                     controller: _phoneController,
+                                    focusNode: _phoneFocusNode,
                                     keyboardType: TextInputType.phone,
                                     style: const TextStyle(
                                       color: Colors.black87,
@@ -538,18 +583,7 @@ class _LoginPageState extends State<LoginPage> {
                                                 Icons.edit,
                                                 color: AppColors.primary,
                                               ),
-                                              onPressed: () {
-                                                setState(() {
-                                                  _isOtpSentLocal = false;
-                                                  for (var c
-                                                      in _otpControllers) {
-                                                    c.clear();
-                                                  }
-                                                });
-                                                context.read<AuthBloc>().add(
-                                                  ResetAuthEvent(),
-                                                );
-                                              },
+                                              onPressed: _returnToPhoneInput,
                                             )
                                           : null,
                                       filled: true,
@@ -677,6 +711,52 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         );
                                       }),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        TextButton.icon(
+                                          onPressed: _returnToPhoneInput,
+                                          icon: const Icon(
+                                            Icons.edit_outlined,
+                                            size: 15,
+                                            color: AppColors.primary,
+                                          ),
+                                          label: const Text(
+                                            'Edit mobile number',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: state.isLoading
+                                              ? null
+                                              : _onSendOtp,
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                          child: const Text(
+                                            'Resend OTP',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                   const SizedBox(height: 20),
@@ -863,8 +943,9 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 }

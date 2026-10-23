@@ -7,8 +7,6 @@ import '../../features/auth/domain/entities/customer_entity.dart';
 import '../../features/auth/domain/entities/driver_entity.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
-import '../../features/auth/presentation/pages/customer_dashboard_page.dart';
-import '../../features/auth/presentation/pages/driver_dashboard_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/documents/presentation/pages/documents_page.dart';
@@ -19,6 +17,8 @@ import '../../features/home/presentation/widgets/create_ride_widget.dart';
 import '../../features/legal/presentation/pages/legal_page.dart';
 import '../../features/navigation/presentation/pages/main_navigator_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/profile/domain/entities/driver_documents_entity.dart';
+import '../../features/profile/domain/entities/driver_profile_entity.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/location_picker_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
@@ -101,6 +101,14 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
+CustomerEntity? _resolveCustomer(dynamic extra, AuthState authState) {
+  if (extra is CustomerEntity) return extra;
+  if (extra is DriverEntity) return extra.toCustomerEntity();
+  if (authState.customer != null) return authState.customer;
+  if (authState.driver != null) return authState.driver!.toCustomerEntity();
+  return null;
+}
+
 /// Centralized Router Configuration using go_router
 class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
@@ -122,11 +130,14 @@ class AppRouter {
 
         // 1. Initial local authentication verification
         if (status == AuthStatus.initial) {
+          if (isLogin || isRegister) return null;
           return isSplash ? null : AppRoutes.splash;
         }
 
         // 2. Unauthenticated check
-        final isUnauthenticated = status == AuthStatus.unauthenticated ||
+        final isUnauthenticated =
+            status == AuthStatus.unauthenticated ||
+            status == AuthStatus.registered ||
             (status == AuthStatus.error && !authState.isAuthenticated);
 
         if (isUnauthenticated) {
@@ -169,8 +180,7 @@ class AppRouter {
           path: AppRoutes.customerHome,
           name: AppRouteNames.customerHome,
           builder: (context, state) {
-            final customer =
-                (state.extra as CustomerEntity?) ?? authBloc.state.customer;
+            final customer = _resolveCustomer(state.extra, authBloc.state);
             if (customer == null) {
               return const LoginPage();
             }
@@ -178,33 +188,40 @@ class AppRouter {
           },
         ),
         GoRoute(
-          path: AppRoutes.customerDashboard,
-          name: AppRouteNames.customerDashboard,
-          builder: (context, state) {
-            final customer =
-                (state.extra as CustomerEntity?) ?? authBloc.state.customer;
-            if (customer == null) {
-              return const LoginPage();
-            }
-            return CustomerDashboardPage(customer: customer);
-          },
-        ),
-        GoRoute(
           path: AppRoutes.driverDashboard,
           name: AppRouteNames.driverDashboard,
           builder: (context, state) {
-            final driver =
-                (state.extra as DriverEntity?) ?? authBloc.state.driver;
-            if (driver == null) {
+            final customer = _resolveCustomer(state.extra, authBloc.state);
+            if (customer == null) {
               return const LoginPage();
             }
-            return DriverDashboardPage(driver: driver);
+            return MainNavigatorPage(customer: customer);
           },
         ),
+
         GoRoute(
           path: AppRoutes.documents,
           name: AppRouteNames.documents,
-          builder: (context, state) => const DocumentsPage(),
+          builder: (context, state) {
+            DriverDocumentsEntity? documents;
+            DriverProfileEntity? profile;
+            final extra = state.extra;
+            if (extra is DriverDocumentsEntity) {
+              documents = extra;
+            } else if (extra is DriverProfileEntity) {
+              profile = extra;
+              documents = extra.documents;
+            } else if (extra is Map) {
+              if (extra['documents'] is DriverDocumentsEntity) {
+                documents = extra['documents'] as DriverDocumentsEntity;
+              }
+              if (extra['profile'] is DriverProfileEntity) {
+                profile = extra['profile'] as DriverProfileEntity;
+                documents ??= profile.documents;
+              }
+            }
+            return DocumentsPage(documents: documents, profile: profile);
+          },
         ),
         GoRoute(
           path: AppRoutes.earnings,
@@ -246,7 +263,8 @@ class AppRouter {
               hasSubscription = state.extra as bool;
             }
 
-            driverToken ??= state.uri.queryParameters['driverToken'] ??
+            driverToken ??=
+                state.uri.queryParameters['driverToken'] ??
                 authBloc.state.driver?.token;
             if (hasSubscription == null &&
                 state.uri.queryParameters.containsKey('hasSubscription')) {
@@ -270,7 +288,8 @@ class AppRouter {
             } else if (state.extra is Map) {
               driverToken = (state.extra as Map)['driverToken'] as String?;
             }
-            driverToken ??= state.uri.queryParameters['driverToken'] ??
+            driverToken ??=
+                state.uri.queryParameters['driverToken'] ??
                 authBloc.state.driver?.token;
 
             return SubscriptionHistoryPage(driverToken: driverToken);
@@ -303,7 +322,8 @@ class AppRouter {
           path: AppRoutes.trips,
           name: AppRouteNames.trips,
           builder: (context, state) {
-            final driverToken = state.uri.queryParameters['driverToken'] ??
+            final driverToken =
+                state.uri.queryParameters['driverToken'] ??
                 (state.extra as String?) ??
                 authBloc.state.driver?.token ??
                 authBloc.state.customer?.token;
@@ -314,17 +334,16 @@ class AppRouter {
           path: AppRoutes.profile,
           name: AppRouteNames.profile,
           builder: (context, state) {
-            final userName = state.uri.queryParameters['userName'] ??
+            final userName =
+                state.uri.queryParameters['userName'] ??
                 authBloc.state.customer?.name ??
                 authBloc.state.driver?.name ??
                 'Driver';
-            final driverToken = state.uri.queryParameters['driverToken'] ??
+            final driverToken =
+                state.uri.queryParameters['driverToken'] ??
                 authBloc.state.driver?.token ??
                 authBloc.state.customer?.token;
-            return ProfilePage(
-              userName: userName,
-              driverToken: driverToken,
-            );
+            return ProfilePage(userName: userName, driverToken: driverToken);
           },
         ),
         GoRoute(
@@ -333,7 +352,8 @@ class AppRouter {
           builder: (context, state) {
             TripEntity? trip;
             String? bookingId = state.uri.queryParameters['bookingId'];
-            String? driverToken = state.uri.queryParameters['driverToken'] ??
+            String? driverToken =
+                state.uri.queryParameters['driverToken'] ??
                 authBloc.state.driver?.token;
 
             if (state.extra is TripEntity) {
@@ -369,7 +389,7 @@ class AppRouter {
                 final bookingId = state.pathParameters['bookingId'] ?? '';
                 final driverToken =
                     state.uri.queryParameters['driverToken'] ??
-                        authBloc.state.driver?.token;
+                    authBloc.state.driver?.token;
                 TripEntity? trip;
 
                 if (state.extra is TripEntity) {
@@ -412,7 +432,8 @@ class AppRouter {
             }
 
             customer ??= authBloc.state.customer;
-            final token = customer?.token ??
+            final token =
+                customer?.token ??
                 authBloc.state.driver?.token ??
                 authBloc.state.customer?.token ??
                 '';
@@ -451,11 +472,7 @@ class AuthSplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.local_taxi_rounded,
-              size: 64,
-              color: AppColors.primary,
-            ),
+            Icon(Icons.local_taxi_rounded, size: 64, color: AppColors.primary),
             SizedBox(height: 24),
             CircularProgressIndicator(
               strokeWidth: 2.5,
@@ -517,9 +534,38 @@ class _CreateRideRouteScreenState extends State<CreateRideRouteScreen> {
     return BlocProvider<HomeBloc>.value(
       value: _bloc,
       child: CreateRidePage(
-        customer: widget.customer,
+        //  customer: widget.customer,
         homeBloc: _bloc,
       ),
     );
+  }
+}
+
+/// Extension on BuildContext to safely handle back navigation without throwing
+/// "GoError: There is nothing to pop" when pages are navigated with context.go()
+extension SafeNavigationExtension on BuildContext {
+  void safePop({String? fallbackRoute}) {
+    if (canPop()) {
+      pop();
+    } else if (Navigator.of(this).canPop()) {
+      Navigator.of(this).pop();
+    } else {
+      if (fallbackRoute != null && fallbackRoute.isNotEmpty) {
+        go(fallbackRoute);
+        return;
+      }
+      try {
+        final authState = read<AuthBloc>().state;
+        if (authState.driver != null) {
+          go(AppRoutes.driverDashboard, extra: authState.driver);
+        } else if (authState.customer != null) {
+          go(AppRoutes.customerHome, extra: authState.customer);
+        } else {
+          go(AppRoutes.login);
+        }
+      } catch (_) {
+        go(AppRoutes.login);
+      }
+    }
   }
 }

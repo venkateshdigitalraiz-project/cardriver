@@ -56,20 +56,13 @@ class _CreateRidePageState extends State<CreateRidePage> {
   double? _dropLat;
   double? _dropLng;
 
-  DateTime _selectedDateTime = DateTime.now().add(const Duration(hours: 1));
+  DateTime? _selectedDateTime;
 
   @override
   void initState() {
     super.initState();
-    if (widget.customer != null) {
-      if (widget.customer!.name.isNotEmpty) {
-        _usernameController.text = widget.customer!.name;
-      }
-      if (widget.customer!.phone.isNotEmpty) {
-        _phoneController.text = widget.customer!.phone;
-      }
-    }
-    _updateDateTimeDisplay();
+    // Do not pre-fill passenger name, mobile number, or schedule (start with no data)
+    _dateTimeController.clear();
 
     // Rebuild listeners for real-time preview updates in bottom bar
     _priceController.addListener(_onPriceChanged);
@@ -85,16 +78,23 @@ class _CreateRidePageState extends State<CreateRidePage> {
   }
 
   void _updateDateTimeDisplay() {
-    _dateTimeController.text =
-        DateFormat('EEE, dd MMM yyyy • hh:mm a').format(_selectedDateTime);
+    if (_selectedDateTime != null) {
+      _dateTimeController.text = DateFormat(
+        'EEE, dd MMM yyyy • hh:mm a',
+      ).format(_selectedDateTime!);
+    } else {
+      _dateTimeController.clear();
+    }
   }
 
   Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final initialDate = _selectedDateTime ?? now;
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      initialDate: initialDate.isBefore(now) ? now : initialDate,
+      firstDate: now.subtract(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 90)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -114,7 +114,9 @@ class _CreateRidePageState extends State<CreateRidePage> {
 
     final pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      initialTime: TimeOfDay.fromDateTime(
+        _selectedDateTime ?? now.add(const Duration(hours: 1)),
+      ),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -273,71 +275,203 @@ class _CreateRidePageState extends State<CreateRidePage> {
         : updated.toStringAsFixed(2);
   }
 
-  void _submitForm() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
-      if (price <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid fare price greater than ₹0'),
-            backgroundColor: Color(0xFFEF4444),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
-      final bloc = widget.homeBloc ?? context.read<HomeBloc>();
-      bloc.add(
-        CreateManualRideEvent(
-          userName: _usernameController.text.trim(),
-          mobileNumber: _phoneController.text.trim(),
-          fromAddress: _fromAddressController.text.trim(),
-          toAddress: _toAddressController.text.trim(),
-          price: price,
-          dateTime: _selectedDateTime,
-          pickupLat: _pickupLat,
-          pickupLng: _pickupLng,
-          dropLat: _dropLat,
-          dropLng: _dropLng,
-        ),
-      );
-
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        Navigator.pop(context);
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Ride created successfully for ${_usernameController.text.trim()} (₹${price.toStringAsFixed(0)})!',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13.5,
-                  ),
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                  color: Colors.white,
                 ),
               ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+            ),
+          ],
         ),
-      );
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _submitForm() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _showFromDropdown = false;
+      _showToDropdown = false;
+    });
+
+    final isFormValid = _formKey.currentState?.validate() ?? false;
+
+    final passengerName = _usernameController.text.trim();
+    final mobileNumber = _phoneController.text.trim();
+    final pickupLocation = _fromAddressController.text.trim();
+    final dropLocation = _toAddressController.text.trim();
+    final fareText = _priceController.text.trim();
+    final price = double.tryParse(fareText);
+
+    // Identify any missing required fields to display specific missing data
+    final List<String> missingFields = [];
+    if (passengerName.isEmpty) missingFields.add('Passenger Name');
+    if (mobileNumber.isEmpty) missingFields.add('Mobile Number');
+    if (pickupLocation.isEmpty) missingFields.add('Pickup Location');
+    if (dropLocation.isEmpty) missingFields.add('Drop-off Destination');
+    if (fareText.isEmpty) missingFields.add('Ride Fare');
+    if (_selectedDateTime == null) missingFields.add('Pickup Schedule');
+
+    if (missingFields.isNotEmpty) {
+      if (missingFields.length == 1) {
+        final field = missingFields.first;
+        if (field == 'Pickup Schedule') {
+          _showErrorSnackBar('Please select $field');
+        } else {
+          _showErrorSnackBar('Please enter $field');
+        }
+      } else {
+        _showErrorSnackBar(
+          'Missing required fields: ${missingFields.join(", ")}',
+        );
+      }
+      return;
     }
+
+    // Validate passenger name format
+    if (passengerName.length < 2) {
+      _showErrorSnackBar('Passenger name must be at least 2 characters');
+      return;
+    }
+
+    // Validate mobile number format
+    if (mobileNumber.length != 10 ||
+        !RegExp(r'^\d{10}$').hasMatch(mobileNumber)) {
+      _showErrorSnackBar('Mobile number must be exactly 10 digits');
+      return;
+    }
+
+    // Validate pickup location length
+    if (pickupLocation.length < 3) {
+      _showErrorSnackBar('Please enter a valid pickup location');
+      return;
+    }
+
+    // Validate drop-off destination length
+    if (dropLocation.length < 3) {
+      _showErrorSnackBar('Please enter a valid drop-off destination');
+      return;
+    }
+
+    // Check that pickup and drop-off are not identical
+    if (pickupLocation.toLowerCase() == dropLocation.toLowerCase()) {
+      _showErrorSnackBar('Pickup and drop-off locations cannot be identical');
+      return;
+    }
+
+    // Validate fare price
+    if (price == null || price <= 0) {
+      _showErrorSnackBar('Please enter a valid fare price greater than ₹0');
+      return;
+    }
+
+    // Validate pickup schedule
+    if (_selectedDateTime!.isBefore(
+      DateTime.now().subtract(const Duration(minutes: 5)),
+    )) {
+      _showErrorSnackBar('Pickup schedule time cannot be in the past');
+      return;
+    }
+
+    // Form key validation check
+    if (!isFormValid) {
+      _showErrorSnackBar('Please correct the highlighted fields');
+      return;
+    }
+
+    // Save ScaffoldMessenger before popping the current screen
+    final messenger = ScaffoldMessenger.of(context);
+    final bloc = widget.homeBloc ?? context.read<HomeBloc>();
+
+    bloc.add(
+      CreateManualRideEvent(
+        userName: passengerName,
+        mobileNumber: mobileNumber,
+        fromAddress: pickupLocation,
+        toAddress: dropLocation,
+        price: price,
+        dateTime: _selectedDateTime!,
+        pickupLat: _pickupLat,
+        pickupLng: _pickupLng,
+        dropLat: _dropLat,
+        dropLng: _dropLng,
+      ),
+    );
+
+    // Close current screen to previous screen
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      Navigator.of(context).pop();
+    }
+
+    // Show message successfully updated on the previous screen
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ride successfully updated!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$passengerName • ₹${price.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
@@ -486,7 +620,6 @@ class _CreateRidePageState extends State<CreateRidePage> {
     );
   }
 
-
   Widget _buildPassengerCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -546,6 +679,9 @@ class _CreateRidePageState extends State<CreateRidePage> {
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please enter passenger name';
+              }
+              if (value.trim().length < 2) {
+                return 'Passenger name must be at least 2 characters';
               }
               return null;
             },
@@ -628,7 +764,8 @@ class _CreateRidePageState extends State<CreateRidePage> {
                 return 'Please enter 10-digit mobile number';
               }
               final trimmed = value.trim();
-              if (trimmed.length != 10) {
+              if (trimmed.length != 10 ||
+                  !RegExp(r'^\d{10}$').hasMatch(trimmed)) {
                 return 'Mobile number must be exactly 10 digits';
               }
               return null;
@@ -797,6 +934,9 @@ class _CreateRidePageState extends State<CreateRidePage> {
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter pickup location';
                         }
+                        if (value.trim().length < 3) {
+                          return 'Please enter a valid pickup location';
+                        }
                         return null;
                       },
                     ),
@@ -862,6 +1002,13 @@ class _CreateRidePageState extends State<CreateRidePage> {
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter destination address';
+                        }
+                        if (value.trim().length < 3) {
+                          return 'Please enter a valid destination address';
+                        }
+                        if (value.trim().toLowerCase() ==
+                            _fromAddressController.text.trim().toLowerCase()) {
+                          return 'Drop-off cannot be the same as pickup location';
                         }
                         return null;
                       },
@@ -1062,13 +1209,20 @@ class _CreateRidePageState extends State<CreateRidePage> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _dateTimeController.text.isNotEmpty
+                          _selectedDateTime != null &&
+                                  _dateTimeController.text.isNotEmpty
                               ? _dateTimeController.text
                               : 'Select date & time',
-                          style: const TextStyle(
-                            color: Color(0xFF0F172A),
+                          style: TextStyle(
+                            color:
+                                _selectedDateTime != null &&
+                                    _dateTimeController.text.isNotEmpty
+                                ? const Color(0xFF0F172A)
+                                : const Color(0xFF94A3B8),
                             fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: _selectedDateTime != null
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ],
@@ -1084,18 +1238,20 @@ class _CreateRidePageState extends State<CreateRidePage> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.edit_calendar_rounded,
+                          _selectedDateTime != null
+                              ? Icons.edit_calendar_rounded
+                              : Icons.calendar_today_rounded,
                           size: 14,
-                          color: Color(0xFF4F46E5),
+                          color: const Color(0xFF4F46E5),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
-                          'Change',
-                          style: TextStyle(
+                          _selectedDateTime != null ? 'Change' : 'Select',
+                          style: const TextStyle(
                             color: Color(0xFF4F46E5),
                             fontWeight: FontWeight.w700,
                             fontSize: 11.5,

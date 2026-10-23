@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_typography.dart';
 import '../../../../injection_container.dart';
@@ -66,7 +66,7 @@ class _TripDetailsView extends StatelessWidget {
             color: AppColors.textPrimaryLight,
             size: 20,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(),
         ),
         title: Text(
           'Booking Details',
@@ -172,9 +172,6 @@ class _TripDetailsView extends StatelessWidget {
                   _buildFareBreakdownCard(trip),
 
                   const SizedBox(height: 24),
-
-                  // 8. Action Buttons
-                  //    _buildActionButtons(context, trip),
                 ],
               ),
             ),
@@ -315,31 +312,6 @@ class _TripDetailsView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Expanded(
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       Text(
-              //         'Total Customer Fare',
-              //         style: TextStyle(
-              //           fontSize: 12,
-              //           fontWeight: FontWeight.w500,
-              //           color: Colors.grey.shade600,
-              //         ),
-              //       ),
-              //       const SizedBox(height: 4),
-              //       Text(
-              //         trip.formattedTotalFare,
-              //         style: const TextStyle(
-              //           fontSize: 28,
-              //           fontWeight: FontWeight.w800,
-              //           color: AppColors.primary,
-              //           height: 1.1,
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
               if (trip.driverFee > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -522,17 +494,6 @@ class _TripDetailsView extends StatelessWidget {
                         color: AppColors.textPrimaryLight,
                       ),
                     ),
-                    if (trip.pickupLat != 0.0 && trip.pickupLng != 0.0) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'GPS: ${trip.pickupLat.toStringAsFixed(4)}, ${trip.pickupLng.toStringAsFixed(4)}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -561,14 +522,14 @@ class _TripDetailsView extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.timer_outlined,
-                          size: 12,
+                          size: 15,
                           color: Colors.grey.shade600,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${trip.durationHours} Hours Duration',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.grey.shade700,
                           ),
@@ -615,17 +576,6 @@ class _TripDetailsView extends StatelessWidget {
                         color: AppColors.textPrimaryLight,
                       ),
                     ),
-                    if (trip.dropLat != 0.0 && trip.dropLng != 0.0) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'GPS: ${trip.dropLat.toStringAsFixed(4)}, ${trip.dropLng.toStringAsFixed(4)}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -694,15 +644,17 @@ class _TripDetailsView extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (trip.custId.isNotEmpty) ...[
+                    if (trip.customerPhone.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'ID: ${trip.custId}',
+                        trip.customerPhone,
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade500,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ],
@@ -714,89 +666,10 @@ class _TripDetailsView extends StatelessWidget {
           const SizedBox(height: 12),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
           const SizedBox(height: 10),
-
-          // if (trip.customerPhone.isNotEmpty)
-          //   _buildCustomerDetailRow(
-          //     Icons.phone_outlined,
-          //     'Phone',
-          //     trip.customerPhone,
-          //     trailing: TextButton.icon(
-          //       onPressed: () {
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(
-          //             content: Text('Calling ${trip.customerPhone}...'),
-          //             behavior: SnackBarBehavior.floating,
-          //             duration: const Duration(seconds: 1),
-          //           ),
-          //         );
-          //       },
-          //       icon: const Icon(Icons.call, size: 14),
-          //       label: const Text('Call'),
-          //       style: TextButton.styleFrom(
-          //         foregroundColor: const Color(0xFF10B981),
-          //         padding: const EdgeInsets.symmetric(
-          //           horizontal: 10,
-          //           vertical: 4,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // if (trip.customerEmail.isNotEmpty)
-          //   _buildCustomerDetailRow(
-          //     Icons.email_outlined,
-          //     'Email',
-          //     trip.customerEmail,
-          //   ),
-          // if (trip.customerAddress.isNotEmpty)
-          //   _buildCustomerDetailRow(
-          //     Icons.location_city_rounded,
-          //     'City/Location',
-          //     trip.customerAddress.trim(),
-          //   ),
-          // if (trip.userNotes.isNotEmpty)
-          //   _buildCustomerDetailRow(
-          //     Icons.note_alt_outlined,
-          //     'Notes',
-          //     trip.userNotes,
-          //   ),
         ],
       ),
     );
   }
-
-  // Widget _buildCustomerDetailRow(
-  //   IconData icon,
-  //   String label,
-  //   String value, {
-  //   Widget? trailing,
-  // }) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(vertical: 4),
-  //     child: Row(
-  //       crossAxisAlignment: CrossAxisAlignment.center,
-  //       children: [
-  //         Icon(icon, size: 15, color: Colors.grey.shade500),
-  //         const SizedBox(width: 8),
-  //         Text(
-  //           '$label: ',
-  //           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-  //         ),
-  //         Expanded(
-  //           child: Text(
-  //             value,
-  //             style: const TextStyle(
-  //               fontSize: 12,
-  //               fontWeight: FontWeight.w600,
-  //               color: AppColors.textPrimaryLight,
-  //             ),
-  //             overflow: TextOverflow.ellipsis,
-  //           ),
-  //         ),
-  //         ?trailing,
-  //       ],
-  //     ),
-  //   );
-  // }
 
   // ================= 5. Vehicle Specifications Card =================
 
@@ -863,11 +736,12 @@ class _TripDetailsView extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildSpecTile(
-                  icon: Icons.people_alt_rounded,
-                  label: 'Capacity',
-                  value: '${trip.numberOfPassengers} Passenger(s)',
-                ),
+                child: Container(),
+                //  _buildSpecTile(
+                //   icon: Icons.people_alt_rounded,
+                //   label: 'Capacity',
+                //   value: '${trip.numberOfPassengers} Passenger(s)',
+                // ),
               ),
             ],
           ),
@@ -981,12 +855,6 @@ class _TripDetailsView extends StatelessWidget {
               'Base Fare',
               '₹${trip.baseAmount.toStringAsFixed(0)}',
             ),
-          if (trip.driverFee > 0)
-            _buildCostRow(
-              'Driver Fee (Your Share)',
-              '₹${trip.driverFee.toStringAsFixed(0)}',
-              valueColor: const Color(0xFF10B981),
-            ),
           if (trip.taxAmount > 0)
             _buildCostRow(
               'Tax & GST (5%)',
@@ -997,11 +865,11 @@ class _TripDetailsView extends StatelessWidget {
               'Extra Km Charge',
               '₹${trip.extraKmAmount.toStringAsFixed(0)}',
             ),
-          if (trip.platformFee > 0)
-            _buildCostRow(
-              'Platform Fee',
-              '₹${trip.platformFee.toStringAsFixed(0)}',
-            ),
+          // if (trip.platformFee > 0)
+          //   _buildCostRow(
+          //     'Platform Fee',
+          //     '₹${trip.platformFee.toStringAsFixed(0)}',
+          //   ),
           if (trip.discountAmount > 0)
             _buildCostRow(
               'Discount',
@@ -1061,76 +929,6 @@ class _TripDetailsView extends StatelessWidget {
       ),
     );
   }
-
-  // ================= 8. Actions =================
-
-  // Widget _buildActionButtons(BuildContext context, TripEntity trip) {
-  //   final isUpcoming = trip.status == 'Upcoming';
-
-  //   return Column(
-  //     children: [
-  //       if (isUpcoming) ...[
-  //         SizedBox(
-  //           width: double.infinity,
-  //           child: ElevatedButton.icon(
-  //             onPressed: () {
-  //               Navigator.push(
-  //                 context,
-  //                 MaterialPageRoute(
-  //                   builder: (_) => ActiveRidePage(
-  //                     acceptedRide: trip.toAcceptedRideEntity(),
-  //                   ),
-  //                 ),
-  //               );
-  //             },
-  //             icon: const Icon(Icons.navigation_rounded, size: 20),
-  //             label: const Text(
-  //               'Start Trip / Open Live Navigation',
-  //               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-  //             ),
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: AppColors.primary,
-  //               foregroundColor: Colors.white,
-  //               padding: const EdgeInsets.symmetric(vertical: 14),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //               elevation: 0,
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //       ],
-
-  //       SizedBox(
-  //         width: double.infinity,
-  //         child: OutlinedButton.icon(
-  //           onPressed: () {
-  //             ScaffoldMessenger.of(context).showSnackBar(
-  //               const SnackBar(
-  //                 content: Text('Support ticket feature opened.'),
-  //                 behavior: SnackBarBehavior.floating,
-  //               ),
-  //             );
-  //           },
-  //           icon: const Icon(Icons.help_outline_rounded, size: 18),
-  //           label: const Text(
-  //             'Report an Issue / Help Support',
-  //             style: TextStyle(fontWeight: FontWeight.w600),
-  //           ),
-  //           style: OutlinedButton.styleFrom(
-  //             padding: const EdgeInsets.symmetric(vertical: 14),
-  //             foregroundColor: AppColors.textPrimaryLight,
-  //             side: BorderSide(color: Colors.grey.shade300),
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(12),
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
 
   // ================= Skeletons & Errors =================
 

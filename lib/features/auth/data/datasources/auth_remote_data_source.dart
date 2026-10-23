@@ -10,6 +10,7 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
 import '../models/intro_banner_model.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 abstract class AuthRemoteDataSource {
   Future<List<IntroBannerModel>> getIntroBanners();
@@ -702,11 +703,35 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }
       }
 
+      debugPrint('════════════════════════════════════════════════════════════════════');
+      debugPrint('🚀 [DRIVER REGISTRATION API] Sending POST Request');
+      debugPrint('🌐 URL: ${ApiEndpoints.driverRegister}');
+      debugPrint('📦 Content-Type: multipart/form-data');
+      debugPrint('📝 Form Fields:');
+      for (final field in formData.fields) {
+        debugPrint('   • ${field.key}: ${field.value}');
+      }
+      debugPrint('📎 Attached Files:');
+      if (formData.files.isEmpty) {
+        debugPrint('   (No files attached)');
+      } else {
+        for (final file in formData.files) {
+          debugPrint('   • ${file.key}: filename="${file.value.filename}", size=${file.value.length} bytes');
+        }
+      }
+      debugPrint('════════════════════════════════════════════════════════════════════');
+
       final response = await dio.post(
         ApiEndpoints.driverRegister,
         options: Options(headers: {'content-type': 'multipart/form-data'}),
         data: formData,
       );
+
+      debugPrint('════════════════════════════════════════════════════════════════════');
+      debugPrint('✅ [DRIVER REGISTRATION API] Response Received');
+      debugPrint('📊 Status Code: ${response.statusCode}');
+      debugPrint('📄 Response Body: ${response.data}');
+      debugPrint('════════════════════════════════════════════════════════════════════');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resData = response.data;
@@ -737,6 +762,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
                 effectiveFirstName.isNotEmpty)
             ? '$effectiveFirstName $effectiveLastName'.trim()
             : name;
+
+        debugPrint('🎉 [DRIVER REGISTRATION API] Successfully parsed driver data:');
+        debugPrint('   • Driver ID: ${driverData['id'] ?? driverData['_id']}');
+        debugPrint('   • Full Name: $fullName');
+        debugPrint('   • Email: ${driverData['email'] ?? body?.email ?? email}');
+        debugPrint('   • Phone: ${driverData['phone'] ?? body?.phone ?? phone}');
 
         return DriverModel(
           id:
@@ -787,13 +818,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           profilePicPath: body?.selfie ?? selfie ?? profilePicPath,
         );
       } else {
+        debugPrint('❌ [DRIVER REGISTRATION API] Unexpected Status: ${response.statusCode}');
         throw AuthException(
           message: 'Registration failed with status ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
+      debugPrint('════════════════════════════════════════════════════════════════════');
+      debugPrint('❌ [DRIVER REGISTRATION API] DioException Occurred');
+      debugPrint('📊 Status Code: ${e.response?.statusCode}');
+      debugPrint('📄 Error Data: ${e.response?.data}');
+      debugPrint('💬 Dio Message: ${e.message}');
+      debugPrint('════════════════════════════════════════════════════════════════════');
       throw AuthException(message: _handleDioError(e));
     } catch (e) {
+      debugPrint('❌ [DRIVER REGISTRATION API] Unexpected Exception: $e');
       if (e is AuthException) rethrow;
       throw AuthException(message: 'Registration failed: ${e.toString()}');
     }
@@ -834,6 +873,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<List<IntroBannerModel>> getIntroBanners() async {
     final dio = Dio();
     try {
+      debugPrint('🌍 API Request -> GET ${ApiEndpoints.driverSettings}');
       final response = await dio.get(
         ApiEndpoints.driverSettings,
         options: Options(
@@ -841,6 +881,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           receiveTimeout: const Duration(seconds: 10),
         ),
       );
+      debugPrint('🌍 API Response [driverSettings]: ${response.statusCode} - ${response.data}');
 
       final dynamic resData = response.data;
       Map<dynamic, dynamic> body = {};
@@ -864,12 +905,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
                 .map((item) => IntroBannerModel.fromJson(Map<String, dynamic>.from(item)))
                 .toList();
             list.sort((a, b) => a.order.compareTo(b.order));
+            debugPrint('✅ Loaded ${list.length} driver intro banners from server');
             return list;
           }
         }
       }
+      debugPrint('ℹ️ No driver intro banners found in server response (intro_screen is empty)');
       return [];
-    } catch (_) {
+    } catch (e) {
+      debugPrint('⚠️ Error fetching driver intro banners: $e');
       return [];
     }
   }

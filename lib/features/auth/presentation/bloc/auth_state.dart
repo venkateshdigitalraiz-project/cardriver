@@ -10,6 +10,7 @@ enum AuthStatus {
   otpSent,
   authenticated,
   unauthenticated,
+  registered,
   error,
 }
 
@@ -43,6 +44,7 @@ class AuthState extends Equatable {
       status == AuthStatus.authenticated &&
       (customer != null || driver != null);
   bool get isOtpSent => status == AuthStatus.otpSent;
+  bool get isRegistered => status == AuthStatus.registered;
   bool get hasError => status == AuthStatus.error && errorMessage != null;
 
   AuthState copyWith({
@@ -57,6 +59,7 @@ class AuthState extends Equatable {
     int? currentBannerIndex,
     bool? isLoadingBanners,
     bool clearError = false,
+    bool clearPendingPhoneNumber = false,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -65,7 +68,9 @@ class AuthState extends Equatable {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       loginMode: loginMode ?? this.loginMode,
       rememberMe: rememberMe ?? this.rememberMe,
-      pendingPhoneNumber: pendingPhoneNumber ?? this.pendingPhoneNumber,
+      pendingPhoneNumber: clearPendingPhoneNumber
+          ? null
+          : (pendingPhoneNumber ?? this.pendingPhoneNumber),
       introBanners: introBanners ?? this.introBanners,
       currentBannerIndex: currentBannerIndex ?? this.currentBannerIndex,
       isLoadingBanners: isLoadingBanners ?? this.isLoadingBanners,

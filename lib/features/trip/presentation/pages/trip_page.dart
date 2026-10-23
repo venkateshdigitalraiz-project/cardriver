@@ -142,8 +142,7 @@ class _TripViewState extends State<_TripView> {
           if (state.lastCompletedTripResult != null &&
               _shownCompletedBookingId !=
                   state.lastCompletedTripResult!.bookingId) {
-            _shownCompletedBookingId =
-                state.lastCompletedTripResult!.bookingId;
+            _shownCompletedBookingId = state.lastCompletedTripResult!.bookingId;
             _showTripCompletionDialog(context, state.lastCompletedTripResult!);
           }
         },
@@ -227,8 +226,8 @@ class _TripViewState extends State<_TripView> {
       builder: (dialogCtx) {
         final amountStr = result.totalAmount != null
             ? (result.totalAmount! % 1 == 0
-                ? '₹${result.totalAmount!.toInt()}'
-                : '₹${result.totalAmount!.toStringAsFixed(1)}')
+                  ? '₹${result.totalAmount!.toInt()}'
+                  : '₹${result.totalAmount!.toStringAsFixed(1)}')
             : '₹0';
         final distStr = result.actualDistance != null
             ? '${result.actualDistance!.toStringAsFixed(1)} km'
@@ -238,8 +237,9 @@ class _TripViewState extends State<_TripView> {
         if (result.tripStartedAt != null && result.tripStartedAt!.isNotEmpty) {
           try {
             final dt = DateTime.parse(result.tripStartedAt!).toLocal();
-            final hour =
-                dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+            final hour = dt.hour == 0
+                ? 12
+                : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
             final period = dt.hour >= 12 ? 'PM' : 'AM';
             final minute = dt.minute.toString().padLeft(2, '0');
             startedStr = '$hour:$minute $period';
@@ -253,8 +253,9 @@ class _TripViewState extends State<_TripView> {
             result.tripCompletedAt!.isNotEmpty) {
           try {
             final dt = DateTime.parse(result.tripCompletedAt!).toLocal();
-            final hour =
-                dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+            final hour = dt.hour == 0
+                ? 12
+                : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
             final period = dt.hour >= 12 ? 'PM' : 'AM';
             final minute = dt.minute.toString().padLeft(2, '0');
             completedStr = '$hour:$minute $period';
@@ -281,17 +282,19 @@ class _TripViewState extends State<_TripView> {
           canPop: true,
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) {
-              context
-                  .read<TripBloc>()
-                  .add(const DismissTripCompletionDialogEvent());
+              context.read<TripBloc>().add(
+                const DismissTripCompletionDialogEvent(),
+              );
             }
           },
           child: Dialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(22),
@@ -310,8 +313,9 @@ class _TripViewState extends State<_TripView> {
                             color: const Color(0xFFECFDF5),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFF10B981)
-                                  .withValues(alpha: 0.2),
+                              color: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.2),
                               width: 2,
                             ),
                           ),
@@ -327,9 +331,9 @@ class _TripViewState extends State<_TripView> {
                           splashRadius: 20,
                           onPressed: () {
                             Navigator.of(dialogCtx).pop();
-                            context
-                                .read<TripBloc>()
-                                .add(const DismissTripCompletionDialogEvent());
+                            context.read<TripBloc>().add(
+                              const DismissTripCompletionDialogEvent(),
+                            );
                           },
                         ),
                       ],
@@ -457,12 +461,12 @@ class _TripViewState extends State<_TripView> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(dialogCtx).pop();
-                          context
-                              .read<TripBloc>()
-                              .add(const DismissTripCompletionDialogEvent());
                           context.read<TripBloc>().add(
-                                const FilterTripsEvent('Completed'),
-                              );
+                            const DismissTripCompletionDialogEvent(),
+                          );
+                          context.read<TripBloc>().add(
+                            const FilterTripsEvent('Completed'),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
@@ -490,9 +494,9 @@ class _TripViewState extends State<_TripView> {
                       child: TextButton(
                         onPressed: () {
                           Navigator.of(dialogCtx).pop();
-                          context
-                              .read<TripBloc>()
-                              .add(const DismissTripCompletionDialogEvent());
+                          context.read<TripBloc>().add(
+                            const DismissTripCompletionDialogEvent(),
+                          );
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.grey.shade700,
@@ -516,9 +520,6 @@ class _TripViewState extends State<_TripView> {
       },
     );
   }
-
-
-
 
   Widget _buildSummaryItem({
     required IconData icon,
@@ -921,13 +922,13 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
         : widget.trip.id;
 
     context.read<TripBloc>().add(
-          UpdateTripStatusEvent(
-            bookingId: bookingId,
-            action: 'start',
-            otp: otp,
-            token: widget.driverToken,
-          ),
-        );
+      UpdateTripStatusEvent(
+        bookingId: bookingId,
+        action: 'start',
+        otp: otp,
+        token: widget.driverToken,
+      ),
+    );
   }
 
   void _onEndTripPressed() {
@@ -940,36 +941,11 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
         : (widget.trip.distanceKm > 0 ? widget.trip.distanceKm : 25.5);
 
     context.read<TripBloc>().add(
-          UpdateTripStatusEvent(
-            bookingId: bookingId,
-            action: 'end',
-            actualDistance: distance,
-            token: widget.driverToken,
-          ),
-        );
-  }
-
-  Widget _buildTagChip(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: Colors.grey.shade600),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
-            ),
-          ),
-        ],
+      UpdateTripStatusEvent(
+        bookingId: bookingId,
+        action: 'end',
+        actualDistance: distance,
+        token: widget.driverToken,
       ),
     );
   }
@@ -1146,27 +1122,13 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                   ),
 
                   // Fare Column
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        trip.formattedTotalFare,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      if (trip.driverFee > 0)
-                        Text(
-                          'Driver: ${trip.formattedDriverFee}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                    ],
+                  Text(
+                    trip.formattedTotalFare,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ],
               ),
@@ -1309,8 +1271,9 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                               color: const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: const Color(0xFF2563EB)
-                                    .withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFF2563EB,
+                                ).withValues(alpha: 0.2),
                               ),
                             ),
                             child: Text(
@@ -1335,7 +1298,7 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                             child: Text(
                               'Duration: ${trip.durationHours} hrs',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 14,
                                 color: Colors.grey.shade600,
                               ),
                             ),
@@ -1387,46 +1350,14 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
               ),
             ),
 
-            // 4. Vehicle & Trip Details Chips
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  _buildTagChip(
-                    Icons.directions_car,
-                    trip.vehicleType.toUpperCase(),
-                  ),
-                  _buildTagChip(Icons.tune, trip.transmission.toUpperCase()),
-                  _buildTagChip(
-                    Icons.person_pin,
-                    '${trip.numberOfPassengers} Passenger(s)',
-                  ),
-                  _buildTagChip(
-                    Icons.payment,
-                    '${trip.paymentMethod.toUpperCase()} (${trip.paymentStatus.toUpperCase()})',
-                  ),
-                  if (trip.actualDistance > 0)
-                    _buildTagChip(
-                      Icons.straighten_rounded,
-                      '${trip.actualDistance.toStringAsFixed(1)} KM ACTUAL',
-                    ),
-                  if (trip.formattedCompletedDuration.isNotEmpty &&
-                      trip.isTripCompleted)
-                    _buildTagChip(
-                      Icons.timer_outlined,
-                      trip.formattedCompletedDuration.toUpperCase(),
-                    ),
-                ],
-              ),
-            ),
-
             // 4.5. 4-Digit Start OTP Entry Box (Shown directly in this card once driver arrived and before trip started)
             if (isUpcoming && isArrived && !isTripStarted) ...[
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(14),
@@ -1536,7 +1467,8 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                                   ),
                                 ),
                               ),
-                              onChanged: (val) => _onOtpDigitChanged(index, val),
+                              onChanged: (val) =>
+                                  _onOtpDigitChanged(index, val),
                             ),
                           ),
                         );
@@ -1592,12 +1524,12 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                                 } else {
                                   // Call API to mark status as reached via BLoC
                                   context.read<TripBloc>().add(
-                                        UpdateTripStatusEvent(
-                                          bookingId: bookingId,
-                                          action: 'reached',
-                                          token: widget.driverToken,
-                                        ),
-                                      );
+                                    UpdateTripStatusEvent(
+                                      bookingId: bookingId,
+                                      action: 'reached',
+                                      token: widget.driverToken,
+                                    ),
+                                  );
                                 }
                               },
                         icon: isUpdatingThisTrip
@@ -1615,8 +1547,8 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                                 isTripStarted
                                     ? Icons.stop_circle_rounded
                                     : (isArrived
-                                        ? Icons.play_arrow_rounded
-                                        : Icons.navigation_rounded),
+                                          ? Icons.play_arrow_rounded
+                                          : Icons.navigation_rounded),
                                 size: 18,
                               ),
                         label: Text(
@@ -1629,8 +1561,8 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                           backgroundColor: isTripStarted
                               ? const Color(0xFFEF4444)
                               : (isArrived
-                                  ? const Color(0xFF10B981)
-                                  : AppColors.primary),
+                                    ? const Color(0xFF10B981)
+                                    : AppColors.primary),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -1653,8 +1585,9 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                           color: const Color(0xFFECFDF5),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color:
-                                const Color(0xFF10B981).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
                         child: const Row(

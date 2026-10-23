@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/router/app_router.dart';
 import '../bloc/support_bloc.dart';
 import '../bloc/support_event.dart';
 import '../bloc/support_state.dart';
@@ -25,7 +25,7 @@ class SupportPage extends StatelessWidget {
               color: Color(0xFF0F172A),
               size: 20,
             ),
-            onPressed: () => context.pop(),
+            onPressed: () => context.safePop(),
           ),
           centerTitle: true,
           title: const Text(

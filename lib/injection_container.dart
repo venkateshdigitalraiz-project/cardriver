@@ -54,6 +54,14 @@ import 'features/profile/domain/repositories/profile_repository.dart';
 import 'features/profile/domain/usecases/get_driver_profile_usecase.dart';
 import 'features/profile/domain/usecases/get_profile_menu_usecase.dart';
 import 'features/profile/presentation/bloc/profile_bloc.dart';
+import 'features/documents/data/datasources/documents_remote_datasource.dart';
+import 'features/documents/data/repositories/documents_repository_impl.dart';
+import 'features/documents/domain/repositories/documents_repository.dart';
+import 'features/documents/domain/usecases/get_driver_documents_usecase.dart';
+import 'features/documents/presentation/bloc/documents_bloc.dart';
+import 'features/documents/presentation/bloc/documents_event.dart';
+import 'features/profile/domain/entities/driver_documents_entity.dart';
+import 'features/profile/domain/entities/driver_profile_entity.dart';
 
 /// Service Locator / Dependency Injection Setup for Clean Architecture
 class InjectionContainer {
@@ -63,6 +71,13 @@ class InjectionContainer {
   static late final FirebaseMessagingService firebaseMessagingService;
   static late final LocalStorageService localStorageService;
   static final SocketService socketService = SocketService();
+
+  // Documents Data Sources & Repositories
+  static late final DocumentsRemoteDataSource documentsRemoteDataSource;
+  static late final DocumentsRepository documentsRepository;
+
+  // Documents UseCases
+  static late final GetDriverDocumentsUseCase getDriverDocumentsUseCase;
 
   // Home Data Sources & Repositories
   static late final HomeRemoteDataSource homeRemoteDataSource;
@@ -209,6 +224,31 @@ class InjectionContainer {
     );
     getDriverProfileUseCase = GetDriverProfileUseCase(profileRepository);
     getProfileMenuUseCase = GetProfileMenuUseCase();
+
+    // Documents Data Sources & Repositories
+    documentsRemoteDataSource = DocumentsRemoteDataSourceImpl(
+      profileRemoteDataSource: profileRemoteDataSource,
+    );
+    documentsRepository = DocumentsRepositoryImpl(
+      remoteDataSource: documentsRemoteDataSource,
+    );
+    getDriverDocumentsUseCase = GetDriverDocumentsUseCase(documentsRepository);
+  }
+
+  static DocumentsBloc createDocumentsBloc({
+    DriverDocumentsEntity? documents,
+    DriverProfileEntity? profile,
+    String? token,
+  }) {
+    final bloc = DocumentsBloc(
+      getDriverDocumentsUseCase: getDriverDocumentsUseCase,
+    );
+    bloc.add(LoadDocumentsEvent(
+      documents: documents,
+      profile: profile,
+      token: token,
+    ));
+    return bloc;
   }
 
   static ProfileBloc createProfileBloc({String? driverToken}) {

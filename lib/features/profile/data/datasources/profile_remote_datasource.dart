@@ -15,7 +15,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
   // Default driver token for the environment
   static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTIxMjk0OTIsImV4cCI6MTc5MjczNDI5Mn0.kH366huiPeZurFW8CHmlsPmEljQOzag8sHKPmup-OBU';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTI3NTExMTYsImV4cCI6MTc5MzM1NTkxNn0.49lJGj1xnscvLoHVLEfVdeyGfH1NxQTBaKmwMfZYZug';
 
   ProfileRemoteDataSourceImpl({
     http.Client? client,

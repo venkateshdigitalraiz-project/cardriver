@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/router/app_router.dart';
 import '../bloc/earnings_bloc.dart';
 import '../bloc/earnings_event.dart';
 import '../bloc/earnings_state.dart';
@@ -19,7 +19,7 @@ class EarningsPage extends StatelessWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => context.pop(),
+            onPressed: () => context.safePop(),
           ),
           title: const Text(
             'Earnings',

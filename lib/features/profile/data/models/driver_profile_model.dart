@@ -1,5 +1,6 @@
 import '../../domain/entities/driver_active_subscription_entity.dart';
 import '../../domain/entities/driver_profile_entity.dart';
+import 'driver_documents_model.dart';
 
 class DriverProfileModel extends DriverProfileEntity {
   const DriverProfileModel({
@@ -19,9 +20,11 @@ class DriverProfileModel extends DriverProfileEntity {
     required super.isVerified,
     required super.createdAt,
     required super.updatedAt,
+    super.fcmToken,
     required super.hasSubscription,
     super.activeSubscription,
     super.allSubscriptions,
+    super.documents,
   });
 
   factory DriverProfileModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +59,31 @@ class DriverProfileModel extends DriverProfileEntity {
       parsedHasSub = true;
     }
 
+    final topLicense = (json['licenseNumber'] ?? '').toString().trim();
+    final topPancard = (json['pancardNumber'] ?? '').toString().trim();
+    final topAadhaar = (json['aadhaarNumber'] ?? '').toString().trim();
+    final topPassport = (json['passportId'] ?? '').toString().trim();
+
+    DriverDocumentsModel? parsedDocuments;
+    if (json['documents'] is Map) {
+      try {
+        parsedDocuments = DriverDocumentsModel.fromJson(
+          Map<String, dynamic>.from(json['documents'] as Map),
+          fallbackAadhaar: topAadhaar,
+          fallbackLicense: topLicense,
+          fallbackPan: topPancard,
+          fallbackPassport: topPassport,
+        );
+      } catch (_) {}
+    } else {
+      parsedDocuments = DriverDocumentsModel(
+        aadhaarNumber: topAadhaar,
+        licenseNumber: topLicense,
+        pancardNumber: topPancard,
+        passportId: topPassport,
+      );
+    }
+
     return DriverProfileModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       firstName: (json['firstName'] ?? '').toString(),
@@ -64,18 +92,20 @@ class DriverProfileModel extends DriverProfileEntity {
       phone: (json['phone'] ?? '').toString(),
       address: (json['address'] ?? '').toString(),
       driverId: (json['driverId'] ?? '').toString(),
-      licenseNumber: (json['licenseNumber'] ?? '').toString(),
-      pancardNumber: (json['pancardNumber'] ?? '').toString(),
-      aadhaarNumber: (json['aadhaarNumber'] ?? '').toString(),
-      passportId: (json['passportId'] ?? '').toString(),
+      licenseNumber: topLicense,
+      pancardNumber: topPancard,
+      aadhaarNumber: topAadhaar,
+      passportId: topPassport,
       status: (json['status'] ?? 'verified').toString(),
       isOnline: json['isOnline'] == true,
       isVerified: json['isVerified'] == true,
       createdAt: (json['createdAt'] ?? '').toString(),
       updatedAt: (json['updatedAt'] ?? '').toString(),
+      fcmToken: (json['fcmToken'] ?? '').toString(),
       hasSubscription: parsedHasSub,
       activeSubscription: parsedActiveSub,
       allSubscriptions: parsedAllSubs,
+      documents: parsedDocuments,
     );
   }
 
@@ -98,9 +128,13 @@ class DriverProfileModel extends DriverProfileEntity {
       'isVerified': isVerified,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'fcmToken': fcmToken,
       'hasSubscription': hasSubscription,
       'activeSubscription': activeSubscription?.toJson(),
       'allSubscriptions': allSubscriptions.map((s) => s.toJson()).toList(),
+      'documents': documents is DriverDocumentsModel
+          ? (documents as DriverDocumentsModel).toJson()
+          : null,
     };
   }
 }

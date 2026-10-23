@@ -222,7 +222,8 @@ class AuthRepositoryImpl implements AuthRepository {
       passportPath: passportPath,
       profilePicPath: profilePicPath,
     );
-    await localDataSource.cacheDriver(driver);
+    // Note: Registration does not authenticate or log the driver in locally.
+    // The driver logs in from the Login screen.
     return driver;
   }
 

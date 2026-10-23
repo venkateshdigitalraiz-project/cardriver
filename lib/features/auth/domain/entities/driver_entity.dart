@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'customer_entity.dart';
 
 enum DriverServiceType { taxi, luxury, courier, electric }
 
@@ -131,4 +132,23 @@ class DriverEntity extends Equatable {
     profilePicPath,
     driverId,
   ];
+
+  CustomerEntity toCustomerEntity() {
+    final names = name.trim().split(RegExp(r'\s+'));
+    final first = names.isNotEmpty ? names.first : '';
+    final last = names.length > 1 ? names.sublist(1).join(' ') : '';
+    return CustomerEntity(
+      id: id,
+      firstName: first,
+      lastName: last,
+      name: name,
+      email: email,
+      phone: phone,
+      avatarUrl: avatarUrl,
+      rating: rating,
+      totalRides: totalTrips,
+      token: token,
+      driverId: driverId,
+    );
+  }
 }

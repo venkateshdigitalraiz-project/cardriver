@@ -65,545 +65,498 @@ class _ProfileView extends StatelessWidget {
 
         return Container(
           color: const Color(0xFF0066FF), // Dark blue background for header
-          child: Column(
-            children: [
-              // Header App Bar
-              Padding(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 16,
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Driver Profile',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              context.read<ProfileBloc>().add(
+                RefreshProfileEvent(token: driverToken),
+              );
+            },
+            color: const Color(0xFF0066FF),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // Header App Bar
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top + 16,
+                      left: 16,
+                      right: 16,
+                      bottom: 16,
                     ),
-                    const Spacer(),
-                    IconButton(
-                      tooltip: 'Refresh Profile',
-                      icon: const Icon(
-                        Icons.refresh_rounded,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        context.read<ProfileBloc>().add(
-                          RefreshProfileEvent(token: driverToken),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              // Profile Details (Image, Name, Rating)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Avatar with Camera icon
-                    Stack(
-                      alignment: Alignment.bottomRight,
+                    child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Driver Profile',
+                          style: TextStyle(
                             color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const CircleAvatar(
-                            radius: 40,
-                            backgroundImage: NetworkImage(
-                              'https://randomuser.me/api/portraits/men/32.jpg',
-                            ),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981), // Green
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
+                        const Spacer(),
+                        IconButton(
+                          tooltip: 'Refresh Profile',
+                          icon: const Icon(
+                            Icons.refresh_rounded,
                             color: Colors.white,
-                            size: 14,
                           ),
+                          onPressed: () {
+                            context.read<ProfileBloc>().add(
+                              RefreshProfileEvent(token: driverToken),
+                            );
+                          },
                         ),
                       ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  displayName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                  ),
+
+                  // Profile Details (Image, Name, Rating)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Avatar with Camera icon
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const CircleAvatar(
+                                radius: 40,
+                                backgroundImage: NetworkImage(
+                                  'https://randomuser.me/api/portraits/men/32.jpg',
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              if (isVerified)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                        size: 12,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Verified',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                          if (driverId.isNotEmpty) ...[
-                            const SizedBox(height: 3),
-                            Text(
-                              'ID: $driverId',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981), // Green
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 14,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 6),
-
-                          //   children: [
-                          //     const Icon(Icons.star,
-                          //         color: Colors.amber, size: 18),
-                          //     const SizedBox(width: 4),
-                          //     const Text(
-                          //       '4.8',
-                          //       style: TextStyle(
-                          //         color: Colors.white,
-                          //         fontWeight: FontWeight.bold,
-                          //         fontSize: 16,
-                          //       ),
-                          //     ),
-                          //     const SizedBox(width: 4),
-                          //     Text(
-                          //       '(124 rides)',
-                          //       style: TextStyle(
-                          //         color: Colors.white70,
-                          //         fontSize: 12,
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
-                          // const SizedBox(height: 6),
-                          // const Text(
-                          //   'Safe Rides  •  Punctual  •  Professional',
-                          //   style: TextStyle(
-                          //     color: Colors.white70,
-                          //     fontSize: 12,
-                          //   ),
-                          // ),
-                        ],
-                      ),
-                    ), // Row(
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // White Content Area
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF8FAFC), // light grey/white background
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      context.read<ProfileBloc>().add(
-                        RefreshProfileEvent(token: driverToken),
-                      );
-                    },
-                    color: const Color(0xFF0066FF),
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          // Stats Row
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildStatItem(
-                                  Icons.directions_car,
-                                  'Total Rides',
-                                  '124',
-                                ),
-                                _buildStatItem(Icons.star, 'Rating', '4.8'),
-                                _buildStatItem(
-                                  Icons.calendar_today,
-                                  'Experience',
-                                  '3 Years',
-                                ),
-                                _buildStatItem(
-                                  Icons.verified_user,
-                                  'Verification',
-                                  isVerified ? 'Completed' : 'Pending',
-                                  valueColor: isVerified
-                                      ? const Color(0xFF10B981)
-                                      : Colors.orange,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Subscription Pass Status Card
-                          _buildSubscriptionCard(
-                            context,
-                            hasSubscription: hasSubscription,
-                            sub: activeSub,
-                            driverToken: driverToken,
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Menu List (BlocBuilder)
-                          BlocBuilder<ProfileBloc, ProfileState>(
-                            builder: (context, menuState) {
-                              final items = (menuState is ProfileLoaded)
-                                  ? menuState.menuItems
-                                  : (state is ProfileLoaded)
-                                  ? state.menuItems
-                                  : const [];
-
-                              if (items.isNotEmpty) {
-                                return Column(
-                                  children: items.map((item) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
-                                      ),
-                                      child: Material(
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      displayName,
+                                      style: const TextStyle(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                        clipBehavior: Clip.antiAlias,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: Colors.grey.shade200,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          child: ListTile(
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 16,
-                                                  vertical: 4,
-                                                ),
-                                            leading: Icon(
-                                              item.icon,
-                                              color: const Color(0xFF0066FF),
-                                            ),
-                                            title: Text(
-                                              item.title,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF1E293B),
-                                              ),
-                                            ),
-                                            subtitle: Text(
-                                              item.subtitle,
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            trailing: const Icon(
-                                              Icons.chevron_right,
-                                              color: Colors.grey,
-                                            ),
-                                            onTap: () {
-                                              if (item.title == 'Documents') {
-                                                context.push(
-                                                  AppRoutes.documents,
-                                                );
-                                              } else if (item.title ==
-                                                  'Notifications') {
-                                                context.push(
-                                                  AppRoutes.notifications,
-                                                );
-                                              } else if (item.title ==
-                                                  'Rewards') {
-                                                context.push(AppRoutes.rewards);
-                                              } else if (item.title ==
-                                                  'Subscription') {
-                                                context
-                                                    .push(
-                                                      AppRoutes.subscription,
-                                                      extra: {
-                                                        'hasSubscription':
-                                                            hasSubscription,
-                                                        'driverToken':
-                                                            driverToken,
-                                                      },
-                                                    )
-                                                    .then((_) {
-                                                      context
-                                                          .read<ProfileBloc>()
-                                                          .add(
-                                                            RefreshProfileEvent(
-                                                              token:
-                                                                  driverToken,
-                                                            ),
-                                                          );
-                                                    });
-                                              } else if (item.title ==
-                                                  'Subscription History') {
-                                                context
-                                                    .push(
-                                                      AppRoutes
-                                                          .subscriptionHistory,
-                                                      extra: driverToken,
-                                                    )
-                                                    .then((_) {
-                                                      context
-                                                          .read<ProfileBloc>()
-                                                          .add(
-                                                            RefreshProfileEvent(
-                                                              token:
-                                                                  driverToken,
-                                                            ),
-                                                          );
-                                                    });
-                                              } else if (item.title ==
-                                                  'My Tickets') {
-                                                _showMyTicketsSheet(context);
-                                              } else if (item.title ==
-                                                  'Terms & Conditions') {
-                                                context.push(
-                                                  AppRoutes.legal,
-                                                  extra: LegalPageType.terms,
-                                                );
-                                              } else if (item.title ==
-                                                  'Privacy Policy') {
-                                                context.push(
-                                                  AppRoutes.legal,
-                                                  extra: LegalPageType.privacy,
-                                                );
-                                              }
-                                            },
-                                          ),
-                                        ),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    );
-                                  }).toList(),
-                                );
-                              }
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(24.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Account Status
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0FDF4), // Light green bg
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.check_circle,
-                                  color: Color(0xFF10B981),
-                                  size: 32,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Account Status',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF064E3B),
-                                        ),
-                                      ),
-                                      Text(
-                                        'Your profile is verified and active',
-                                        style: TextStyle(
-                                          color: Colors.green.shade700,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFD1FAE5),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Text(
-                                    'Active',
-                                    style: TextStyle(
-                                      color: Color(0xFF059669),
-                                      fontWeight: FontWeight.bold,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  const SizedBox(width: 8),
+                                  if (isVerified)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                            size: 12,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Verified',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              if (driverId.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  'ID: $driverId',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
-                            ),
+                              const SizedBox(height: 6),
+
+                              //   children: [
+                              //     const Icon(Icons.star,
+                              //         color: Colors.amber, size: 18),
+                              //     const SizedBox(width: 4),
+                              //     const Text(
+                              //       '4.8',
+                              //       style: TextStyle(
+                              //         color: Colors.white,
+                              //         fontWeight: FontWeight.bold,
+                              //         fontSize: 16,
+                              //       ),
+                              //     ),
+                              //     const SizedBox(width: 4),
+                              //     Text(
+                              //       '(124 rides)',
+                              //       style: TextStyle(
+                              //         color: Colors.white70,
+                              //         fontSize: 12,
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
+                              // const SizedBox(height: 6),
+                              // const Text(
+                              //   'Safe Rides  •  Punctual  •  Professional',
+                              //   style: TextStyle(
+                              //     color: Colors.white70,
+                              //     fontSize: 12,
+                              //   ),
+                              // ),
+                            ],
                           ),
+                        ), // Row(
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-                          const SizedBox(height: 24),
+                  // White Content Area
+                  // Expanded(
+                  //   child:
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF8FAFC), // light grey/white background
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
 
-                          // Quick Actions
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Quick Actions',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
+                        // Menu List (BlocBuilder)
+                        BlocBuilder<ProfileBloc, ProfileState>(
+                          builder: (context, menuState) {
+                            final items = (menuState is ProfileLoaded)
+                                ? menuState.menuItems
+                                : (state is ProfileLoaded)
+                                ? state.menuItems
+                                : const [];
+
+                            if (items.isNotEmpty) {
+                              return Column(
+                                children: items.map((item) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Material(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.grey.shade200,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: ListTile(
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 4,
+                                              ),
+                                          leading: Icon(
+                                            item.icon,
+                                            color: const Color(0xFF0066FF),
+                                          ),
+                                          title: Text(
+                                            item.title,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            item.subtitle,
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          trailing: const Icon(
+                                            Icons.chevron_right,
+                                            color: Colors.grey,
+                                          ),
+                                          onTap: () {
+                                            if (item.title == 'Documents') {
+                                              context.push(
+                                                AppRoutes.documents,
+                                                extra: {
+                                                  'documents':
+                                                      profile?.documents,
+                                                  'profile': profile,
+                                                },
+                                              );
+                                            } else if (item.title ==
+                                                'Notifications') {
+                                              context.push(
+                                                AppRoutes.notifications,
+                                              );
+                                            } else if (item.title ==
+                                                'Rewards') {
+                                              context.push(AppRoutes.rewards);
+                                            } else if (item.title ==
+                                                'Subscription') {
+                                              context
+                                                  .push(
+                                                    AppRoutes.subscription,
+                                                    extra: {
+                                                      'hasSubscription':
+                                                          hasSubscription,
+                                                      'driverToken':
+                                                          driverToken,
+                                                    },
+                                                  )
+                                                  .then((_) {
+                                                    context
+                                                        .read<ProfileBloc>()
+                                                        .add(
+                                                          RefreshProfileEvent(
+                                                            token: driverToken,
+                                                          ),
+                                                        );
+                                                  });
+                                            } else if (item.title ==
+                                                'Subscription History') {
+                                              context
+                                                  .push(
+                                                    AppRoutes
+                                                        .subscriptionHistory,
+                                                    extra: driverToken,
+                                                  )
+                                                  .then((_) {
+                                                    context
+                                                        .read<ProfileBloc>()
+                                                        .add(
+                                                          RefreshProfileEvent(
+                                                            token: driverToken,
+                                                          ),
+                                                        );
+                                                  });
+                                            } else if (item.title ==
+                                                'My Tickets') {
+                                              _showMyTicketsSheet(context);
+                                            } else if (item.title ==
+                                                'Terms & Conditions') {
+                                              context.push(
+                                                AppRoutes.legal,
+                                                extra: LegalPageType.terms,
+                                              );
+                                            } else if (item.title ==
+                                                'Privacy Policy') {
+                                              context.push(
+                                                AppRoutes.legal,
+                                                extra: LegalPageType.privacy,
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            }
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(24.0),
+                                child: CircularProgressIndicator(),
                               ),
-                            ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Account Status
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4), // Light green bg
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          child: Row(
                             children: [
-                              _buildActionCard(
-                                Icons.account_balance_wallet,
-                                'View\nEarnings',
-                                Colors.blue,
-                                onTap: () {
-                                  context.push(AppRoutes.earnings);
-                                },
+                              const Icon(
+                                Icons.check_circle,
+                                color: Color(0xFF10B981),
+                                size: 32,
                               ),
-                              _buildActionCard(
-                                Icons.history,
-                                'Ride\nHistory',
-                                Colors.purple,
-                                onTap: () {
-                                  context.push(AppRoutes.rideHistory);
-                                },
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Account Status',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF064E3B),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Your profile is verified and active',
+                                      style: TextStyle(
+                                        color: Colors.green.shade700,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              _buildActionCard(
-                                Icons.headset_mic,
-                                'Help &\nSupport',
-                                Colors.orange,
-                                onTap: () {
-                                  context.push(AppRoutes.support);
-                                },
-                              ),
-                              _buildActionCard(
-                                Icons.logout,
-                                'Logout',
-                                Colors.red,
-                                onTap: () => _handleLogout(context),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD1FAE5),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Text(
+                                  'Active',
+                                  style: TextStyle(
+                                    color: Color(0xFF059669),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
+                        ),
 
-                          const SizedBox(height: 32),
+                        const SizedBox(height: 24),
 
-                          // Edit Profile Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                context.push(AppRoutes.editProfile);
+                        // Quick Actions
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Quick Actions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildActionCard(
+                              Icons.account_balance_wallet,
+                              'View\nEarnings',
+                              Colors.blue,
+                              onTap: () {
+                                context.push(AppRoutes.earnings);
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0066FF),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                            ),
+                            _buildActionCard(
+                              Icons.history,
+                              'Ride\nHistory',
+                              Colors.purple,
+                              onTap: () {
+                                context.push(AppRoutes.rideHistory);
+                              },
+                            ),
+                            _buildActionCard(
+                              Icons.headset_mic,
+                              'Help &\nSupport',
+                              Colors.orange,
+                              onTap: () {
+                                context.push(AppRoutes.support);
+                              },
+                            ),
+                            _buildActionCard(
+                              Icons.logout,
+                              'Logout',
+                              Colors.red,
+                              onTap: () => _handleLogout(context),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Edit Profile Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              context.push(AppRoutes.editProfile);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0066FF),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              icon: const Icon(Icons.edit, color: Colors.white),
-                              label: const Text(
-                                'Edit Profile',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            label: const Text(
+                              'Edit Profile',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
+                        ),
 
-                          const SizedBox(height: 32),
-                        ],
-                      ),
+                        const SizedBox(height: 32),
+                      ],
                     ),
                   ),
-                ),
+                  // ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },

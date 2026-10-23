@@ -199,6 +199,9 @@ class _RegisterPageState extends State<RegisterPage> {
     // Explicitly construct API request body matching the cURL specification
     final body = _buildApiRequestBody();
 
+    debugPrint('📝 [RegisterPage] "Submit Registration" button pressed.');
+    debugPrint('🚀 [RegisterPage] Dispatching RegisterDriverEvent to AuthBloc for ${body.email} (${body.phone})...');
+
     context.read<AuthBloc>().add(
       RegisterDriverEvent(
         body: body,
@@ -479,15 +482,18 @@ class _RegisterPageState extends State<RegisterPage> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.error && state.errorMessage != null) {
+          debugPrint('❌ [RegisterPage] Registration failed with message: ${state.errorMessage}');
           AppSnackBar.showError(context, state.errorMessage!);
-        } else if (state.status == AuthStatus.authenticated) {
+        } else if (state.status == AuthStatus.registered ||
+            state.status == AuthStatus.authenticated) {
           final driverName =
               state.driver?.name ?? state.customer?.name ?? 'Driver';
+          debugPrint('🎉 [RegisterPage] Registration succeeded! Welcome, $driverName (ID: ${state.driver?.id})');
           AppSnackBar.showSuccess(
             context,
-            'Registration successful! Welcome, $driverName!',
+            'Registration successful! Please login to continue.',
           );
-          context.go(AppRoutes.documents);
+          context.go(AppRoutes.login);
         }
       },
       builder: (context, state) {
@@ -534,7 +540,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           // Back Button
                           GestureDetector(
-                            onTap: () => context.pop(),
+                            onTap: () => context.safePop(fallbackRoute: AppRoutes.login),
                             child: Container(
                               width: 42,
                               height: 42,
@@ -1214,7 +1220,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () => context.pop(),
+                              onTap: () => context.safePop(fallbackRoute: AppRoutes.login),
                               child: const Text(
                                 'Login',
                                 style: TextStyle(
