@@ -1149,8 +1149,27 @@ class _HomeView extends StatelessWidget {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                if (ride.fare > 0)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total Price',
+                        style: AppTypography.bodySmall(
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        ride.formattedFare,
+                        style: AppTypography.headingSmall(
+                          color: primaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 if (ride.driverFee > 0)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,

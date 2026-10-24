@@ -208,6 +208,9 @@ class AvailableRideEntity extends Equatable {
     final fare = toD(
       json['fare'] ??
           json['totalAmount'] ??
+          json['total_amount'] ??
+          json['totalPrice'] ??
+          json['total_price'] ??
           json['estimatedFare'] ??
           json['totalFare'] ??
           json['amount'] ??

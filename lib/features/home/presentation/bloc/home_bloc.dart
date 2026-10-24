@@ -23,13 +23,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   StreamSubscription<void>? _connectedSubscription;
   StreamSubscription<dynamic>? _rideNewAvailableSubscription;
-  late final void Function(dynamic) _onRideNewAvailableHandler;
   DateTime? _lastRefreshTime;
+  String? _lastPayload;
+  final Set<String> _assignedRideIds = {};
   final AudioPlayer _audioPlayer = AudioPlayer();
   String? _lastSoundEventRideId;
   DateTime? _lastSoundPlayedTime;
-
-  static const String _socketEvent = 'ride:new_available';
 
   HomeBloc({
     required this.remoteDataSource,
@@ -38,16 +37,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     this.acceptRideUseCase,
     this.rejectRideUseCase,
     CreateManualRideUseCase? createManualRideUseCase,
-  })  : createManualRideUseCase =
-            createManualRideUseCase ?? const CreateManualRideUseCase(),
-        super(const HomeState()) {
-    // 1. Maintain a stable handler reference for socket off/on
-    _onRideNewAvailableHandler = _handleRideNewAvailable;
+  }) : createManualRideUseCase =
+           createManualRideUseCase ?? const CreateManualRideUseCase(),
+       super(const HomeState()) {
+    // 1. Register Bloc event handlers
 
     // 2. Register Bloc event handlers
     on<ToggleOnlineStatusEvent>(_onToggleOnlineStatus);
     on<LoadAvailableRidesEvent>(_onLoadAvailableRides);
     on<NewRideReceivedEvent>(_onNewRideReceived);
+    on<RemoveRideEvent>(_onRemoveRide);
     on<ClearNewRideAlertEvent>(_onClearNewRideAlert);
     on<DeclineRideRequestEvent>(_onDeclineRideRequest);
     on<ClearRejectedRideEvent>(_onClearRejectedRide);
@@ -59,9 +58,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _connectedSubscription = socketService.onConnected.listen((_) {
       if (state.isOnline) {
         log(
-          '🔄 [HomeBloc] Socket connected/reconnected while online. Attaching listener and refreshing home page.',
+          '🔄 [HomeBloc] Socket connected/reconnected while online. Refreshing home page.',
         );
-        _attachSocketListener();
         add(const LoadAvailableRidesEvent(silent: true));
       }
     });
@@ -77,37 +75,31 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     });
   }
 
-  void _attachSocketListener() {
-    log('🔌 [HomeBloc] Attaching socket listener for: $_socketEvent');
-    socketService.off(_socketEvent, _onRideNewAvailableHandler);
-    socketService.on(_socketEvent, _onRideNewAvailableHandler);
-  }
+  void _attachSocketListener() {}
 
-  void _detachSocketListener() {
-    log('🔌 [HomeBloc] Detaching socket listener for: $_socketEvent');
-    socketService.off(_socketEvent, _onRideNewAvailableHandler);
-  }
+  void _detachSocketListener() {}
 
   /// Handles incoming 'ride:new_available' socket event.
   /// Refreshes the driver app home page so up-to-date rides are displayed.
   void _handleRideNewAvailable(dynamic data) {
-    // 1. Debounce rapid duplicate socket events within 1 second
+    // 1. Debounce only exact duplicate payloads within 1.5s
+    final payloadStr = data?.toString() ?? '';
     final now = DateTime.now();
-    if (_lastRefreshTime != null &&
-        now.difference(_lastRefreshTime!).inMilliseconds < 1000) {
-      log('⏱️ [HomeBloc] Duplicate "ride:new_available" ignored within 1s');
+    if (payloadStr.isNotEmpty &&
+        _lastPayload == payloadStr &&
+        _lastRefreshTime != null &&
+        now.difference(_lastRefreshTime!).inMilliseconds < 1500) {
+      log('⏱️ [HomeBloc] Duplicate identical "ride:new_available" ignored');
       return;
     }
+    _lastPayload = payloadStr;
     _lastRefreshTime = now;
 
     log(
       '🚗 [HomeBloc] "ride:new_available" event detected! Refreshing home page...',
     );
 
-    // 2. Play short notification sound safely for new incoming event
-    _playNotificationSound(data);
-
-    // 3. If payload contains a valid ride entity, dispatch immediately for instant UI responsiveness
+    // 2. If payload contains a ride entity or assignment status, process it
     if (data != null) {
       try {
         dynamic parsed = data;
@@ -121,15 +113,74 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           Map<String, dynamic>? rideMap;
           if (parsed['ride'] is Map) {
             rideMap = Map<String, dynamic>.from(parsed['ride']);
-          } else if (parsed['id'] != null || parsed['_id'] != null) {
+          } else if (parsed['booking'] is Map) {
+            rideMap = Map<String, dynamic>.from(parsed['booking']);
+          } else if (parsed['data'] is Map) {
+            final inner = parsed['data'] as Map;
+            if (inner['ride'] is Map) {
+              rideMap = Map<String, dynamic>.from(inner['ride']);
+            } else if (inner['booking'] is Map) {
+              rideMap = Map<String, dynamic>.from(inner['booking']);
+            } else {
+              rideMap = Map<String, dynamic>.from(inner);
+            }
+          } else if (parsed['id'] != null ||
+              parsed['_id'] != null ||
+              parsed['bookingId'] != null ||
+              parsed['booking_id'] != null ||
+              parsed['rideId'] != null) {
             rideMap = Map<String, dynamic>.from(parsed);
           }
 
           if (rideMap != null) {
+            // Check status: if ride is already assigned, accepted, or completed, remove it!
+            final status = (rideMap['status'] ??
+                    rideMap['bookingStatus'] ??
+                    rideMap['booking_status'] ??
+                    '')
+                .toString()
+                .toLowerCase();
+
+            final isUnavailable = status == 'driver_assigned' ||
+                status == 'accepted' ||
+                status == 'assigned' ||
+                status == 'completed' ||
+                status == 'cancelled' ||
+                status == 'canceled' ||
+                status == 'in_progress' ||
+                status == 'started' ||
+                status == 'declined' ||
+                status == 'rejected' ||
+                (rideMap['driverId'] != null &&
+                    rideMap['driverId'].toString().isNotEmpty &&
+                    status != 'pending');
+
+            final rideId = rideMap['id']?.toString() ??
+                rideMap['_id']?.toString() ??
+                rideMap['bookingMongoId']?.toString() ??
+                '';
+            final bookingId = rideMap['bookingId']?.toString() ??
+                rideMap['booking_id']?.toString() ??
+                '';
+
+            if (isUnavailable) {
+              log('🚫 [HomeBloc] Ride is no longer available ($status). Removing from home: id=$rideId, bookingId=$bookingId');
+              if (rideId.isNotEmpty) _assignedRideIds.add(rideId);
+              if (bookingId.isNotEmpty) _assignedRideIds.add(bookingId);
+              add(RemoveRideEvent(rideId: rideId, bookingId: bookingId));
+              return;
+            }
+
+            if (rideId.isNotEmpty) _assignedRideIds.remove(rideId);
+            if (bookingId.isNotEmpty) _assignedRideIds.remove(bookingId);
+
+            // Genuinely available new ride: play sound and add to state
+            _playNotificationSound(data);
+
             final ride = AvailableRideEntity.fromJson(rideMap);
-            if (ride.id.isNotEmpty) {
+            if (ride.id.isNotEmpty || ride.bookingId.isNotEmpty) {
               log(
-                '✨ [HomeBloc] Instant new ride alert from socket payload: ${ride.id}',
+                '✨ [HomeBloc] Instant new ride alert from socket payload: ${ride.id.isNotEmpty ? ride.id : ride.bookingId}',
               );
               add(NewRideReceivedEvent(ride));
               try {
@@ -149,7 +200,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
     }
 
-    // 4. Always refresh available rides from API so the home page is 100% up-to-date
+    // 3. Always refresh available rides from API so the home page is 100% up-to-date
     add(const LoadAvailableRidesEvent(silent: true));
   }
 
@@ -167,8 +218,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       if (data is Map) {
         if (data['ride'] is Map) {
           rideId =
-              data['ride']['id']?.toString() ??
-              data['ride']['_id']?.toString();
+              data['ride']['id']?.toString() ?? data['ride']['_id']?.toString();
         } else {
           rideId = data['id']?.toString() ?? data['_id']?.toString();
         }
@@ -191,6 +241,40 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     } catch (e) {
       log('ℹ️ [HomeBloc] Notification sound skipped/failed: $e');
     }
+  }
+
+  /// Returns true if two ride entities represent the same booking.
+  bool _isSameRide(AvailableRideEntity a, AvailableRideEntity b) {
+    if (a.id.isNotEmpty && b.id.isNotEmpty && a.id == b.id) return true;
+    if (a.bookingId.isNotEmpty &&
+        b.bookingId.isNotEmpty &&
+        a.bookingId == b.bookingId) {
+      return true;
+    }
+    if (a.id.isNotEmpty && b.bookingId.isNotEmpty && a.id == b.bookingId) {
+      return true;
+    }
+    if (a.bookingId.isNotEmpty && b.id.isNotEmpty && a.bookingId == b.id) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Checks if a ride matches a given identifier (either id or bookingId).
+  bool _matchesRideId(AvailableRideEntity r, String id) {
+    if (id.isEmpty) return false;
+    return r.id == id || r.bookingId == id;
+  }
+
+  /// Removes any duplicate ride entries based on booking and ride IDs.
+  List<AvailableRideEntity> _deduplicateRides(List<AvailableRideEntity> rides) {
+    final List<AvailableRideEntity> unique = [];
+    for (final ride in rides) {
+      if (!unique.any((existing) => _isSameRide(existing, ride))) {
+        unique.add(ride);
+      }
+    }
+    return unique;
   }
 
   void _onToggleOnlineStatus(
@@ -256,32 +340,72 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       final apiRides = await remoteDataSource.fetchAvailableRides(token);
 
+      // Merge API rides with current valid socket rides without duplicates.
+      // Filter out any rides that are in _assignedRideIds or marked unavailable.
+      final List<AvailableRideEntity> combined = [];
+
+      // 1. Authoritative rides from API
+      for (final r in apiRides) {
+        final st = r.bookingStatus.toLowerCase();
+        final isTaken = _assignedRideIds.contains(r.id) ||
+            _assignedRideIds.contains(r.bookingId) ||
+            st == 'driver_assigned' ||
+            st == 'accepted' ||
+            st == 'completed' ||
+            st == 'cancelled' ||
+            st == 'rejected' ||
+            st == 'declined';
+        if (!isTaken && !combined.any((existing) => _isSameRide(existing, r))) {
+          combined.add(r);
+        }
+      }
+
+      // 2. Keep recently received socket/state rides not yet indexed in API
+      for (final r in state.availableRides) {
+        final st = r.bookingStatus.toLowerCase();
+        final isTaken = _assignedRideIds.contains(r.id) ||
+            _assignedRideIds.contains(r.bookingId) ||
+            st == 'driver_assigned' ||
+            st == 'accepted' ||
+            st == 'completed' ||
+            st == 'cancelled' ||
+            st == 'rejected' ||
+            st == 'declined';
+        if (!isTaken && !combined.any((existing) => _isSameRide(existing, r))) {
+          combined.add(r);
+        }
+      }
+
+      final combinedRides = _deduplicateRides(combined);
+
       // Check if there are newly added rides compared to previous state
-      final previousIds = state.availableRides.map((r) => r.id).toSet();
       AvailableRideEntity? newAlert = state.newRideAlert;
 
       // Find any newly arrived ride to trigger the alert
-      for (final ride in apiRides) {
-        if (!previousIds.contains(ride.id)) {
+      for (final ride in combinedRides) {
+        final wasPresent =
+            state.availableRides.any((r) => _isSameRide(r, ride));
+        if (!wasPresent) {
           newAlert = ride;
           break;
         }
       }
 
       // If no alert is currently active and rides are available, show the newest
-      if (newAlert == null && apiRides.isNotEmpty) {
-        newAlert = apiRides.first;
+      if (newAlert == null && combinedRides.isNotEmpty) {
+        newAlert = combinedRides.first;
       }
 
-      // If the current alert ride is no longer in the available rides list, clear or update it
-      if (newAlert != null && !apiRides.any((r) => r.id == newAlert!.id)) {
-        newAlert = apiRides.isNotEmpty ? apiRides.first : null;
+      // If the current alert ride is no longer in the list, clear or update it
+      if (newAlert != null &&
+          !combinedRides.any((r) => _isSameRide(r, newAlert!))) {
+        newAlert = combinedRides.isNotEmpty ? combinedRides.first : null;
       }
 
       emit(
         state.copyWith(
           isLoadingRides: false,
-          availableRides: apiRides,
+          availableRides: combinedRides,
           newRideAlert: newAlert,
           clearNewRideAlert: newAlert == null,
           clearError: true,
@@ -298,14 +422,46 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
+  void _onRemoveRide(RemoveRideEvent event, Emitter<HomeState> emit) {
+    log('🗑️ [HomeBloc] Removing ride from available list: id=${event.rideId}, bookingId=${event.bookingId}');
+    final updatedList = state.availableRides.where((r) {
+      if (event.rideId.isNotEmpty && _matchesRideId(r, event.rideId)) {
+        return false;
+      }
+      if (event.bookingId != null &&
+          event.bookingId!.isNotEmpty &&
+          _matchesRideId(r, event.bookingId!)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    final clearAlert = (event.rideId.isNotEmpty &&
+            state.newRideAlert != null &&
+            _matchesRideId(state.newRideAlert!, event.rideId)) ||
+        (event.bookingId != null &&
+            event.bookingId!.isNotEmpty &&
+            state.newRideAlert != null &&
+            _matchesRideId(state.newRideAlert!, event.bookingId!));
+
+    emit(
+      state.copyWith(
+        availableRides: _deduplicateRides(updatedList),
+        clearNewRideAlert: clearAlert,
+        newRideAlert: clearAlert ? null : state.newRideAlert,
+      ),
+    );
+  }
+
   void _onNewRideReceived(NewRideReceivedEvent event, Emitter<HomeState> emit) {
     final existingIndex = state.availableRides.indexWhere(
-      (r) => r.id == event.ride.id,
+      (r) => _isSameRide(r, event.ride),
     );
 
     if (existingIndex == -1) {
       // New ride: insert at top and trigger alert banner
-      final updatedList = [event.ride, ...state.availableRides];
+      final updatedList =
+          _deduplicateRides([event.ride, ...state.availableRides]);
       emit(
         state.copyWith(
           isOnline: true,
@@ -317,7 +473,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       // Existing ride: replace in place without re-triggering alert
       final updatedList = List<AvailableRideEntity>.from(state.availableRides);
       updatedList[existingIndex] = event.ride;
-      emit(state.copyWith(isOnline: true, availableRides: updatedList));
+      final deduplicated = _deduplicateRides(updatedList);
+      emit(state.copyWith(isOnline: true, availableRides: deduplicated));
     }
   }
 
@@ -368,15 +525,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       // Remove the declined ride from availableRides list
       final updatedList = state.availableRides
-          .where((r) => r.id != event.rideId)
+          .where((r) => !_matchesRideId(r, event.rideId))
           .toList();
-      final clearAlert = state.newRideAlert?.id == event.rideId;
+      final clearAlert = state.newRideAlert != null &&
+          _matchesRideId(state.newRideAlert!, event.rideId);
 
       emit(
         state.copyWith(
           clearDecliningRideId: true,
           rejectedRide: rejected,
-          availableRides: updatedList,
+          availableRides: _deduplicateRides(updatedList),
           clearNewRideAlert: clearAlert,
           clearError: true,
         ),
@@ -428,24 +586,33 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       // Remove the accepted ride from availableRides list
       final updatedList = state.availableRides
-          .where((r) => r.id != event.rideId)
+          .where((r) => !_matchesRideId(r, event.rideId))
           .toList();
-      final clearAlert = state.newRideAlert?.id == event.rideId;
+      final clearAlert = state.newRideAlert != null &&
+          _matchesRideId(state.newRideAlert!, event.rideId);
 
       emit(
         state.copyWith(
           clearAcceptingRideId: true,
           acceptedRide: accepted,
-          availableRides: updatedList,
+          availableRides: _deduplicateRides(updatedList),
           clearNewRideAlert: clearAlert,
           clearError: true,
         ),
       );
     } catch (e) {
       log('❌ [HomeBloc] Failed to accept ride: $e');
+      final updatedList = state.availableRides
+          .where((r) => !_matchesRideId(r, event.rideId))
+          .toList();
+      final clearAlert = state.newRideAlert != null &&
+          _matchesRideId(state.newRideAlert!, event.rideId);
+
       emit(
         state.copyWith(
           clearAcceptingRideId: true,
+          availableRides: _deduplicateRides(updatedList),
+          clearNewRideAlert: clearAlert,
           errorMessage: e.toString().replaceFirst('Exception: ', ''),
         ),
       );
@@ -476,11 +643,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       dropLng: event.dropLng,
     );
 
-    final updatedRides = [newRide, ...state.availableRides];
-    emit(state.copyWith(
-      availableRides: updatedRides,
-      newRideAlert: newRide,
-    ));
+    final updatedRides =
+        _deduplicateRides([newRide, ...state.availableRides]);
+    emit(state.copyWith(availableRides: updatedRides, newRideAlert: newRide));
   }
 
   @override

@@ -71,6 +71,17 @@ class ClearAcceptedRideEvent extends HomeEvent {}
 /// Clears the rejected ride notification indicator state.
 class ClearRejectedRideEvent extends HomeEvent {}
 
+/// Dispatched when a ride is accepted by another driver or no longer available.
+class RemoveRideEvent extends HomeEvent {
+  final String rideId;
+  final String? bookingId;
+
+  const RemoveRideEvent({required this.rideId, this.bookingId});
+
+  @override
+  List<Object?> get props => [rideId, bookingId];
+}
+
 /// Dispatched when creating a new manual ride entry.
 class CreateManualRideEvent extends HomeEvent {
   final String userName;
