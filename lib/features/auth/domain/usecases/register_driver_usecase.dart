@@ -31,11 +31,15 @@ class RegisterDriverParams extends Equatable {
   String? get aadharNumber => aadhaarNumber;
   String? get panNumber => pancardNumber;
   String? get passportNumber => passportId;
+  String? get pvcNumber => passportId;
+  String? get pvcId => passportId;
   String? get aadharFrontPath => aadhaarCardFront;
   String? get aadharBackPath => aadhaarCardBack;
   String? get panCardPath => pancard;
   String? get drivingLicensePath => drivingLicense;
   String? get passportPath => passport;
+  String? get pvcPath => passport;
+  String? get pvc => passport;
   String? get profilePicPath => selfie;
 
   RegisterDriverParams({
@@ -54,20 +58,24 @@ class RegisterDriverParams extends Equatable {
     String? pancardNumber,
     String? aadhaarNumber,
     String? passportId,
+    String? pvcId,
     String? pancard,
     String? aadhaarCardFront,
     String? aadhaarCardBack,
     String? drivingLicense,
     String? selfie,
     String? passport,
+    String? pvc,
     String? aadharNumber,
     String? panNumber,
     String? passportNumber,
+    String? pvcNumber,
     String? aadharFrontPath,
     String? aadharBackPath,
     String? panCardPath,
     String? drivingLicensePath,
     String? passportPath,
+    String? pvcPath,
     String? profilePicPath,
   }) : firstName = firstName ?? body?.firstName,
        lastName = lastName ?? body?.lastName,
@@ -83,7 +91,7 @@ class RegisterDriverParams extends Equatable {
        licenseNumber = licenseNumber ?? body?.licenseNumber,
        aadhaarNumber = aadhaarNumber ?? aadharNumber ?? body?.aadhaarNumber,
        pancardNumber = pancardNumber ?? panNumber ?? body?.pancardNumber,
-       passportId = passportId ?? passportNumber ?? body?.passportId,
+       passportId = pvcId ?? pvcNumber ?? passportId ?? passportNumber ?? body?.effectivePvcId,
        pancard = pancard ?? panCardPath ?? body?.pancard,
        aadhaarCardFront =
            aadhaarCardFront ?? aadharFrontPath ?? body?.aadhaarCardFront,
@@ -92,7 +100,7 @@ class RegisterDriverParams extends Equatable {
        drivingLicense =
            drivingLicense ?? drivingLicensePath ?? body?.drivingLicense,
        selfie = selfie ?? profilePicPath ?? body?.selfie,
-       passport = passport ?? passportPath ?? body?.passport;
+       passport = pvc ?? pvcPath ?? passport ?? passportPath ?? body?.effectivePvc;
 
   @override
   List<Object?> get props => [

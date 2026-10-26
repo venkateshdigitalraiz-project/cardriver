@@ -15,6 +15,8 @@ class DriverProfileEntity extends Equatable {
   final String pancardNumber;
   final String aadhaarNumber;
   final String passportId;
+  String get pvcId => passportId;
+  String get pvcNumber => passportId;
   final String status;
   final bool isOnline;
   final bool isVerified;

@@ -21,6 +21,13 @@ class DriverRegisterBody {
   final String? passport;
   final String? password;
 
+  // PVC aliases mapped to API fields (passportId / passport)
+  String get pvcId => passportId;
+  String get pvcNumber => passportId;
+  String? get pvc => passport;
+  String get effectivePvcId => passportId;
+  String? get effectivePvc => passport;
+
   const DriverRegisterBody({
     required this.firstName,
     required this.lastName,
@@ -30,17 +37,20 @@ class DriverRegisterBody {
     required this.licenseNumber,
     required this.pancardNumber,
     required this.aadhaarNumber,
-    required this.passportId,
+    String? passportId,
+    String? pvcId,
     this.pancard,
     this.aadhaarCardFront,
     this.aadhaarCardBack,
     this.drivingLicense,
     this.selfie,
-    this.passport,
+    String? passport,
+    String? pvc,
     this.password,
-  });
+  })  : passportId = passportId ?? pvcId ?? '',
+        passport = passport ?? pvc;
 
-  /// Map representation of all form fields matching the cURL keys
+  /// Map representation of all form fields matching the exact API/cURL keys
   Map<String, dynamic> toMap() {
     return {
       'firstName': firstName,
@@ -66,7 +76,7 @@ class DriverRegisterBody {
   Future<FormData> toFormData() async {
     final formData = FormData();
 
-    // 1. Text Form Fields
+    // 1. Text Form Fields matching backend API specifications
     formData.fields.addAll([
       MapEntry('firstName', firstName),
       MapEntry('lastName', lastName),

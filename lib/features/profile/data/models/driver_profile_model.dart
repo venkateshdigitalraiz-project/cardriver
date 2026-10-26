@@ -62,7 +62,7 @@ class DriverProfileModel extends DriverProfileEntity {
     final topLicense = (json['licenseNumber'] ?? '').toString().trim();
     final topPancard = (json['pancardNumber'] ?? '').toString().trim();
     final topAadhaar = (json['aadhaarNumber'] ?? '').toString().trim();
-    final topPassport = (json['passportId'] ?? '').toString().trim();
+    final topPassport = (json['pvcNumber'] ?? json['pvcId'] ?? json['passportId'] ?? '').toString().trim();
 
     DriverDocumentsModel? parsedDocuments;
     if (json['documents'] is Map) {

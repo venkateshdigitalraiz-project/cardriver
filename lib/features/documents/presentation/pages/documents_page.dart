@@ -980,8 +980,8 @@ class _DocumentCard extends StatelessWidget {
       icon = Icons.credit_card_rounded;
       iconColor = const Color(0xFF7C3AED);
       iconBg = const Color(0xFFF5F3FF);
-    } else if (doc.key == 'passport') {
-      icon = Icons.menu_book_rounded;
+    } else if (doc.key == 'pvc' || doc.key == 'passport') {
+      icon = Icons.verified_user_rounded;
       iconColor = const Color(0xFF0D9488);
       iconBg = const Color(0xFFF0FDFA);
     } else {

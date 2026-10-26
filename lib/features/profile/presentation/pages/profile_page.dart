@@ -268,6 +268,11 @@ class _ProfileView extends StatelessWidget {
                       children: [
                         const SizedBox(height: 20),
 
+                        // WhatsApp Helpline Card
+                        _buildWhatsAppHelplineCard(context),
+
+                        const SizedBox(height: 16),
+
                         // Menu List (BlocBuilder)
                         BlocBuilder<ProfileBloc, ProfileState>(
                           builder: (context, menuState) {
@@ -382,6 +387,16 @@ class _ProfileView extends StatelessWidget {
                                             } else if (item.title ==
                                                 'My Tickets') {
                                               _showMyTicketsSheet(context);
+                                            } else if (item.title ==
+                                                'Wallet') {
+                                              context.push(AppRoutes.wallet);
+                                            } else if (item.title ==
+                                                'WhatsApp Helpline') {
+                                              context
+                                                  .read<ProfileBloc>()
+                                                  .add(
+                                                    const OpenWhatsAppHelplineEvent(),
+                                                  );
                                             } else if (item.title ==
                                                 'Terms & Conditions') {
                                               context.push(
@@ -911,6 +926,118 @@ class _ProfileView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildWhatsAppHelplineCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFA5D6A7)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Color(0xFF25D366),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.chat_bubble_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    const Text(
+                      'Helpline Support',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF1B5E20),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1B5E20),
+                        borderRadius: BorderRadius.all(Radius.circular(6)),
+                      ),
+                      child: const Text(
+                        'WhatsApp Only',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  '8686234434',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<ProfileBloc>().add(const OpenWhatsAppHelplineEvent());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.send_rounded, size: 14, color: Colors.white),
+            label: const Text(
+              'Chat',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }

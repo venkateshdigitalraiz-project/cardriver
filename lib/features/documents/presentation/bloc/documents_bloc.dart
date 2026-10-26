@@ -166,8 +166,11 @@ class DocumentsBloc extends Bloc<DocumentsEvent, DocumentsState> {
         }
       }
 
-      // 2. Other documents
-      if (doc.key == event.documentKey) {
+      // 2. Other documents (drivingLicense, pancard, pvc, selfie)
+      if (doc.key == event.documentKey ||
+          (doc.key == 'pvc' &&
+              (event.documentKey == 'pvc' ||
+                  event.documentKey == 'passport'))) {
         const newStatus = DocumentVerificationStatus.verified;
         final docNum = doc.documentNumber;
         final subtitle = docNum != null && docNum.isNotEmpty ? docNum : '';
@@ -223,9 +226,13 @@ class DocumentsBloc extends Bloc<DocumentsEvent, DocumentsState> {
     final panNo = documents.pancardNumber.trim().isNotEmpty
         ? documents.pancardNumber.trim()
         : (profile?.pancardNumber.trim() ?? '');
-    final passportNo = documents.passportId.trim().isNotEmpty
-        ? documents.passportId.trim()
-        : (profile?.passportId.trim() ?? '');
+    final pvcNo = documents.pvcId.trim().isNotEmpty
+        ? documents.pvcId.trim()
+        : (profile?.pvcId.trim().isNotEmpty == true
+            ? profile!.pvcId.trim()
+            : (documents.passportId.trim().isNotEmpty
+                ? documents.passportId.trim()
+                : (profile?.passportId.trim() ?? '')));
     final aadhaarNo = documents.aadhaarNumber.trim().isNotEmpty
         ? documents.aadhaarNumber.trim()
         : (profile?.aadhaarNumber.trim() ?? '');
@@ -311,27 +318,28 @@ class DocumentsBloc extends Bloc<DocumentsEvent, DocumentsState> {
       ),
     );
 
-    // 4. Passport (Requires passport file value)
-    final passportStatus = EvaluateDocumentStatusUseCase.evaluateSingleDocument(
-      documents.passport,
+    // 4. Police Verification Certificate (PVC)
+    final pvcFileValue = documents.pvc.trim().isNotEmpty
+        ? documents.pvc.trim()
+        : documents.passport.trim();
+    final pvcStatus = EvaluateDocumentStatusUseCase.evaluateSingleDocument(
+      pvcFileValue,
     );
-    final String passportSubtitle = passportNo.isNotEmpty ? passportNo : '';
+    final String pvcSubtitle = pvcNo.isNotEmpty ? pvcNo : '';
 
     items.add(
       DocumentItem(
         key: 'passport',
-        title: 'Passport',
-        subtitle: "ID : $passportSubtitle",
-        documentNumber: passportNo.isNotEmpty ? passportNo : null,
+        title: 'Police Verification (PVC)',
+        subtitle: pvcSubtitle.isNotEmpty ? "ID : $pvcSubtitle" : 'Certificate Upload',
+        documentNumber: pvcNo.isNotEmpty ? pvcNo : null,
         fileUrl:
-            EvaluateDocumentStatusUseCase.isValidDocumentValue(
-              documents.passport,
-            )
-            ? documents.passport.trim()
+            EvaluateDocumentStatusUseCase.isValidDocumentValue(pvcFileValue)
+            ? pvcFileValue
             : null,
-        verificationStatus: passportStatus,
-        status: passportStatus.label,
-        statusType: passportStatus.statusType,
+        verificationStatus: pvcStatus,
+        status: pvcStatus.label,
+        statusType: pvcStatus.statusType,
       ),
     );
 

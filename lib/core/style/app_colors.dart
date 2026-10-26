@@ -66,6 +66,7 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+  static const LinearGradient primaryGradient = driverPrimaryGradient;
 
   static const LinearGradient darkCardGradient = LinearGradient(
     colors: [Color(0xFF161F30), Color(0xFF0F1724)],

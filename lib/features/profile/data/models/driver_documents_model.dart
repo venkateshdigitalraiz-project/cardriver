@@ -32,7 +32,18 @@ class DriverDocumentsModel extends DriverDocumentsEntity {
     final rawAadhaar = _safeString(json['aadhaarNumber']);
     final rawLicense = _safeString(json['licenseNumber']);
     final rawPan = _safeString(json['pancardNumber']);
-    final rawPassport = _safeString(json['passportId']);
+    final rawPassportId = _safeString(
+      json['passportId'] ??
+          json['pvcNumber'] ??
+          json['pvcId'] ??
+          json['policeVerificationNumber'],
+    );
+    final rawPassportFile = _safeString(
+      json['passport'] ??
+          json['pvc'] ??
+          json['pvcDocument'] ??
+          json['policeVerification'],
+    );
 
     return DriverDocumentsModel(
       aadhaarNumber: rawAadhaar.isNotEmpty ? rawAadhaar : _safeString(fallbackAadhaar),
@@ -43,12 +54,13 @@ class DriverDocumentsModel extends DriverDocumentsEntity {
       licenseNumber: rawLicense.isNotEmpty ? rawLicense : _safeString(fallbackLicense),
       pancard: _safeString(json['pancard']),
       pancardNumber: rawPan.isNotEmpty ? rawPan : _safeString(fallbackPan),
-      passport: _safeString(json['passport']),
-      passportId: rawPassport.isNotEmpty ? rawPassport : _safeString(fallbackPassport),
+      passport: rawPassportFile,
+      passportId: rawPassportId.isNotEmpty ? rawPassportId : _safeString(fallbackPassport),
       selfie: _safeString(json['selfie']),
     );
   }
 
+  /// Exact API fields matching backend schema
   Map<String, dynamic> toJson() {
     return {
       'aadhaarNumber': aadhaarNumber,

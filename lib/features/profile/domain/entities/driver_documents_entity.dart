@@ -14,6 +14,11 @@ class DriverDocumentsEntity extends Equatable {
   final String passportId;
   final String selfie;
 
+  // PVC aliases mapped to API fields (passport / passportId)
+  String get pvc => passport;
+  String get pvcId => passportId;
+  String get pvcNumber => passportId;
+
   const DriverDocumentsEntity({
     this.aadhaarNumber = '',
     this.aadhaarCardFront = '',
@@ -38,13 +43,15 @@ class DriverDocumentsEntity extends Equatable {
 
   bool get isDrivingLicenseUploaded => drivingLicense.trim().isNotEmpty;
   bool get isPanCardUploaded => pancard.trim().isNotEmpty;
-  bool get isPassportUploaded => passport.trim().isNotEmpty;
+  bool get isPvcUploaded => pvc.trim().isNotEmpty;
+  bool get isPassportUploaded => isPvcUploaded;
   bool get isSelfieUploaded => selfie.trim().isNotEmpty;
 
   /// Legacy helper getters updated to reflect upload completeness
   bool get hasAadhaar => isAadhaarComplete;
   bool get hasDrivingLicense => isDrivingLicenseUploaded;
   bool get hasPanCard => isPanCardUploaded;
+  bool get hasPvc => isPvcUploaded;
   bool get hasPassport => isPassportUploaded;
   bool get hasSelfie => isSelfieUploaded;
 
@@ -69,6 +76,8 @@ class DriverDocumentsEntity extends Equatable {
     String? licenseNumber,
     String? pancard,
     String? pancardNumber,
+    String? pvc,
+    String? pvcId,
     String? passport,
     String? passportId,
     String? selfie,
@@ -82,8 +91,8 @@ class DriverDocumentsEntity extends Equatable {
       licenseNumber: licenseNumber ?? this.licenseNumber,
       pancard: pancard ?? this.pancard,
       pancardNumber: pancardNumber ?? this.pancardNumber,
-      passport: passport ?? this.passport,
-      passportId: passportId ?? this.passportId,
+      passport: passport ?? pvc ?? this.passport,
+      passportId: passportId ?? pvcId ?? this.passportId,
       selfie: selfie ?? this.selfie,
     );
   }

@@ -6,6 +6,7 @@ import '../../../../core/router/app_router.dart';
 import '../bloc/support_bloc.dart';
 import '../bloc/support_event.dart';
 import '../bloc/support_state.dart';
+import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 
 class SupportPage extends StatelessWidget {
   const SupportPage({super.key});
@@ -933,25 +934,28 @@ class _ContactUs extends StatelessWidget {
             // ),
             // const SizedBox(width: 16),
             Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {},
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  OpenWhatsAppHelplineUseCase().execute();
+                },
                 icon: const Icon(
-                  Icons.phone_in_talk_rounded,
-                  color: Color(0xFF0F172A),
+                  Icons.chat_bubble_rounded,
+                  color: Colors.white,
                   size: 20,
                 ),
                 label: const Text(
-                  'Call Us',
+                  'WhatsApp Helpline: 8686234434',
                   style: TextStyle(
-                    color: Color(0xFF0F172A),
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 14,
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
+                style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                  backgroundColor: const Color(0xFF25D366),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),

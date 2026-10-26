@@ -53,6 +53,7 @@ import 'features/profile/data/repositories/profile_repository_impl.dart';
 import 'features/profile/domain/repositories/profile_repository.dart';
 import 'features/profile/domain/usecases/get_driver_profile_usecase.dart';
 import 'features/profile/domain/usecases/get_profile_menu_usecase.dart';
+import 'features/profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import 'features/profile/presentation/bloc/profile_bloc.dart';
 import 'features/documents/data/datasources/documents_remote_datasource.dart';
 import 'features/documents/data/repositories/documents_repository_impl.dart';
@@ -62,6 +63,14 @@ import 'features/documents/presentation/bloc/documents_bloc.dart';
 import 'features/documents/presentation/bloc/documents_event.dart';
 import 'features/profile/domain/entities/driver_documents_entity.dart';
 import 'features/profile/domain/entities/driver_profile_entity.dart';
+import 'features/wallet/data/datasources/driver_wallet_local_datasource.dart';
+import 'features/wallet/data/repositories/driver_wallet_repository_impl.dart';
+import 'features/wallet/domain/repositories/driver_wallet_repository.dart';
+import 'features/wallet/domain/usecases/add_money_to_driver_wallet_usecase.dart';
+import 'features/wallet/domain/usecases/get_driver_wallet_transactions_usecase.dart';
+import 'features/wallet/domain/usecases/get_driver_wallet_usecase.dart';
+import 'features/wallet/domain/usecases/withdraw_wallet_funds_usecase.dart';
+import 'features/wallet/presentation/bloc/driver_wallet_bloc.dart';
 
 /// Service Locator / Dependency Injection Setup for Clean Architecture
 class InjectionContainer {
@@ -143,6 +152,17 @@ class InjectionContainer {
   // Profile UseCases
   static late final GetDriverProfileUseCase getDriverProfileUseCase;
   static late final GetProfileMenuUseCase getProfileMenuUseCase;
+  static late final OpenWhatsAppHelplineUseCase openWhatsAppHelplineUseCase;
+
+  // Wallet Data Sources & Repositories
+  static late final DriverWalletLocalDataSource driverWalletLocalDataSource;
+  static late final DriverWalletRepository driverWalletRepository;
+
+  // Wallet UseCases
+  static late final GetDriverWalletUseCase getDriverWalletUseCase;
+  static late final WithdrawWalletFundsUseCase withdrawWalletFundsUseCase;
+  static late final AddMoneyToDriverWalletUseCase addMoneyToDriverWalletUseCase;
+  static late final GetDriverWalletTransactionsUseCase getDriverWalletTransactionsUseCase;
 
   static void init() {
     // Core Services
@@ -224,6 +244,7 @@ class InjectionContainer {
     );
     getDriverProfileUseCase = GetDriverProfileUseCase(profileRepository);
     getProfileMenuUseCase = GetProfileMenuUseCase();
+    openWhatsAppHelplineUseCase = OpenWhatsAppHelplineUseCase();
 
     // Documents Data Sources & Repositories
     documentsRemoteDataSource = DocumentsRemoteDataSourceImpl(
@@ -233,6 +254,16 @@ class InjectionContainer {
       remoteDataSource: documentsRemoteDataSource,
     );
     getDriverDocumentsUseCase = GetDriverDocumentsUseCase(documentsRepository);
+
+    // Wallet Data Sources & Repositories
+    driverWalletLocalDataSource = DriverWalletLocalDataSourceImpl();
+    driverWalletRepository = DriverWalletRepositoryImpl(
+      localDataSource: driverWalletLocalDataSource,
+    );
+    getDriverWalletUseCase = GetDriverWalletUseCase(driverWalletRepository);
+    withdrawWalletFundsUseCase = WithdrawWalletFundsUseCase(driverWalletRepository);
+    addMoneyToDriverWalletUseCase = AddMoneyToDriverWalletUseCase(driverWalletRepository);
+    getDriverWalletTransactionsUseCase = GetDriverWalletTransactionsUseCase(driverWalletRepository);
   }
 
   static DocumentsBloc createDocumentsBloc({
@@ -255,6 +286,7 @@ class InjectionContainer {
     return ProfileBloc(
       getDriverProfileUseCase: getDriverProfileUseCase,
       getProfileMenuUseCase: getProfileMenuUseCase,
+      openWhatsAppHelplineUseCase: openWhatsAppHelplineUseCase,
       driverToken: driverToken,
     );
   }
@@ -330,6 +362,14 @@ class InjectionContainer {
     return SubscriptionHistoryBloc(
       getSubscriptionHistoryUseCase: getSubscriptionHistoryUseCase,
       driverToken: driverToken,
+    );
+  }
+
+  static DriverWalletBloc createDriverWalletBloc() {
+    return DriverWalletBloc(
+      getDriverWalletUseCase: getDriverWalletUseCase,
+      withdrawWalletFundsUseCase: withdrawWalletFundsUseCase,
+      addMoneyToDriverWalletUseCase: addMoneyToDriverWalletUseCase,
     );
   }
 }

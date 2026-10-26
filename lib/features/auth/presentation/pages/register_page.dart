@@ -37,7 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _licenseNumberController = TextEditingController();
   final _aadharController = TextEditingController();
   final _panController = TextEditingController();
-  final _passportController = TextEditingController();
+  final _pvcController = TextEditingController();
 
   // Attached Document Files
   File? _profilePicFile;
@@ -45,7 +45,7 @@ class _RegisterPageState extends State<RegisterPage> {
   File? _aadharBackFile;
   File? _drivingLicenseFile;
   File? _panCardFile;
-  File? _passportFile;
+  File? _pvcFile;
 
   // Validation state flags
   //bool _obscurePassword = true;
@@ -62,7 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _licenseNumberController.dispose();
     _aadharController.dispose();
     _panController.dispose();
-    _passportController.dispose();
+    _pvcController.dispose();
     super.dispose();
   }
 
@@ -70,9 +70,9 @@ class _RegisterPageState extends State<RegisterPage> {
   /// POST http://192.168.0.161:3000/api/driver/register
   ///
   /// Text form fields:
-  /// - firstName, lastName, email, phone, address, licenseNumber, pancardNumber, aadhaarNumber, passportId
+  /// - firstName, lastName, email, phone, address, licenseNumber, pancardNumber, aadhaarNumber, pvcId/passportId
   /// Multipart file fields:
-  /// - pancard, aadhaarCardFront, aadhaarCardBack, drivingLicense, selfie, passport
+  /// - pancard, aadhaarCardFront, aadhaarCardBack, drivingLicense, selfie, pvc/passport
   DriverRegisterBody _buildApiRequestBody() {
     return DriverRegisterBody(
       firstName: _firstNameController.text.trim(),
@@ -83,13 +83,15 @@ class _RegisterPageState extends State<RegisterPage> {
       licenseNumber: _licenseNumberController.text.trim(),
       pancardNumber: _panController.text.trim().toUpperCase(),
       aadhaarNumber: _aadharController.text.trim(),
-      passportId: _passportController.text.trim().toUpperCase(),
+      passportId: _pvcController.text.trim().toUpperCase(),
+      pvcId: _pvcController.text.trim().toUpperCase(),
       pancard: _panCardFile?.path,
       aadhaarCardFront: _aadharFrontFile?.path,
       aadhaarCardBack: _aadharBackFile?.path,
       drivingLicense: _drivingLicenseFile?.path,
       selfie: _profilePicFile?.path,
-      passport: _passportFile?.path,
+      passport: _pvcFile?.path,
+      pvc: _pvcFile?.path,
       //  password: _passwordController.text,
     );
   }
@@ -175,12 +177,12 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    final passportErr = InputValidators.validatePassport(
-      _passportController.text,
+    final pvcErr = InputValidators.validatePvc(
+      _pvcController.text,
       isRequired: true,
     );
-    if (passportErr != null) {
-      AppSnackBar.showError(context, passportErr);
+    if (pvcErr != null) {
+      AppSnackBar.showError(context, pvcErr);
       return;
     }
 
@@ -216,12 +218,16 @@ class _RegisterPageState extends State<RegisterPage> {
         pancardNumber: body.pancardNumber,
         aadhaarNumber: body.aadhaarNumber,
         passportId: body.passportId,
+        pvcId: body.passportId,
+        pvcNumber: body.passportId,
         pancard: body.pancard,
         aadhaarCardFront: body.aadhaarCardFront,
         aadhaarCardBack: body.aadhaarCardBack,
         drivingLicense: body.drivingLicense,
         selfie: body.selfie,
         passport: body.passport,
+        pvc: body.passport,
+        pvcPath: body.passport,
         aadharNumber: body.aadhaarNumber,
         panNumber: body.pancardNumber,
         passportNumber: body.passportId,
@@ -907,15 +913,15 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Passport ID *
+                        // PVC Number (Police Verification) *
                         _buildTextField(
-                          controller: _passportController,
-                          labelText: 'Passport Number',
-                          hintText: 'e.g. A1234567',
-                          prefixIcon: Icons.flight_takeoff_rounded,
+                          controller: _pvcController,
+                          labelText: 'PVC Number (Police Verification)',
+                          hintText: 'e.g. PVC12345678',
+                          prefixIcon: Icons.verified_user_rounded,
                           textCapitalization: TextCapitalization.characters,
-                          maxLength: 12,
-                          validator: (val) => InputValidators.validatePassport(
+                          maxLength: 20,
+                          validator: (val) => InputValidators.validatePvc(
                             val,
                             isRequired: true,
                           ),
@@ -1060,25 +1066,25 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 5. Passport (Optional)
+                        // 5. Police Verification Certificate (PVC)
                         DocumentUploadTile(
-                          title: 'Passport',
-                          subtitle: 'Upload photo page of passport (optional)',
+                          title: 'Police Verification (PVC)',
+                          subtitle: 'Upload Police Verification Certificate / PVC',
                           isRequired: false,
-                          file: _passportFile,
-                          icon: Icons.flight_takeoff_rounded,
+                          file: _pvcFile,
+                          icon: Icons.verified_user_rounded,
                           onTap: () => _showDocumentSourcePicker(
-                            title: 'Passport',
-                            currentFile: _passportFile,
-                            onFileSelected: (f) => _passportFile = f,
+                            title: 'Police Verification (PVC)',
+                            currentFile: _pvcFile,
+                            onFileSelected: (f) => _pvcFile = f,
                           ),
                           onRemove: () => setState(() {
-                            _passportFile = null;
+                            _pvcFile = null;
                           }),
-                          onPreview: _passportFile != null
+                          onPreview: _pvcFile != null
                               ? () => _showImagePreview(
-                                  _passportFile!,
-                                  'Passport',
+                                  _pvcFile!,
+                                  'Police Verification (PVC)',
                                 )
                               : null,
                         ),

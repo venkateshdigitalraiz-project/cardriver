@@ -15,6 +15,11 @@ class GetProfileMenuUseCase {
         icon: Icons.history_rounded,
       ),
       ProfileMenuItem(
+        title: 'Wallet',
+        subtitle: 'Balance: ₹1,250 • Payouts & Settlement',
+        icon: Icons.account_balance_wallet_rounded,
+      ),
+      ProfileMenuItem(
         title: 'Notifications',
         subtitle: 'Alert, Updates and Message',
         icon: Icons.notifications_none,
@@ -34,6 +39,11 @@ class GetProfileMenuUseCase {
         title: 'My Tickets',
         subtitle: 'Track Your Support Requests',
         icon: Icons.confirmation_number_outlined,
+      ),
+      ProfileMenuItem(
+        title: 'WhatsApp Helpline',
+        subtitle: 'WhatsApp Only: 8686234434',
+        icon: Icons.chat_bubble_rounded,
       ),
       ProfileMenuItem(
         title: 'Terms & Conditions',

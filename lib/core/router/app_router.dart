@@ -30,6 +30,7 @@ import '../../features/support/presentation/pages/support_page.dart';
 import '../../features/trip/domain/entities/trip_entity.dart';
 import '../../features/trip/presentation/pages/trip_details_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
+import '../../features/wallet/presentation/pages/driver_wallet_page.dart';
 import '../../injection_container.dart';
 import '../style/app_colors.dart';
 
@@ -56,6 +57,7 @@ class AppRoutes {
   static const String tripDetails = '/trip-details';
   static const String profile = '/profile';
   static const String createRide = '/create-ride';
+  static const String wallet = '/wallet';
 }
 
 /// Centralized route names for named navigation
@@ -81,6 +83,7 @@ class AppRouteNames {
   static const String tripDetails = 'tripDetails';
   static const String profile = 'profile';
   static const String createRide = 'createRide';
+  static const String wallet = 'wallet';
 }
 
 /// Helper that converts any Stream into a Listenable for GoRouter
@@ -445,6 +448,11 @@ class AppRouter {
               driverToken: token,
             );
           },
+        ),
+        GoRoute(
+          path: AppRoutes.wallet,
+          name: AppRouteNames.wallet,
+          builder: (context, state) => const DriverWalletPage(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

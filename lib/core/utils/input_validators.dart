@@ -103,6 +103,18 @@ class InputValidators {
     return null;
   }
 
+  static String? validatePvc(String? value, {bool isRequired = true}) {
+    if (value == null || value.trim().isEmpty) {
+      if (isRequired) return 'PVC number (Police Verification) is required';
+      return null;
+    }
+    final cleanPvc = value.trim().toUpperCase();
+    if (cleanPvc.length < 3) {
+      return 'Please enter a valid PVC number';
+    }
+    return null;
+  }
+
   static String? validatePassport(String? value, {bool isRequired = true}) {
     if (value == null || value.trim().isEmpty) {
       if (isRequired) return 'Passport ID is required';
