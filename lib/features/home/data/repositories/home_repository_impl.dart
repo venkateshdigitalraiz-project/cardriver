@@ -1,9 +1,11 @@
 import 'dart:async';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
 import '../../domain/repositories/home_repository.dart';
 import '../datasources/home_remote_data_source.dart';
+import '../models/d_to_d_booking_model.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
   final HomeRemoteDataSource remoteDataSource;
@@ -52,6 +54,40 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
+  Future<DtoDBookingEntity> createDtoDBooking({
+    required DtoDBookingRequestModel request,
+    String? token,
+  }) async {
+    return await remoteDataSource.createDtoDBooking(
+      request: request,
+      token: token,
+    );
+  }
+
+  @override
+  Future<DtoDBookingsPaginatedEntity> getDtoDBookings({
+    int page = 1,
+    int limit = 10,
+    String? token,
+    String? status,
+    String? serviceType,
+    String? tripType,
+    int? durationDays,
+    int? durationHours,
+  }) async {
+    return await remoteDataSource.getDtoDBookings(
+      page: page,
+      limit: limit,
+      token: token,
+      status: status,
+      serviceType: serviceType,
+      tripType: tripType,
+      durationDays: durationDays,
+      durationHours: durationHours,
+    );
+  }
+
+  @override
   Stream<List<AvailableRideEntity>> monitorAvailableRides({
     String? token,
     Duration interval = const Duration(seconds: 4),
@@ -65,4 +101,3 @@ class HomeRepositoryImpl implements HomeRepository {
     }
   }
 }
-

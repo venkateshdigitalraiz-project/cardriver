@@ -15,6 +15,10 @@ class CreateManualRideUseCase {
     double? pickupLng,
     double? dropLat,
     double? dropLng,
+    String serviceType = 'local',
+    String tripType = 'one_way',
+    int duration = 2,
+    String vehicleType = 'Sedan',
   }) {
     final now = DateTime.now();
     final cleanPhone = mobileNumber.trim();
@@ -22,15 +26,21 @@ class CreateManualRideUseCase {
         ? cleanPhone
         : '+91 $cleanPhone';
 
+    final isOutstation = serviceType.trim().toLowerCase() == 'outstation';
+    final durationHours = isOutstation ? (duration * 24) : duration;
+    final durationDays =
+        isOutstation ? duration : (duration > 0 ? (duration / 24).ceil() : 0);
+
     return AvailableRideEntity(
       id: 'manual_${now.millisecondsSinceEpoch}',
       bookingId: 'CD-${now.millisecondsSinceEpoch.toString().substring(7)}',
       riderName: userName.trim(),
       riderPhone: formattedPhone,
-      vehicleType: 'Sedan',
-      serviceType: 'Manual Ride',
-      tripType: 'Point-to-Point',
-      durationHours: 2,
+      vehicleType: vehicleType.trim().isNotEmpty ? vehicleType.trim() : 'Sedan',
+      serviceType: serviceType,
+      tripType: tripType,
+      durationHours: durationHours,
+      durationDays: durationDays,
       fare: price,
       driverFee: (price * 0.85).roundToDouble(),
       paymentMethod: 'Cash',

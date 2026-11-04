@@ -7,9 +7,12 @@ import '../../../../core/services/socket_service.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
 import '../../data/datasources/available_rides_remote_data_source.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/usecases/accept_ride_usecase.dart';
+import '../../domain/usecases/create_d_to_d_booking_usecase.dart';
 import '../../domain/usecases/create_manual_ride_usecase.dart';
 import '../../domain/usecases/reject_ride_usecase.dart';
+import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
@@ -20,6 +23,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final AcceptRideUseCase? acceptRideUseCase;
   final RejectRideUseCase? rejectRideUseCase;
   final CreateManualRideUseCase createManualRideUseCase;
+  final OpenWhatsAppHelplineUseCase openWhatsAppHelplineUseCase;
+  final CreateDtoDBookingUseCase? createDtoDBookingUseCase;
 
   StreamSubscription<void>? _connectedSubscription;
   StreamSubscription<dynamic>? _rideNewAvailableSubscription;
@@ -37,10 +42,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     this.acceptRideUseCase,
     this.rejectRideUseCase,
     CreateManualRideUseCase? createManualRideUseCase,
+    OpenWhatsAppHelplineUseCase? openWhatsAppHelplineUseCase,
+    this.createDtoDBookingUseCase,
   }) : createManualRideUseCase =
            createManualRideUseCase ?? const CreateManualRideUseCase(),
+       openWhatsAppHelplineUseCase =
+           openWhatsAppHelplineUseCase ?? OpenWhatsAppHelplineUseCase(),
        super(const HomeState()) {
     // 1. Register Bloc event handlers
+    on<OpenWhatsAppSupportEvent>(_onOpenWhatsAppSupport);
 
     // 2. Register Bloc event handlers
     on<ToggleOnlineStatusEvent>(_onToggleOnlineStatus);
@@ -53,6 +63,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<AcceptRideEvent>(_onAcceptRide);
     on<ClearAcceptedRideEvent>(_onClearAcceptedRide);
     on<CreateManualRideEvent>(_onCreateManualRide);
+    on<CreateDtoDBookingEvent>(_onCreateDtoDBooking);
+    on<ClearDtoDBookingStatusEvent>(_onClearDtoDBookingStatus);
 
     // 3. Listen to socket connection / reconnection
     _connectedSubscription = socketService.onConnected.listen((_) {
@@ -641,11 +653,100 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       pickupLng: event.pickupLng,
       dropLat: event.dropLat,
       dropLng: event.dropLng,
+      serviceType: event.serviceType,
+      tripType: event.tripType,
+      duration: event.duration,
+      vehicleType: event.vehicleType,
     );
 
     final updatedRides =
         _deduplicateRides([newRide, ...state.availableRides]);
     emit(state.copyWith(availableRides: updatedRides, newRideAlert: newRide));
+  }
+
+  Future<void> _onCreateDtoDBooking(
+    CreateDtoDBookingEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isSubmittingDtoDBooking: true,
+        clearDtoDBookingError: true,
+        clearDtoDBookingSuccess: true,
+      ),
+    );
+
+    final effectiveToken =
+        (event.token != null && event.token!.isNotEmpty)
+            ? event.token!
+            : (driverToken.isNotEmpty
+                ? driverToken
+                : AvailableRidesRemoteDataSourceImpl.defaultDriverToken);
+
+    try {
+      log('🚕 [HomeBloc] Initiating D-to-D booking creation via Clean Architecture...');
+      final DtoDBookingEntity result;
+      if (createDtoDBookingUseCase != null) {
+        result = await createDtoDBookingUseCase!(
+          request: event.request,
+          token: effectiveToken,
+        );
+      } else {
+        result = await remoteDataSource.createDtoDBooking(
+          request: event.request,
+          token: effectiveToken,
+        );
+      }
+
+      log('✅ [HomeBloc] D-to-D booking successfully created: bookingId=${result.bookingId}, id=${result.id}');
+
+      emit(
+        state.copyWith(
+          isSubmittingDtoDBooking: false,
+          dtoDBookingSuccess: result,
+        ),
+      );
+
+      event.onSuccess?.call(result);
+
+      // Refresh available rides silently so newly created bookings appear on home feed
+      add(const LoadAvailableRidesEvent(silent: true));
+    } catch (e) {
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      log('❌ [HomeBloc] Failed to create D-to-D booking: $errorMsg');
+
+      emit(
+        state.copyWith(
+          isSubmittingDtoDBooking: false,
+          dtoDBookingError: errorMsg,
+        ),
+      );
+
+      event.onError?.call(errorMsg);
+    }
+  }
+
+  void _onClearDtoDBookingStatus(
+    ClearDtoDBookingStatusEvent event,
+    Emitter<HomeState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        clearDtoDBookingError: true,
+        clearDtoDBookingSuccess: true,
+      ),
+    );
+  }
+
+  Future<void> _onOpenWhatsAppSupport(
+    OpenWhatsAppSupportEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    try {
+      await openWhatsAppHelplineUseCase.execute(message: event.message);
+    } catch (e) {
+      log('❌ [HomeBloc] Failed to launch WhatsApp helpline: $e');
+    }
   }
 
   @override

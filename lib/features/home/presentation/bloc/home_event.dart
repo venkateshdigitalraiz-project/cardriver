@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import '../../data/models/d_to_d_booking_model.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/d_to_d_booking_entity.dart';
 
 abstract class HomeEvent extends Equatable {
   const HomeEvent();
@@ -94,6 +96,10 @@ class CreateManualRideEvent extends HomeEvent {
   final double? pickupLng;
   final double? dropLat;
   final double? dropLng;
+  final String serviceType;
+  final String tripType;
+  final int duration;
+  final String vehicleType;
 
   const CreateManualRideEvent({
     required this.userName,
@@ -106,6 +112,10 @@ class CreateManualRideEvent extends HomeEvent {
     this.pickupLng,
     this.dropLat,
     this.dropLng,
+    this.serviceType = 'local',
+    this.tripType = 'one_way',
+    this.duration = 2,
+    this.vehicleType = 'Sedan',
   });
 
   @override
@@ -120,5 +130,42 @@ class CreateManualRideEvent extends HomeEvent {
         pickupLng,
         dropLat,
         dropLng,
+        serviceType,
+        tripType,
+        duration,
+        vehicleType,
       ];
 }
+
+/// Dispatched when the driver taps the WhatsApp support icon in the HomePage AppBar.
+class OpenWhatsAppSupportEvent extends HomeEvent {
+  final String? message;
+
+  const OpenWhatsAppSupportEvent({this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// Dispatched when submitting a Driver-to-Driver booking to the API:
+/// POST http://localhost:3000/api/driver/d-to-d-bookings
+class CreateDtoDBookingEvent extends HomeEvent {
+  final DtoDBookingRequestModel request;
+  final String? token;
+  final void Function(DtoDBookingEntity booking)? onSuccess;
+  final void Function(String error)? onError;
+
+  const CreateDtoDBookingEvent({
+    required this.request,
+    this.token,
+    this.onSuccess,
+    this.onError,
+  });
+
+  @override
+  List<Object?> get props => [request, token];
+}
+
+/// Clears D-to-D booking success/error state.
+class ClearDtoDBookingStatusEvent extends HomeEvent {}
+

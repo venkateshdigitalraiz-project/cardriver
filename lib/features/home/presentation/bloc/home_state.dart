@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
 
 class HomeState extends Equatable {
@@ -17,6 +18,11 @@ class HomeState extends Equatable {
   final String? decliningRideId;
   final RejectedRideEntity? rejectedRide;
 
+  // D-to-D Booking fields
+  final bool isSubmittingDtoDBooking;
+  final DtoDBookingEntity? dtoDBookingSuccess;
+  final String? dtoDBookingError;
+
   const HomeState({
     this.isOnline = false,
     this.isLoadingRides = false,
@@ -30,6 +36,9 @@ class HomeState extends Equatable {
     this.acceptedRide,
     this.decliningRideId,
     this.rejectedRide,
+    this.isSubmittingDtoDBooking = false,
+    this.dtoDBookingSuccess,
+    this.dtoDBookingError,
   });
 
   /// Convenience getters for UI compatibility
@@ -57,6 +66,11 @@ class HomeState extends Equatable {
     bool clearDecliningRideId = false,
     RejectedRideEntity? rejectedRide,
     bool clearRejectedRide = false,
+    bool? isSubmittingDtoDBooking,
+    DtoDBookingEntity? dtoDBookingSuccess,
+    bool clearDtoDBookingSuccess = false,
+    String? dtoDBookingError,
+    bool clearDtoDBookingError = false,
   }) {
     return HomeState(
       isOnline: isOnline ?? this.isOnline,
@@ -81,6 +95,14 @@ class HomeState extends Equatable {
       rejectedRide: clearRejectedRide
           ? null
           : (rejectedRide ?? this.rejectedRide),
+      isSubmittingDtoDBooking:
+          isSubmittingDtoDBooking ?? this.isSubmittingDtoDBooking,
+      dtoDBookingSuccess: clearDtoDBookingSuccess
+          ? null
+          : (dtoDBookingSuccess ?? this.dtoDBookingSuccess),
+      dtoDBookingError: clearDtoDBookingError
+          ? null
+          : (dtoDBookingError ?? this.dtoDBookingError),
     );
   }
 
@@ -98,5 +120,8 @@ class HomeState extends Equatable {
     acceptedRide,
     decliningRideId,
     rejectedRide,
+    isSubmittingDtoDBooking,
+    dtoDBookingSuccess,
+    dtoDBookingError,
   ];
 }

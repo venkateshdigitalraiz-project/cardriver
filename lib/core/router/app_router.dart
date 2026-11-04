@@ -12,6 +12,7 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/documents/presentation/pages/documents_page.dart';
 import '../../features/earnings/presentation/pages/earnings_page.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
+import '../../features/home/presentation/pages/d_to_d_bookings_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/widgets/create_ride_widget.dart';
 import '../../features/legal/presentation/pages/legal_page.dart';
@@ -33,6 +34,7 @@ import '../../features/trip/presentation/pages/trip_page.dart';
 import '../../features/wallet/presentation/pages/driver_wallet_page.dart';
 import '../../injection_container.dart';
 import '../style/app_colors.dart';
+import '../widgets/location_picker_map_screen.dart';
 
 /// Centralized route paths for the application
 class AppRoutes {
@@ -57,7 +59,9 @@ class AppRoutes {
   static const String tripDetails = '/trip-details';
   static const String profile = '/profile';
   static const String createRide = '/create-ride';
+  static const String dToDBookings = '/d-to-d-bookings';
   static const String wallet = '/wallet';
+  static const String locationPickerMap = '/location-picker-map';
 }
 
 /// Centralized route names for named navigation
@@ -79,10 +83,12 @@ class AppRouteNames {
   static const String legal = 'legal';
   static const String editProfile = 'editProfile';
   static const String locationPicker = 'locationPicker';
+  static const String locationPickerMap = 'locationPickerMap';
   static const String trips = 'trips';
   static const String tripDetails = 'tripDetails';
   static const String profile = 'profile';
   static const String createRide = 'createRide';
+  static const String dToDBookings = 'dToDBookings';
   static const String wallet = 'wallet';
 }
 
@@ -322,6 +328,23 @@ class AppRouter {
           builder: (context, state) => const LocationPickerPage(),
         ),
         GoRoute(
+          path: AppRoutes.locationPickerMap,
+          name: AppRouteNames.locationPickerMap,
+          builder: (context, state) {
+            double? initialLat;
+            double? initialLng;
+            if (state.extra is Map) {
+              final map = state.extra as Map;
+              initialLat = (map['initialLat'] as num?)?.toDouble();
+              initialLng = (map['initialLng'] as num?)?.toDouble();
+            }
+            return LocationPickerMapScreen(
+              initialLat: initialLat,
+              initialLng: initialLng,
+            );
+          },
+        ),
+        GoRoute(
           path: AppRoutes.trips,
           name: AppRouteNames.trips,
           builder: (context, state) {
@@ -450,6 +473,35 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.dToDBookings,
+          name: AppRouteNames.dToDBookings,
+          builder: (context, state) {
+            CustomerEntity? customer;
+            String? driverToken;
+
+            if (state.extra is Map) {
+              final map = state.extra as Map;
+              customer = map['customer'] as CustomerEntity?;
+              driverToken = map['driverToken'] as String?;
+            } else if (state.extra is CustomerEntity) {
+              customer = state.extra as CustomerEntity;
+            } else if (state.extra is String) {
+              driverToken = state.extra as String;
+            }
+
+            customer ??= authBloc.state.customer;
+            driverToken ??=
+                customer?.token ??
+                authBloc.state.driver?.token ??
+                authBloc.state.customer?.token;
+
+            return DtoDBookingsPage(
+              customer: customer,
+              driverToken: driverToken,
+            );
+          },
+        ),
+        GoRoute(
           path: AppRoutes.wallet,
           name: AppRouteNames.wallet,
           builder: (context, state) => const DriverWalletPage(),
@@ -542,7 +594,7 @@ class _CreateRideRouteScreenState extends State<CreateRideRouteScreen> {
     return BlocProvider<HomeBloc>.value(
       value: _bloc,
       child: CreateRidePage(
-        //  customer: widget.customer,
+        customer: widget.customer,
         homeBloc: _bloc,
       ),
     );

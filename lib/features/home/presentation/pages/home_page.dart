@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
@@ -16,7 +17,9 @@ import '../../domain/entities/available_ride_entity.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../widgets/booking_driver_card.dart';
 
+export '../widgets/booking_driver_card.dart';
 export '../widgets/create_ride_widget.dart';
 
 class HomePage extends StatelessWidget {
@@ -252,6 +255,31 @@ class _HomeView extends StatelessWidget {
                         );
                       },
                     ),
+                    const SizedBox(width: 4),
+                    // WhatsApp Helpline Icon Button in AppBar right corner
+                    IconButton(
+                      tooltip: 'WhatsApp Helpline',
+                      icon: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF25D366),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                      onPressed: () {
+                        context.read<HomeBloc>().add(
+                          const OpenWhatsAppSupportEvent(),
+                        );
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ],
@@ -445,6 +473,14 @@ class _HomeView extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Feature Card for Booking Driver
+                    BookingDriverCard(
+                      customer: customer,
+                      onBookTap: () => _openCreateRide(context),
                     ),
 
                     const SizedBox(height: 24),

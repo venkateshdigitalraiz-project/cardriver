@@ -41,11 +41,6 @@ class GetProfileMenuUseCase {
         icon: Icons.confirmation_number_outlined,
       ),
       ProfileMenuItem(
-        title: 'WhatsApp Helpline',
-        subtitle: 'WhatsApp Only: 8686234434',
-        icon: Icons.chat_bubble_rounded,
-      ),
-      ProfileMenuItem(
         title: 'Terms & Conditions',
         subtitle: 'Read our terms of service',
         icon: Icons.description_rounded,

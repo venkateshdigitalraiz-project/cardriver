@@ -26,8 +26,12 @@ import 'features/home/data/datasources/home_remote_data_source.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/domain/usecases/accept_ride_usecase.dart';
+import 'features/home/domain/usecases/create_d_to_d_booking_usecase.dart';
 import 'features/home/domain/usecases/get_available_rides_usecase.dart';
+import 'features/home/domain/usecases/get_d_to_d_bookings_usecase.dart';
 import 'features/home/domain/usecases/reject_ride_usecase.dart';
+import 'features/home/presentation/bloc/d_to_d_bookings/d_to_d_bookings_bloc.dart';
+import 'features/home/presentation/bloc/d_to_d_bookings/d_to_d_bookings_event.dart';
 import 'features/home/presentation/bloc/home_bloc.dart';
 import 'features/trip/data/datasources/trip_remote_data_source.dart';
 import 'features/trip/data/repositories/trip_repository_impl.dart';
@@ -96,6 +100,8 @@ class InjectionContainer {
   static late final GetAvailableRidesUseCase getAvailableRidesUseCase;
   static late final AcceptRideUseCase acceptRideUseCase;
   static late final RejectRideUseCase rejectRideUseCase;
+  static late final CreateDtoDBookingUseCase createDtoDBookingUseCase;
+  static late final GetDtoDBookingsUseCase getDtoDBookingsUseCase;
 
   // Trip Data Sources & Repositories
   static late final TripRemoteDataSource tripRemoteDataSource;
@@ -210,6 +216,8 @@ class InjectionContainer {
     getAvailableRidesUseCase = GetAvailableRidesUseCase(homeRepository);
     acceptRideUseCase = AcceptRideUseCase(homeRepository);
     rejectRideUseCase = RejectRideUseCase(homeRepository);
+    createDtoDBookingUseCase = CreateDtoDBookingUseCase(homeRepository);
+    getDtoDBookingsUseCase = GetDtoDBookingsUseCase(homeRepository);
 
     // Trip Data Sources & Repositories
     tripRemoteDataSource = TripRemoteDataSourceImpl();
@@ -321,7 +329,17 @@ class InjectionContainer {
       driverToken: driverToken,
       acceptRideUseCase: acceptRideUseCase,
       rejectRideUseCase: rejectRideUseCase,
+      createDtoDBookingUseCase: createDtoDBookingUseCase,
     );
+  }
+
+  static DtoDBookingsBloc createDtoDBookingsBloc({String? driverToken}) {
+    final bloc = DtoDBookingsBloc(
+      getDtoDBookingsUseCase: getDtoDBookingsUseCase,
+      driverToken: driverToken,
+    );
+    bloc.add(LoadDtoDBookingsEvent(token: driverToken));
+    return bloc;
   }
 
   static TripBloc createTripBloc({String? driverToken}) {

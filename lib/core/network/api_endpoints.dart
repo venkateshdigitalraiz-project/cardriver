@@ -2,8 +2,8 @@ class ApiEndpoints {
   // Main Application Server
   // current Live Host  http://194.238.19.189:2200
   // current Test Host  http://192.168.0.161:3000
-  //static const String _host = 'http://192.168.0.161:3000';
-  static const String _host = 'http://194.238.19.189:2200';
+  static const String _host = 'http://192.168.0.161:3000';
+  // static const String _host = 'http://194.238.19.189:2200';
   static const String baseUrl = '$_host/api';
 
   // Socket.IO server root (no /api prefix)
@@ -28,6 +28,7 @@ class ApiEndpoints {
   static String driverBookingDetails(String bookingId) =>
       '$driverBookings/$bookingId';
   static const String driverTripStatus = '$driverBookings/trip-status';
+  static const String driverDtoDBookings = '$baseUrl/driver/d-to-d-bookings';
 
   // Driver Subscriptions
   static const String driverSubscriptionPlans =

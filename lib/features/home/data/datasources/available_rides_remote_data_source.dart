@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
+import '../models/d_to_d_booking_model.dart';
 
 abstract class AvailableRidesRemoteDataSource {
   Future<List<AvailableRideEntity>> fetchAvailableRides(String token);
@@ -16,6 +18,20 @@ abstract class AvailableRidesRemoteDataSource {
     required String rideId,
     required String token,
     String? reason,
+  });
+  Future<DtoDBookingEntity> createDtoDBooking({
+    required DtoDBookingRequestModel request,
+    String? token,
+  });
+  Future<DtoDBookingsPaginatedEntity> getDtoDBookings({
+    int page = 1,
+    int limit = 10,
+    String? token,
+    String? status,
+    String? serviceType,
+    String? tripType,
+    int? durationDays,
+    int? durationHours,
   });
 }
 
@@ -216,6 +232,191 @@ class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSour
         }
       } catch (_) {}
       throw Exception(errorMessage);
+    }
+  }
+
+  @override
+  Future<DtoDBookingEntity> createDtoDBooking({
+    required DtoDBookingRequestModel request,
+    String? token,
+  }) async {
+    String cleanToken = (token ?? '').trim();
+    if (cleanToken.toLowerCase().startsWith('bearer ')) {
+      cleanToken = cleanToken.substring(7).trim();
+    }
+
+    if (cleanToken.isEmpty) {
+      cleanToken = defaultDriverToken;
+    }
+
+    final uri = Uri.parse(ApiEndpoints.driverDtoDBookings);
+    final payload = request.toJson();
+    final bodyJson = jsonEncode(payload);
+
+    log('================================================================');
+    log('🚀 [AvailableRidesRemoteDataSource] POST D-to-D Booking API');
+    log('🌐 URL: $uri');
+    log('🔑 Authorization: Bearer ${cleanToken.length > 20 ? "${cleanToken.substring(0, 15)}..." : cleanToken}');
+    log('📦 Request Payload:\n${const JsonEncoder.withIndent('  ').convert(payload)}');
+    log('================================================================');
+
+    try {
+      final response = await _client.post(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $cleanToken',
+          'Content-Type': 'application/json',
+        },
+        body: bodyJson,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          log('⏱️ [AvailableRidesRemoteDataSource] Request timed out after 15 seconds');
+          throw Exception('Connection timed out while creating D-to-D booking.');
+        },
+      );
+
+      log('================================================================');
+      log('📥 [AvailableRidesRemoteDataSource] D-to-D Booking Response Received');
+      log('📊 Status Code: ${response.statusCode}');
+      log('📋 Headers: ${response.headers}');
+      log('📄 Response Body:\n${response.body}');
+      log('================================================================');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          return DtoDBookingResponseModel.fromJson(
+            Map<String, dynamic>.from(decoded),
+          );
+        }
+        return DtoDBookingResponseModel.fromJson({
+          'status': 'confirmed',
+          'message': 'Driver booking confirmed successfully',
+          'data': decoded,
+        });
+      } else {
+        String errorMessage =
+            'Failed to create D-to-D booking. Status: ${response.statusCode}';
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map &&
+              (decoded['message'] != null || decoded['error'] != null)) {
+            errorMessage =
+                (decoded['message'] ?? decoded['error']).toString();
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      log('❌ [AvailableRidesRemoteDataSource] Error in D-to-D Booking: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<DtoDBookingsPaginatedEntity> getDtoDBookings({
+    int page = 1,
+    int limit = 10,
+    String? token,
+    String? status,
+    String? serviceType,
+    String? tripType,
+    int? durationDays,
+    int? durationHours,
+  }) async {
+    String cleanToken = (token ?? '').trim();
+    if (cleanToken.toLowerCase().startsWith('bearer ')) {
+      cleanToken = cleanToken.substring(7).trim();
+    }
+
+    if (cleanToken.isEmpty) {
+      cleanToken = defaultDriverToken;
+    }
+
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+
+    if (status != null && status.trim().isNotEmpty && status.trim().toLowerCase() != 'all') {
+      queryParams['status'] = status.trim().toLowerCase();
+    }
+    if (serviceType != null && serviceType.trim().isNotEmpty && serviceType.trim().toLowerCase() != 'all') {
+      queryParams['serviceType'] = serviceType.trim().toLowerCase();
+    }
+    if (tripType != null && tripType.trim().isNotEmpty && tripType.trim().toLowerCase() != 'all') {
+      queryParams['tripType'] = tripType.trim().toLowerCase();
+    }
+    if (durationDays != null && durationDays > 0) {
+      queryParams['durationDays'] = durationDays.toString();
+    }
+    if (durationHours != null && durationHours > 0) {
+      queryParams['durationHours'] = durationHours.toString();
+    }
+
+    final uri = Uri.parse(ApiEndpoints.driverDtoDBookings).replace(queryParameters: queryParams);
+
+    log('================================================================');
+    log('🚀 [AvailableRidesRemoteDataSource] GET D-to-D Bookings API');
+    log('🌐 URL: $uri');
+    log('🔑 Authorization: Bearer ${cleanToken.length > 20 ? "${cleanToken.substring(0, 15)}..." : cleanToken}');
+    log('📋 Query Parameters: $queryParams');
+    log('================================================================');
+
+    try {
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $cleanToken',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          log('⏱️ [AvailableRidesRemoteDataSource] Request timed out after 15 seconds');
+          throw Exception('Connection timed out while fetching bookings.');
+        },
+      );
+
+      log('================================================================');
+      log('📥 [AvailableRidesRemoteDataSource] D-to-D Bookings Status: ${response.statusCode}');
+      log('📄 Body: ${response.body}');
+      log('================================================================');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          return DtoDBookingsPaginatedModel.fromJson(
+            Map<String, dynamic>.from(decoded),
+            requestedPage: page,
+            requestedLimit: limit,
+          );
+        }
+        if (decoded is List) {
+          return DtoDBookingsPaginatedModel.fromJson(
+            {'data': decoded},
+            requestedPage: page,
+            requestedLimit: limit,
+          );
+        }
+        return DtoDBookingsPaginatedModel(page: page, limit: limit);
+      } else {
+        String errorMessage =
+            'Failed to fetch D-to-D bookings. Status: ${response.statusCode}';
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map &&
+              (decoded['message'] != null || decoded['error'] != null)) {
+            errorMessage =
+                (decoded['message'] ?? decoded['error']).toString();
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      log('❌ [AvailableRidesRemoteDataSource] Error fetching D-to-D Bookings: $e');
+      rethrow;
     }
   }
 }
