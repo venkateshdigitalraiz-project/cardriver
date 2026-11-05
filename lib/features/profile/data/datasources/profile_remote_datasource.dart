@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../models/driver_profile_model.dart';
@@ -13,35 +14,17 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   final http.Client _client;
   final LocalStorageService? storageService;
 
-  // Default driver token for the environment
-  static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTI3NTExMTYsImV4cCI6MTc5MzM1NTkxNn0.49lJGj1xnscvLoHVLEfVdeyGfH1NxQTBaKmwMfZYZug';
-
-  ProfileRemoteDataSourceImpl({
-    http.Client? client,
-    this.storageService,
-  }) : _client = client ?? http.Client();
+  Future<String> _resolveCleanToken(String? provided) async {
+    String cleanToken = (provided ?? '').trim();
+    if (cleanToken.isNotEmpty) {
+      return LocalStorageService.cleanToken(cleanToken);
+    }
+    return await LocalStorageService.getOrCollectToken(storageService);
+  }
 
   @override
   Future<DriverProfileModel> getDriverProfile({String? token}) async {
-    String cleanToken = (token ?? '').trim();
-
-    if (cleanToken.isEmpty && storageService != null) {
-      try {
-        final stored = await storageService!.getToken();
-        if (stored != null && stored.trim().isNotEmpty) {
-          cleanToken = stored.trim();
-        }
-      } catch (_) {}
-    }
-
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverProfile);
     log('🚀 [ProfileRemoteDataSource] GET $uri');
@@ -89,16 +72,50 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
           return model;
         }
       }
-      throw Exception('Unexpected data format received from driver profile API.');
+      throw const ServerException(
+        message: 'Unexpected data format received from driver profile API.',
+      );
     } else {
-      String message = 'Failed to fetch driver profile.';
+      String serverMessage = '';
       try {
         final decoded = jsonDecode(response.body);
         if (decoded is Map && decoded['message'] != null) {
-          message = decoded['message'].toString();
+          serverMessage = decoded['message'].toString().trim();
         }
       } catch (_) {}
-      throw Exception('$message (Status code: ${response.statusCode})');
+
+      String friendlyMessage = serverMessage;
+      if (response.statusCode == 401) {
+        if (friendlyMessage.isEmpty ||
+            friendlyMessage.toLowerCase().contains('unauthorized') ||
+            friendlyMessage.toLowerCase().contains('token') ||
+            friendlyMessage.toLowerCase().contains('expired')) {
+          friendlyMessage = 'Your session has expired. Please log in again to continue.';
+        }
+        if (storageService != null) {
+          try {
+            await storageService!.clearLoginData();
+          } catch (_) {}
+        }
+      } else if (response.statusCode == 404) {
+        if (friendlyMessage.isEmpty ||
+            friendlyMessage.toLowerCase().contains('not found') ||
+            friendlyMessage.toLowerCase().contains('driver')) {
+          friendlyMessage = 'Driver profile not found. Please log in again.';
+        }
+        if (storageService != null) {
+          try {
+            await storageService!.clearLoginData();
+          } catch (_) {}
+        }
+      } else if (friendlyMessage.isEmpty) {
+        friendlyMessage = 'Failed to fetch driver profile. Please try again.';
+      }
+
+      throw ServerException(
+        message: friendlyMessage,
+        statusCode: response.statusCode,
+      );
     }
   }
 }

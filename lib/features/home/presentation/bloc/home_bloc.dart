@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/socket_service.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../data/datasources/available_rides_remote_data_source.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../../domain/entities/d_to_d_booking_entity.dart';
@@ -289,6 +290,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     return unique;
   }
 
+  String _resolveTokenSync([String? token]) {
+    final clean = LocalStorageService.cleanToken(token ?? driverToken);
+    if (clean.isNotEmpty) return clean;
+    return LocalStorageService.currentToken ?? '';
+  }
+
+  Future<String> _resolveToken([String? token]) async {
+    final clean = LocalStorageService.cleanToken(token ?? driverToken);
+    if (clean.isNotEmpty) return clean;
+    return await LocalStorageService.getOrCollectToken();
+  }
+
   void _onToggleOnlineStatus(
     ToggleOnlineStatusEvent event,
     Emitter<HomeState> emit,
@@ -300,13 +313,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         state.copyWith(isOnline: true, isLoadingRides: true, clearError: true),
       );
 
-      final cleanToken = driverToken.trim().replaceFirst(
-        RegExp(r'^bearer\s+', caseSensitive: false),
-        '',
-      );
-      final token = cleanToken.isNotEmpty
-          ? cleanToken
-          : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
+      final token = _resolveTokenSync();
 
       // Connect or attach socket listener
       if (socketService.isConnected) {
@@ -342,13 +349,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
 
     try {
-      final cleanToken = driverToken.trim().replaceFirst(
-        RegExp(r'^bearer\s+', caseSensitive: false),
-        '',
-      );
-      final token = cleanToken.isNotEmpty
-          ? cleanToken
-          : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
+      final token = await _resolveToken();
 
       final apiRides = await remoteDataSource.fetchAvailableRides(token);
 
@@ -513,13 +514,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     );
 
     try {
-      final cleanToken = driverToken.trim().replaceFirst(
-        RegExp(r'^bearer\s+', caseSensitive: false),
-        '',
-      );
-      final token = cleanToken.isNotEmpty
-          ? cleanToken
-          : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
+      final token = await _resolveToken();
 
       final rejected = rejectRideUseCase != null
           ? await rejectRideUseCase!(
@@ -579,13 +574,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     emit(state.copyWith(acceptingRideId: event.rideId, clearError: true));
 
     try {
-      final cleanToken = driverToken.trim().replaceFirst(
-        RegExp(r'^bearer\s+', caseSensitive: false),
-        '',
-      );
-      final token = cleanToken.isNotEmpty
-          ? cleanToken
-          : AvailableRidesRemoteDataSourceImpl.defaultDriverToken;
+      final token = await _resolveToken();
 
       final accepted = acceptRideUseCase != null
           ? await acceptRideUseCase!(
@@ -676,12 +665,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       ),
     );
 
-    final effectiveToken =
-        (event.token != null && event.token!.isNotEmpty)
-            ? event.token!
-            : (driverToken.isNotEmpty
-                ? driverToken
-                : AvailableRidesRemoteDataSourceImpl.defaultDriverToken);
+    final effectiveToken = await _resolveToken(event.token);
 
     try {
       log('🚕 [HomeBloc] Initiating D-to-D booking creation via Clean Architecture...');

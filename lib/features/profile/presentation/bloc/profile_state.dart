@@ -26,12 +26,16 @@ class ProfileLoaded extends ProfileState {
   final List<ProfileMenuItem> menuItems;
   final bool isRefreshing;
   final String? errorMessage;
+  final int? statusCode;
+  final bool isSessionExpired;
 
   const ProfileLoaded({
     this.driverProfile,
     required this.menuItems,
     this.isRefreshing = false,
     this.errorMessage,
+    this.statusCode,
+    this.isSessionExpired = false,
   });
 
   bool get hasSubscription => driverProfile?.hasSubscription ?? false;
@@ -44,6 +48,8 @@ class ProfileLoaded extends ProfileState {
     List<ProfileMenuItem>? menuItems,
     bool? isRefreshing,
     String? errorMessage,
+    int? statusCode,
+    bool? isSessionExpired,
     bool clearError = false,
   }) {
     return ProfileLoaded(
@@ -51,6 +57,9 @@ class ProfileLoaded extends ProfileState {
       menuItems: menuItems ?? this.menuItems,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      statusCode: clearError ? null : (statusCode ?? this.statusCode),
+      isSessionExpired:
+          clearError ? false : (isSessionExpired ?? this.isSessionExpired),
     );
   }
 
@@ -60,18 +69,24 @@ class ProfileLoaded extends ProfileState {
         menuItems,
         isRefreshing,
         errorMessage,
+        statusCode,
+        isSessionExpired,
       ];
 }
 
 class ProfileError extends ProfileState {
   final String message;
   final List<ProfileMenuItem> menuItems;
+  final int? statusCode;
+  final bool isSessionExpired;
 
   const ProfileError({
     required this.message,
     this.menuItems = const [],
+    this.statusCode,
+    this.isSessionExpired = false,
   });
 
   @override
-  List<Object?> get props => [message, menuItems];
+  List<Object?> get props => [message, menuItems, statusCode, isSessionExpired];
 }

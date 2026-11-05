@@ -38,6 +38,11 @@ class ApiEndpoints {
   // Driver Profile
   static const String driverProfile = '$baseUrl/driver/profile';
 
+  // Driver Jobs
+  static const String driverJobs = '$baseUrl/driver/jobs';
+  static String driverAcceptJob(String jobId) => '$driverJobs/$jobId/accept';
+  static String driverRejectJob(String jobId) => '$driverJobs/$jobId/reject';
+
   /// Helper to convert relative server paths (like /uploads/xyz.jpg) to full URLs
   static String resolveImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';

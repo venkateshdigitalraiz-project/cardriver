@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
 import '../models/available_ride_model.dart';
@@ -38,10 +39,6 @@ abstract class HomeRemoteDataSource {
 class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   final Dio dio;
 
-  // Default driver token as requested by user
-  static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTE5NzEyODQsImV4cCI6MTc5MjU3NjA4NH0.L4T_-AyHasOEXO5onMJOI2ynFBu7rpUCoz5971nz3jk';
-
   HomeRemoteDataSourceImpl({Dio? dioClient})
       : dio = dioClient ??
             Dio(
@@ -51,17 +48,17 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
               ),
             );
 
+  Future<String> _resolveCleanToken(String? provided) async {
+    final clean = (provided ?? '').trim();
+    if (clean.isNotEmpty) {
+      return LocalStorageService.cleanToken(clean);
+    }
+    return await LocalStorageService.getOrCollectToken();
+  }
+
   @override
   Future<List<AvailableRideModel>> getAvailableRides({String? token}) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     try {
       final response = await dio.get(
@@ -133,14 +130,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     required String rideId,
     required String token,
   }) async {
-    String cleanToken = token.trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     try {
       final response = await dio.post(
@@ -197,14 +187,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     required String token,
     String? reason,
   }) async {
-    String cleanToken = token.trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     try {
       final response = await dio.post(
@@ -257,15 +240,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     required DtoDBookingRequestModel request,
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     final url = ApiEndpoints.driverDtoDBookings;
     final payload = request.toJson();
@@ -349,15 +324,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     int? durationDays,
     int? durationHours,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     final queryParams = <String, String>{
       'page': page.toString(),

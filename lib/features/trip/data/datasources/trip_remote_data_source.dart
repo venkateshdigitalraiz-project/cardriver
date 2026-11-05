@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../../domain/entities/trip_status_update_result.dart';
 
@@ -23,22 +24,19 @@ abstract class TripRemoteDataSource {
 class TripRemoteDataSourceImpl implements TripRemoteDataSource {
   final http.Client _client;
 
-  // Default driver token provided by user
-  static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTIxMjk0OTIsImV4cCI6MTc5MjczNDI5Mn0.kH366huiPeZurFW8CHmlsPmEljQOzag8sHKPmup-OBU';
-
   TripRemoteDataSourceImpl({http.Client? client}) : _client = client ?? http.Client();
+
+  Future<String> _resolveCleanToken(String? provided) async {
+    final clean = (provided ?? '').trim();
+    if (clean.isNotEmpty) {
+      return LocalStorageService.cleanToken(clean);
+    }
+    return await LocalStorageService.getOrCollectToken();
+  }
 
   @override
   Future<List<TripEntity>> getDriverBookings({String? token}) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverBookings);
     log('🚀 [TripRemoteDataSource] GET $uri with Bearer token');
@@ -105,14 +103,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
     required String bookingId,
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverBookingDetails(bookingId));
     log('🚀 [TripRemoteDataSource] GET $uri with Bearer token');
@@ -173,14 +164,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
     double? actualDistance,
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    final effectiveToken =
-        (cleanToken.isNotEmpty && cleanToken.split('.').length == 3)
-            ? cleanToken
-            : defaultDriverToken;
+    final effectiveToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverTripStatus);
     log('🚀 [TripRemoteDataSource] POST $uri body={"bookingId": "$bookingId", "action": "$action", "otp": "$otp", "actualDistance": $actualDistance}');

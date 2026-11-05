@@ -10,6 +10,9 @@ import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/documents/presentation/pages/documents_page.dart';
+import '../../features/driver_jobs/domain/entities/driver_job_entity.dart';
+import '../../features/driver_jobs/presentation/pages/driver_jobs_page.dart';
+import '../../features/driver_jobs/presentation/pages/driver_job_details_screen.dart';
 import '../../features/earnings/presentation/pages/earnings_page.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/home/presentation/pages/d_to_d_bookings_page.dart';
@@ -61,6 +64,9 @@ class AppRoutes {
   static const String createRide = '/create-ride';
   static const String dToDBookings = '/d-to-d-bookings';
   static const String wallet = '/wallet';
+  static const String driverJobs = '/driver-jobs';
+  static const String driverJobDetails = '/driver-job-details';
+  static const String driverJobDetailsWithParam = '/driver-job-details/:jobId';
   static const String locationPickerMap = '/location-picker-map';
 }
 
@@ -90,6 +96,8 @@ class AppRouteNames {
   static const String createRide = 'createRide';
   static const String dToDBookings = 'dToDBookings';
   static const String wallet = 'wallet';
+  static const String driverJobs = 'driverJobs';
+  static const String driverJobDetails = 'driverJobDetails';
 }
 
 /// Helper that converts any Stream into a Listenable for GoRouter
@@ -505,6 +513,33 @@ class AppRouter {
           path: AppRoutes.wallet,
           name: AppRouteNames.wallet,
           builder: (context, state) => const DriverWalletPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.driverJobs,
+          name: AppRouteNames.driverJobs,
+          builder: (context, state) {
+            final driverToken =
+                state.extra is String ? state.extra as String : null;
+            return DriverJobsPage(driverToken: driverToken);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.driverJobDetailsWithParam,
+          name: AppRouteNames.driverJobDetails,
+          builder: (context, state) {
+            final jobId = state.pathParameters['jobId'] ?? '';
+            final initialJob = state.extra is DriverJobEntity
+                ? state.extra as DriverJobEntity
+                : null;
+            final driverToken = state.extra is Map
+                ? (state.extra as Map)['driverToken'] as String?
+                : null;
+            return DriverJobDetailsScreen(
+              jobId: jobId,
+              initialJob: initialJob,
+              driverToken: driverToken,
+            );
+          },
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

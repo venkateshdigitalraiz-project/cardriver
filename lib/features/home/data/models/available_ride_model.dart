@@ -29,6 +29,11 @@ class AvailableRideModel extends AvailableRideEntity {
     required super.paymentMethod,
     required super.paymentStatus,
     required super.createdAt,
+    super.isDriverToDriver = false,
+    super.sourceDriverDetails,
+    super.userDetails,
+    super.transmission = '',
+    super.driverReturnOption = const [],
   });
 
   factory AvailableRideModel.fromJson(Map<String, dynamic> json) {
@@ -161,6 +166,39 @@ class AvailableRideModel extends AvailableRideEntity {
         json['booking_mode']?.toString() ??
         '';
 
+    // D2D and User details parsing
+    final rawSourceDriver = json['sourceDriverDetails'] ??
+        json['sourceDriver'] ??
+        json['driverDetails'];
+    final Map<String, dynamic>? sourceDriverDetails = rawSourceDriver is Map
+        ? Map<String, dynamic>.from(rawSourceDriver)
+        : null;
+
+    final bool isD2D = json['isDriverToDriver'] == true ||
+        json['is_driver_to_driver'] == true ||
+        json['isDriver2Driver'] == true ||
+        json['bookingType']?.toString().toLowerCase() == 'driver_to_driver' ||
+        json['bookingType']?.toString().toLowerCase() == 'd_to_d' ||
+        json['bookingType']?.toString().toLowerCase() == 'd2d' ||
+        sourceDriverDetails != null ||
+        (json['driverReturnOption'] is List &&
+            (json['driverReturnOption'] as List).isNotEmpty);
+
+    final transmission = json['transmission']?.toString() ??
+        json['gearType']?.toString() ??
+        json['transmissionType']?.toString() ??
+        '';
+
+    List<String> driverReturnOption = [];
+    final rawRetOpt = json['driverReturnOption'] ??
+        json['returnOptions'] ??
+        json['driver_return_option'];
+    if (rawRetOpt is List) {
+      driverReturnOption = rawRetOpt.map((e) => e.toString()).toList();
+    } else if (rawRetOpt is String && rawRetOpt.trim().isNotEmpty) {
+      driverReturnOption = [rawRetOpt.trim()];
+    }
+
     return AvailableRideModel(
       id: id,
       bookingId: bookingId,
@@ -195,6 +233,11 @@ class AvailableRideModel extends AvailableRideEntity {
       paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? 'online',
       paymentStatus: json['paymentStatus']?.toString() ?? json['payment_status']?.toString() ?? 'pending',
       createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString() ?? '',
+      isDriverToDriver: isD2D,
+      sourceDriverDetails: sourceDriverDetails,
+      userDetails: userDetails,
+      transmission: transmission,
+      driverReturnOption: driverReturnOption,
     );
   }
 
@@ -202,6 +245,10 @@ class AvailableRideModel extends AvailableRideEntity {
     return {
       '_id': id,
       'bookingId': bookingId,
+      'isDriverToDriver': isDriverToDriver,
+      'sourceDriverDetails': sourceDriverDetails,
+      'transmission': transmission,
+      'driverReturnOption': driverReturnOption,
       'userDetails': {
         'firstName': riderName,
         'phone': riderPhone,

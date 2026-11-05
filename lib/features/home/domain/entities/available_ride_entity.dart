@@ -32,6 +32,13 @@ class AvailableRideEntity extends Equatable {
   final String paymentStatus;
   final String createdAt;
 
+  // D2D and User details support
+  final bool isDriverToDriver;
+  final Map<String, dynamic>? sourceDriverDetails;
+  final Map<String, dynamic>? userDetails;
+  final String transmission;
+  final List<String> driverReturnOption;
+
   const AvailableRideEntity({
     required this.id,
     required this.bookingId,
@@ -60,6 +67,11 @@ class AvailableRideEntity extends Equatable {
     this.bookingStatus = 'pending',
     this.paymentStatus = 'pending',
     this.createdAt = '',
+    this.isDriverToDriver = false,
+    this.sourceDriverDetails,
+    this.userDetails,
+    this.transmission = '',
+    this.driverReturnOption = const [],
   });
 
   /// Formatted total fare with rupee symbol and 0 decimal places.
@@ -129,6 +141,96 @@ class AvailableRideEntity extends Equatable {
 
   /// Alias for fare
   double get totalAmount => fare;
+
+  /// Safely extracts source driver name from sourceDriverDetails
+  String get sourceDriverName {
+    if (sourceDriverDetails != null) {
+      final f = sourceDriverDetails!['firstName']?.toString();
+      final l = sourceDriverDetails!['lastName']?.toString();
+      if (f != null && f.trim().isNotEmpty) {
+        return '$f ${l ?? ''}'.trim();
+      }
+      final name = sourceDriverDetails!['name']?.toString() ??
+          sourceDriverDetails!['fullName']?.toString();
+      if (name != null && name.trim().isNotEmpty) {
+        return name.trim();
+      }
+    }
+    return riderName.isNotEmpty ? riderName : 'Partner Driver';
+  }
+
+  /// Safely extracts source driver ID from sourceDriverDetails
+  String get sourceDriverId {
+    if (sourceDriverDetails != null) {
+      final id = sourceDriverDetails!['driverId']?.toString() ??
+          sourceDriverDetails!['displayDriverId']?.toString() ??
+          sourceDriverDetails!['driver_id']?.toString() ??
+          sourceDriverDetails!['id']?.toString() ??
+          sourceDriverDetails!['_id']?.toString();
+      if (id != null && id.trim().isNotEmpty) {
+        return id.trim();
+      }
+    }
+    return '';
+  }
+
+  /// Safely extracts source driver phone from sourceDriverDetails
+  String get sourceDriverPhone {
+    if (sourceDriverDetails != null) {
+      final phone = sourceDriverDetails!['phone']?.toString() ??
+          sourceDriverDetails!['phoneNumber']?.toString() ??
+          sourceDriverDetails!['mobileNumber']?.toString() ??
+          sourceDriverDetails!['mobile']?.toString();
+      if (phone != null && phone.trim().isNotEmpty) {
+        return phone.trim();
+      }
+    }
+    return riderPhone;
+  }
+
+  /// Safely extracts customer name from userDetails
+  String get customerName {
+    if (userDetails != null) {
+      final f = userDetails!['firstName']?.toString();
+      final l = userDetails!['lastName']?.toString();
+      if (f != null && f.trim().isNotEmpty) {
+        return '$f ${l ?? ''}'.trim();
+      }
+      final name = userDetails!['name']?.toString() ??
+          userDetails!['fullName']?.toString();
+      if (name != null && name.trim().isNotEmpty) {
+        return name.trim();
+      }
+    }
+    return riderName.isNotEmpty ? riderName : 'Customer';
+  }
+
+  /// Safely extracts customer phone from userDetails
+  String get customerPhone {
+    if (userDetails != null) {
+      final phone = userDetails!['phone']?.toString() ??
+          userDetails!['phoneNumber']?.toString() ??
+          userDetails!['mobileNumber']?.toString() ??
+          userDetails!['mobile']?.toString();
+      if (phone != null && phone.trim().isNotEmpty) {
+        return phone.trim();
+      }
+    }
+    return riderPhone;
+  }
+
+  /// Formatted return options for D-to-D bookings (e.g. "Bus • Train")
+  String get formattedReturnOptions {
+    if (driverReturnOption.isEmpty) return '';
+    return driverReturnOption.map((opt) {
+      final cleaned = opt.toLowerCase().replaceAll('ret-', '').replaceAll('_', ' ').trim();
+      if (cleaned == 'bus') return 'Bus';
+      if (cleaned == 'train') return 'Train';
+      if (cleaned == 'flight') return 'Flight';
+      if (cleaned == 'cab') return 'Cab';
+      return opt.replaceAll('ret-', '').toUpperCase();
+    }).join(' • ');
+  }
 
   /// Tolerant factory constructor that handles multiple backend schemas and never throws on missing keys.
   factory AvailableRideEntity.fromJson(Map<String, dynamic> json) {
@@ -265,6 +367,49 @@ class AvailableRideEntity extends Equatable {
       json['startOtp'] ?? json['otp'] ?? '',
     );
 
+    // D2D and User details parsing
+    final rawSourceDriver = json['sourceDriverDetails'] ??
+        json['sourceDriver'] ??
+        json['driverDetails'];
+    final Map<String, dynamic>? sourceDriverDetails = rawSourceDriver is Map
+        ? Map<String, dynamic>.from(rawSourceDriver)
+        : null;
+
+    final rawUserDetails = json['userDetails'] ??
+        json['user'] ??
+        json['customer'] ??
+        json['rider'];
+    final Map<String, dynamic>? userDetails = rawUserDetails is Map
+        ? Map<String, dynamic>.from(rawUserDetails)
+        : null;
+
+    final bool isD2D = json['isDriverToDriver'] == true ||
+        json['is_driver_to_driver'] == true ||
+        json['isDriver2Driver'] == true ||
+        json['bookingType']?.toString().toLowerCase() == 'driver_to_driver' ||
+        json['bookingType']?.toString().toLowerCase() == 'd_to_d' ||
+        json['bookingType']?.toString().toLowerCase() == 'd2d' ||
+        sourceDriverDetails != null ||
+        (json['driverReturnOption'] is List &&
+            (json['driverReturnOption'] as List).isNotEmpty);
+
+    final transmission = toS(
+      json['transmission'] ??
+          json['gearType'] ??
+          json['transmissionType'] ??
+          '',
+    );
+
+    List<String> driverReturnOption = [];
+    final rawRetOpt = json['driverReturnOption'] ??
+        json['returnOptions'] ??
+        json['driver_return_option'];
+    if (rawRetOpt is List) {
+      driverReturnOption = rawRetOpt.map((e) => e.toString()).toList();
+    } else if (rawRetOpt is String && rawRetOpt.trim().isNotEmpty) {
+      driverReturnOption = [rawRetOpt.trim()];
+    }
+
     return AvailableRideEntity(
       id: id,
       bookingId: bookingId,
@@ -298,6 +443,11 @@ class AvailableRideEntity extends Equatable {
       bookingStatus: toS(json['bookingStatus'] ?? 'pending'),
       paymentStatus: toS(json['paymentStatus'] ?? 'pending'),
       createdAt: toS(json['createdAt']),
+      isDriverToDriver: isD2D,
+      sourceDriverDetails: sourceDriverDetails,
+      userDetails: userDetails,
+      transmission: transmission,
+      driverReturnOption: driverReturnOption,
     );
   }
 
@@ -330,5 +480,10 @@ class AvailableRideEntity extends Equatable {
         bookingStatus,
         paymentStatus,
         createdAt,
+        isDriverToDriver,
+        sourceDriverDetails,
+        userDetails,
+        transmission,
+        driverReturnOption,
       ];
 }

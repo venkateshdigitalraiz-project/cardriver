@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../data/datasources/subscription_history_remote_data_source.dart';
 import '../../domain/entities/driver_subscription_entity.dart';
 import '../../domain/usecases/get_subscription_history_usecase.dart';
@@ -31,7 +32,7 @@ class SubscriptionHistoryBloc
     try {
       final token = event.token ??
           driverToken ??
-          SubscriptionHistoryRemoteDataSourceImpl.defaultDriverToken;
+          await LocalStorageService.getOrCollectToken();
 
       final response = await getSubscriptionHistoryUseCase(
         GetSubscriptionHistoryParams(token: token),

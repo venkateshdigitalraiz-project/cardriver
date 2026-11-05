@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../../profile/domain/entities/driver_active_subscription_entity.dart';
 import '../../../profile/domain/entities/driver_profile_entity.dart';
 import '../../../profile/domain/usecases/get_driver_profile_usecase.dart';
@@ -47,7 +48,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final token = event.token ??
           driverToken ??
-          SubscriptionRemoteDataSourceImpl.defaultDriverToken;
+          await LocalStorageService.getOrCollectToken();
 
       final plansFuture = getSubscriptionPlansUseCase(
         GetSubscriptionPlansParams(token: token),
@@ -142,7 +143,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final token = event.token ??
           driverToken ??
-          SubscriptionRemoteDataSourceImpl.defaultDriverToken;
+          await LocalStorageService.getOrCollectToken();
 
       final result = await activateSubscriptionUseCase(
         ActivateSubscriptionParams(

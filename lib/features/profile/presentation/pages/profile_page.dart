@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../injection_container.dart';
-import '../../domain/entities/driver_active_subscription_entity.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
@@ -42,9 +41,54 @@ class _ProfileView extends StatelessWidget {
     return BlocConsumer<ProfileBloc, ProfileState>(
       listener: (context, state) {
         if (state is ProfileLoaded && state.errorMessage != null) {
+          if (state.isSessionExpired ||
+              state.statusCode == 401 ||
+              state.statusCode == 404) {
+            final friendlyMsg = state.errorMessage ??
+                'Your session has expired. Please log in again to continue.';
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(friendlyMsg),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFFDC2626),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+
+            context.read<AuthBloc>().add(const LogoutEvent());
+            context.go(AppRoutes.login);
+            return;
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        } else if (state is ProfileError) {
+          if (state.isSessionExpired ||
+              state.statusCode == 401 ||
+              state.statusCode == 404) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFFDC2626),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+
+            context.read<AuthBloc>().add(const LogoutEvent());
+            context.go(AppRoutes.login);
+            return;
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
               behavior: SnackBarBehavior.floating,
               backgroundColor: Colors.red.shade700,
             ),
@@ -59,9 +103,6 @@ class _ProfileView extends StatelessWidget {
         final hasSubscription = (state is ProfileLoaded)
             ? state.hasSubscription
             : false;
-        final activeSub = (state is ProfileLoaded)
-            ? state.activeSubscription
-            : null;
 
         return Container(
           color: const Color(0xFF0066FF), // Dark blue background for header
@@ -212,37 +253,6 @@ class _ProfileView extends StatelessWidget {
                                 ),
                               ],
                               const SizedBox(height: 6),
-
-                              //   children: [
-                              //     const Icon(Icons.star,
-                              //         color: Colors.amber, size: 18),
-                              //     const SizedBox(width: 4),
-                              //     const Text(
-                              //       '4.8',
-                              //       style: TextStyle(
-                              //         color: Colors.white,
-                              //         fontWeight: FontWeight.bold,
-                              //         fontSize: 16,
-                              //       ),
-                              //     ),
-                              //     const SizedBox(width: 4),
-                              //     Text(
-                              //       '(124 rides)',
-                              //       style: TextStyle(
-                              //         color: Colors.white70,
-                              //         fontSize: 12,
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
-                              // const SizedBox(height: 6),
-                              // const Text(
-                              //   'Safe Rides  •  Punctual  •  Professional',
-                              //   style: TextStyle(
-                              //     color: Colors.white70,
-                              //     fontSize: 12,
-                              //   ),
-                              // ),
                             ],
                           ),
                         ), // Row(
@@ -383,15 +393,25 @@ class _ProfileView extends StatelessWidget {
                                                 'My Tickets') {
                                               _showMyTicketsSheet(context);
                                             } else if (item.title ==
-                                                'Wallet') {
+                                                'My Booking' ||
+                                                item.title == 'My Bookings') {
+                                              context.push(
+                                                AppRoutes.dToDBookings,
+                                                extra: driverToken,
+                                              );
+                                            } else if (item.title == 'Wallet') {
                                               context.push(AppRoutes.wallet);
                                             } else if (item.title ==
+                                                'Driver Jobs') {
+                                              context.push(
+                                                AppRoutes.driverJobs,
+                                                extra: driverToken,
+                                              );
+                                            } else if (item.title ==
                                                 'WhatsApp Helpline') {
-                                              context
-                                                  .read<ProfileBloc>()
-                                                  .add(
-                                                    const OpenWhatsAppHelplineEvent(),
-                                                  );
+                                              context.read<ProfileBloc>().add(
+                                                const OpenWhatsAppHelplineEvent(),
+                                              );
                                             } else if (item.title ==
                                                 'Terms & Conditions') {
                                               context.push(
@@ -573,248 +593,248 @@ class _ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildSubscriptionCard(
-    BuildContext context, {
-    required bool hasSubscription,
-    DriverActiveSubscriptionEntity? sub,
-    String? driverToken,
-  }) {
-    if (hasSubscription) {
-      final planName = sub?.planName.isNotEmpty == true
-          ? sub!.planName
-          : 'Gold Pro Pass';
-      final daysLeft = sub?.daysLeft ?? 29;
-      final expiry = sub?.formattedDateRange ?? '';
+  // Widget _buildSubscriptionCard(
+  //   BuildContext context, {
+  //   required bool hasSubscription,
+  //   DriverActiveSubscriptionEntity? sub,
+  //   String? driverToken,
+  // }) {
+  //   if (hasSubscription) {
+  //     final planName = sub?.planName.isNotEmpty == true
+  //         ? sub!.planName
+  //         : 'Gold Pro Pass';
+  //     final daysLeft = sub?.daysLeft ?? 29;
+  //     final expiry = sub?.formattedDateRange ?? '';
 
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF021B45), Color(0xFF0B2C6F), Color(0xFF1E3E62)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF021B45).withValues(alpha: 0.22),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.workspace_premium_rounded,
-                        color: Colors.white,
-                        size: 13,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'ACTIVE PASS',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 9,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$daysLeft Days Left',
-                    style: const TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              planName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Zero commission on rides • Priority ride dispatch',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 12,
-              ),
-            ),
-            if (expiry.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                expiry,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.65),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 38,
-              child: ElevatedButton(
-                onPressed: () {
-                  context
-                      .push(
-                        AppRoutes.subscription,
-                        extra: {
-                          'hasSubscription': true,
-                          'driverToken': driverToken,
-                        },
-                      )
-                      .then((_) {
-                        context.read<ProfileBloc>().add(
-                          RefreshProfileEvent(token: driverToken),
-                        );
-                      });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFCD34D),
-                  foregroundColor: const Color(0xFF0F172A),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'Manage Subscription Pass',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.stars_rounded,
-                color: Color(0xFF0066FF),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Driver Pass Subscription',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    '0% commission & unlimited rides',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .push(
-                      AppRoutes.subscription,
-                      extra: {
-                        'hasSubscription': false,
-                        'driverToken': driverToken,
-                      },
-                    )
-                    .then((_) {
-                      context.read<ProfileBloc>().add(
-                        RefreshProfileEvent(token: driverToken),
-                      );
-                    });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0066FF),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Get Pass',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-  }
+  //     return Container(
+  //       width: double.infinity,
+  //       padding: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         gradient: const LinearGradient(
+  //           colors: [Color(0xFF021B45), Color(0xFF0B2C6F), Color(0xFF1E3E62)],
+  //           begin: Alignment.topLeft,
+  //           end: Alignment.bottomRight,
+  //         ),
+  //         borderRadius: BorderRadius.circular(16),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: const Color(0xFF021B45).withValues(alpha: 0.22),
+  //             blurRadius: 12,
+  //             offset: const Offset(0, 4),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Row(
+  //             children: [
+  //               Container(
+  //                 padding: const EdgeInsets.symmetric(
+  //                   horizontal: 8,
+  //                   vertical: 4,
+  //                 ),
+  //                 decoration: BoxDecoration(
+  //                   gradient: const LinearGradient(
+  //                     colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+  //                   ),
+  //                   borderRadius: BorderRadius.circular(6),
+  //                 ),
+  //                 child: const Row(
+  //                   mainAxisSize: MainAxisSize.min,
+  //                   children: [
+  //                     Icon(
+  //                       Icons.workspace_premium_rounded,
+  //                       color: Colors.white,
+  //                       size: 13,
+  //                     ),
+  //                     SizedBox(width: 4),
+  //                     Text(
+  //                       'ACTIVE PASS',
+  //                       style: TextStyle(
+  //                         color: Colors.white,
+  //                         fontWeight: FontWeight.w900,
+  //                         fontSize: 9,
+  //                         letterSpacing: 0.5,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //               const Spacer(),
+  //               Container(
+  //                 padding: const EdgeInsets.symmetric(
+  //                   horizontal: 10,
+  //                   vertical: 3,
+  //                 ),
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.white.withValues(alpha: 0.15),
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 child: Text(
+  //                   '$daysLeft Days Left',
+  //                   style: const TextStyle(
+  //                     color: Color(0xFFFCD34D),
+  //                     fontSize: 11,
+  //                     fontWeight: FontWeight.bold,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //           const SizedBox(height: 10),
+  //           Text(
+  //             planName,
+  //             style: const TextStyle(
+  //               color: Colors.white,
+  //               fontSize: 18,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 4),
+  //           Text(
+  //             'Zero commission on rides • Priority ride dispatch',
+  //             style: TextStyle(
+  //               color: Colors.white.withValues(alpha: 0.85),
+  //               fontSize: 12,
+  //             ),
+  //           ),
+  //           if (expiry.isNotEmpty) ...[
+  //             const SizedBox(height: 6),
+  //             Text(
+  //               expiry,
+  //               style: TextStyle(
+  //                 color: Colors.white.withValues(alpha: 0.65),
+  //                 fontSize: 11,
+  //               ),
+  //             ),
+  //           ],
+  //           const SizedBox(height: 12),
+  //           SizedBox(
+  //             width: double.infinity,
+  //             height: 38,
+  //             child: ElevatedButton(
+  //               onPressed: () {
+  //                 context
+  //                     .push(
+  //                       AppRoutes.subscription,
+  //                       extra: {
+  //                         'hasSubscription': true,
+  //                         'driverToken': driverToken,
+  //                       },
+  //                     )
+  //                     .then((_) {
+  //                       context.read<ProfileBloc>().add(
+  //                         RefreshProfileEvent(token: driverToken),
+  //                       );
+  //                     });
+  //               },
+  //               style: ElevatedButton.styleFrom(
+  //                 backgroundColor: const Color(0xFFFCD34D),
+  //                 foregroundColor: const Color(0xFF0F172A),
+  //                 elevation: 0,
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(10),
+  //                 ),
+  //               ),
+  //               child: const Text(
+  //                 'Manage Subscription Pass',
+  //                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   } else {
+  //     return Container(
+  //       width: double.infinity,
+  //       padding: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.circular(16),
+  //         border: Border.all(color: Colors.grey.shade200),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.black.withValues(alpha: 0.03),
+  //             blurRadius: 10,
+  //             offset: const Offset(0, 4),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           Container(
+  //             padding: const EdgeInsets.all(10),
+  //             decoration: BoxDecoration(
+  //               color: const Color(0xFFEFF6FF),
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //             child: const Icon(
+  //               Icons.stars_rounded,
+  //               color: Color(0xFF0066FF),
+  //               size: 24,
+  //             ),
+  //           ),
+  //           const SizedBox(width: 12),
+  //           const Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   'Driver Pass Subscription',
+  //                   style: TextStyle(
+  //                     fontSize: 14,
+  //                     fontWeight: FontWeight.bold,
+  //                     color: Color(0xFF0F172A),
+  //                   ),
+  //                 ),
+  //                 SizedBox(height: 2),
+  //                 Text(
+  //                   '0% commission & unlimited rides',
+  //                   style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               context
+  //                   .push(
+  //                     AppRoutes.subscription,
+  //                     extra: {
+  //                       'hasSubscription': false,
+  //                       'driverToken': driverToken,
+  //                     },
+  //                   )
+  //                   .then((_) {
+  //                     context.read<ProfileBloc>().add(
+  //                       RefreshProfileEvent(token: driverToken),
+  //                     );
+  //                   });
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: const Color(0xFF0066FF),
+  //               foregroundColor: Colors.white,
+  //               elevation: 0,
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 12,
+  //                 vertical: 8,
+  //               ),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //             ),
+  //             child: const Text(
+  //               'Get Pass',
+  //               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
 
   void _handleLogout(BuildContext context) {
     showDialog(
@@ -853,32 +873,32 @@ class _ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(
-    IconData icon,
-    String label,
-    String value, {
-    Color? valueColor,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: const Color(0xFF0066FF), size: 24),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? const Color(0xFF1E293B),
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildStatItem(
+  //   IconData icon,
+  //   String label,
+  //   String value, {
+  //   Color? valueColor,
+  // }) {
+  //   return Column(
+  //     children: [
+  //       Icon(icon, color: const Color(0xFF0066FF), size: 24),
+  //       const SizedBox(height: 8),
+  //       Text(
+  //         label,
+  //         style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+  //       ),
+  //       const SizedBox(height: 4),
+  //       Text(
+  //         value,
+  //         style: TextStyle(
+  //           color: valueColor ?? const Color(0xFF1E293B),
+  //           fontWeight: FontWeight.bold,
+  //           fontSize: 14,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildActionCard(
     IconData icon,

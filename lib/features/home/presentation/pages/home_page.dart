@@ -186,7 +186,7 @@ class _HomeView extends StatelessWidget {
                           )
                         : null,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,9 +234,9 @@ class _HomeView extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      state.isOnline ? 'GO OFFLINE' : 'GO ONLINE',
+                      state.isOnline ? 'OFFLINE' : 'ONLINE',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: state.isOnline
                             ? const Color(0xFF10B981)
@@ -925,8 +925,39 @@ class _HomeView extends StatelessWidget {
     required Color primaryTextColor,
     required Color secondaryTextColor,
   }) {
+    if (ride.isDriverToDriver) {
+      return _buildDriverToDriverBookingCard(
+        ride: ride,
+        context: context,
+        state: state,
+        primaryTextColor: primaryTextColor,
+        secondaryTextColor: secondaryTextColor,
+      );
+    } else {
+      return _buildUserToDriverBookingCard(
+        ride: ride,
+        context: context,
+        state: state,
+        primaryTextColor: primaryTextColor,
+        secondaryTextColor: secondaryTextColor,
+      );
+    }
+  }
+
+  /// Professional, dedicated card design for Driver-to-Driver (D-to-D) bookings
+  Widget _buildDriverToDriverBookingCard({
+    required AvailableRideEntity ride,
+    required BuildContext context,
+    required HomeState state,
+    required Color primaryTextColor,
+    required Color secondaryTextColor,
+  }) {
     final isThisRideAccepting = state.acceptingRideId == ride.id;
     final isThisRideDeclining = state.decliningRideId == ride.id;
+    final driverName = ride.sourceDriverName;
+    final driverId = ride.sourceDriverId;
+    final driverPhone = ride.sourceDriverPhone;
+    final returnOptions = ride.formattedReturnOptions;
 
     return Container(
       decoration: BoxDecoration(
@@ -934,30 +965,88 @@ class _HomeView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.12),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
         ],
-        border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+        border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Rider Name, Avatar, Booking ID, OTP
+          // Top Header: D-to-D Distinct Badge & Booking ID
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.swap_horizontal_circle_rounded,
+                      size: 13,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'DRIVER-TO-DRIVER BOOKING',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (ride.bookingId.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: Text(
+                    ride.bookingId,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E40AF),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Source Driver Profile Info Row
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                child: Text(
-                  ride.riderName.isNotEmpty
-                      ? ride.riderName[0].toUpperCase()
-                      : 'P',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+                radius: 20,
+                backgroundColor: const Color(0xFFEFF6FF),
+                child: const Icon(
+                  Icons.airline_seat_recline_normal_rounded,
+                  color: Color(0xFF2563EB),
+                  size: 20,
                 ),
               ),
               const SizedBox(width: 12),
@@ -966,182 +1055,86 @@ class _HomeView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      ride.riderName,
+                      driverName,
                       style: AppTypography.headingSmall(
                         color: primaryTextColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            ride.bookingId,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
+                        if (driverId.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: const Color(0xFFBFDBFE),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.badge_rounded,
+                                  size: 11,
+                                  color: Color(0xFF2563EB),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'ID: $driverId',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        if (ride.riderPhone.isNotEmpty) ...[
                           const SizedBox(width: 8),
+                        ],
+                      ],
+                    ),
+                    if (driverPhone.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.phone_rounded,
+                            size: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 3),
                           Text(
-                            ride.riderPhone,
+                            driverPhone,
                             style: TextStyle(
                               fontSize: 11,
                               color: secondaryTextColor,
                             ),
                           ),
                         ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               // Map navigation icon button
-              Material(
-                color: Colors.transparent,
-                child: Tooltip(
-                  message: 'Open in Google Maps',
-                  child: InkWell(
-                    onTap: () => MapLauncherUtils.openDirections(
-                      pickupLat: ride.pickupLat,
-                      pickupLng: ride.pickupLng,
-                      pickupAddress: ride.pickupAddress,
-                      dropLat: ride.dropLat,
-                      dropLng: ride.dropLng,
-                      dropAddress: ride.dropAddress,
-                      context: context,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFBFDBFE),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.map_rounded,
-                            size: 16,
-                            color: Color(0xFF2563EB),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Map',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2563EB),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              _buildMapButton(ride, context),
             ],
           ),
 
           // Scheduled Start Time Display
           if (ride.scheduledStartTime.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.schedule_rounded,
-                        size: 15,
-                        color: Color(0xFF2563EB),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Scheduled: ',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          ride.formattedScheduledTime,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1D4ED8),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (ride.returnDate.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.keyboard_return_rounded,
-                          size: 14,
-                          color: Color(0xFF3B82F6),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Return: ',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            ride.formattedReturnDate,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E40AF),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            _buildScheduleBox(ride),
           ],
 
           const SizedBox(height: 12),
@@ -1174,244 +1167,646 @@ class _HomeView extends StatelessWidget {
             ],
           ),
 
+          // Return Options Display (if available)
+          // if (returnOptions.isNotEmpty) ...[
+          //   const SizedBox(height: 10),
+          //   Container(
+          //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          //     decoration: BoxDecoration(
+          //       color: const Color(0xFFF0FDF4),
+          //       borderRadius: BorderRadius.circular(8),
+          //       border: Border.all(color: const Color(0xFFBBF7D0)),
+          //     ),
+          //     child: Row(
+          //       children: [
+          //         const Icon(
+          //           Icons.commute_rounded,
+          //           size: 15,
+          //           color: Color(0xFF16A34A),
+          //         ),
+          //         const SizedBox(width: 6),
+          //         const Text(
+          //           'Return Options: ',
+          //           style: TextStyle(
+          //             fontSize: 11,
+          //             fontWeight: FontWeight.w600,
+          //             color: Color(0xFF166534),
+          //           ),
+          //         ),
+          //         Expanded(
+          //           child: Text(
+          //             returnOptions,
+          //             style: const TextStyle(
+          //               fontSize: 11,
+          //               fontWeight: FontWeight.bold,
+          //               color: Color(0xFF15803D),
+          //             ),
+          //             overflow: TextOverflow.ellipsis,
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ],
           const SizedBox(height: 14),
 
           // Fare & Financial Container
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (ride.fare > 0)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Price',
-                        style: AppTypography.bodySmall(
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ride.formattedFare,
-                        style: AppTypography.headingSmall(
-                          color: primaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                if (ride.driverFee > 0)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Trip Earning',
-                        style: AppTypography.bodySmall(
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ride.formattedDriverFee,
-                        style: AppTypography.headingSmall(
-                          color: const Color(0xFF10B981),
-                        ),
-                      ),
-                    ],
-                  ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+          _buildFareContainer(
+            ride: ride,
+            primaryTextColor: primaryTextColor,
+            secondaryTextColor: secondaryTextColor,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Locations
+          _buildRouteSection(ride: ride, primaryTextColor: primaryTextColor),
+
+          const SizedBox(height: 16),
+
+          // Buttons: Decline & Accept
+          _buildActionButtons(
+            ride: ride,
+            context: context,
+            isThisRideAccepting: isThisRideAccepting,
+            isThisRideDeclining: isThisRideDeclining,
+            acceptColor: const Color(0xFF2563EB),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Professional, dedicated card design for User-to-Driver bookings
+  Widget _buildUserToDriverBookingCard({
+    required AvailableRideEntity ride,
+    required BuildContext context,
+    required HomeState state,
+    required Color primaryTextColor,
+    required Color secondaryTextColor,
+  }) {
+    final isThisRideAccepting = state.acceptingRideId == ride.id;
+    final isThisRideDeclining = state.decliningRideId == ride.id;
+    final customerName = ride.customerName;
+    final customerPhone = ride.customerPhone;
+    final transmission = ride.transmission.trim();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Header: User Booking Request Badge & Booking ID
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Payment Method',
-                      style: AppTypography.bodySmall(color: secondaryTextColor),
+                    Icon(
+                      Icons.person_pin_rounded,
+                      size: 13,
+                      color: Color(0xFF059669),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(width: 5),
                     Text(
-                      ride.paymentMethod.toUpperCase(),
-                      style: AppTypography.bodyMedium(
-                        color: primaryTextColor,
-                      ).copyWith(fontWeight: FontWeight.bold),
+                      'USER BOOKING REQUEST',
+                      style: TextStyle(
+                        color: Color(0xFF065F46),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Pickup Location
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.my_location_rounded,
-                  size: 18,
-                  color: Color(0xFF10B981),
-                ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  ride.pickupAddress,
-                  style: AppTypography.bodyMedium(color: primaryTextColor),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-
-          const Padding(
-            padding: EdgeInsets.only(left: 8),
-            child: SizedBox(
-              height: 14,
-              child: VerticalDivider(color: Colors.grey, thickness: 1.5),
-            ),
-          ),
-
-          // Dropoff Location
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.location_on_rounded,
-                  size: 18,
-                  color: AppColors.error,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  ride.dropAddress,
-                  style: AppTypography.bodyMedium(color: primaryTextColor),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Buttons: Decline & View / Accept
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: (isThisRideDeclining || isThisRideAccepting)
-                      ? null
-                      : () {
-                          context.read<HomeBloc>().add(
-                            DeclineRideRequestEvent(ride.id),
-                          );
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    disabledForegroundColor: AppColors.error.withValues(
-                      alpha: 0.5,
-                    ),
-                    side: BorderSide(
-                      color: (isThisRideDeclining || isThisRideAccepting)
-                          ? AppColors.error.withValues(alpha: 0.4)
-                          : AppColors.error,
-                      width: 1.5,
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              if (ride.bookingId.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    ride.bookingId,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
                     ),
                   ),
-                  child: isThisRideDeclining
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.error,
-                          ),
-                        )
-                      : Text(
-                          'Decline',
-                          style: TextStyle(
-                            color: (isThisRideDeclining || isThisRideAccepting)
-                                ? AppColors.error.withValues(alpha: 0.5)
-                                : AppColors.error,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Customer Profile Info Row
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                child: Text(
+                  customerName.isNotEmpty ? customerName[0].toUpperCase() : 'C',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: (isThisRideAccepting || isThisRideDeclining)
-                      ? null
-                      : () {
-                          context.read<HomeBloc>().add(
-                            AcceptRideEvent(ride.id),
-                          );
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(
-                      0xFF10B981,
-                    ).withValues(alpha: 0.6),
-                    disabledForegroundColor: Colors.white.withValues(
-                      alpha: 0.8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customerName,
+                      style: AppTypography.headingSmall(
+                        color: primaryTextColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: isThisRideAccepting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                    if (customerPhone.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.phone_rounded,
+                            size: 12,
+                            color: Color(0xFF64748B),
                           ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Accept',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
+                          const SizedBox(width: 3),
+                          Text(
+                            customerPhone,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: secondaryTextColor,
                             ),
-                            SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              // Map navigation icon button
+              _buildMapButton(ride, context),
+            ],
+          ),
+
+          // Scheduled Start Time Display
+          if (ride.scheduledStartTime.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _buildScheduleBox(ride),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Trip Badges Row
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildBadge(
+                ride.vehicleType.toUpperCase(),
+                const Color(0xFF2563EB),
+                const Color(0xFFEFF6FF),
+              ),
+              if (transmission.isNotEmpty)
+                _buildBadge(
+                  transmission.toUpperCase(),
+                  const Color(0xFF0284C7),
+                  const Color(0xFFE0F2FE),
+                ),
+              _buildBadge(
+                ride.serviceType.toUpperCase(),
+                const Color(0xFF7C3AED),
+                const Color(0xFFF5F3FF),
+              ),
+              _buildBadge(
+                ride.tripType.replaceAll('_', ' ').toUpperCase(),
+                const Color(0xFF059669),
+                const Color(0xFFECFDF5),
+              ),
+              _buildBadge(
+                ride.durationDisplay,
+                const Color(0xFFD97706),
+                const Color(0xFFFFFBEB),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Fare & Financial Container
+          _buildFareContainer(
+            ride: ride,
+            primaryTextColor: primaryTextColor,
+            secondaryTextColor: secondaryTextColor,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Locations
+          _buildRouteSection(ride: ride, primaryTextColor: primaryTextColor),
+
+          const SizedBox(height: 16),
+
+          // Buttons: Decline & Accept
+          _buildActionButtons(
+            ride: ride,
+            context: context,
+            isThisRideAccepting: isThisRideAccepting,
+            isThisRideDeclining: isThisRideDeclining,
+            acceptColor: const Color(0xFF10B981),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapButton(AvailableRideEntity ride, BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Tooltip(
+        message: 'Open in Google Maps',
+        child: InkWell(
+          onTap: () => MapLauncherUtils.openDirections(
+            pickupLat: ride.pickupLat,
+            pickupLng: ride.pickupLng,
+            pickupAddress: ride.pickupAddress,
+            dropLat: ride.dropLat,
+            dropLng: ride.dropLng,
+            dropAddress: ride.dropAddress,
+            context: context,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFBFDBFE), width: 1),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.map_rounded, size: 16, color: Color(0xFF2563EB)),
+                SizedBox(width: 4),
+                Text(
+                  'Map',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleBox(AvailableRideEntity ride) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.schedule_rounded,
+                size: 15,
+                color: Color(0xFF2563EB),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Scheduled: ',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  ride.formattedScheduledTime,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (ride.returnDate.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Row(
+              children: [
+                const Icon(
+                  Icons.keyboard_return_rounded,
+                  size: 14,
+                  color: Color(0xFF3B82F6),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Return: ',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    ride.formattedReturnDate,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E40AF),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFareContainer({
+    required AvailableRideEntity ride,
+    required Color primaryTextColor,
+    required Color secondaryTextColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (ride.fare > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Total Amount',
+                  style: AppTypography.bodySmall(color: secondaryTextColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  ride.formattedFare,
+                  style: AppTypography.headingSmall(color: primaryTextColor),
+                ),
+              ],
+            ),
+          if (ride.driverFee > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Trip Earning',
+                  style: AppTypography.bodySmall(color: secondaryTextColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  ride.formattedDriverFee,
+                  style: AppTypography.headingSmall(
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+              ],
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Payment Method',
+                style: AppTypography.bodySmall(color: secondaryTextColor),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                ride.paymentMethod.toUpperCase(),
+                style: AppTypography.bodyMedium(
+                  color: primaryTextColor,
+                ).copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRouteSection({
+    required AvailableRideEntity ride,
+    required Color primaryTextColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.my_location_rounded,
+                size: 18,
+                color: Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                ride.pickupAddress,
+                style: AppTypography.bodyMedium(color: primaryTextColor),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 8),
+          child: SizedBox(
+            height: 14,
+            child: VerticalDivider(color: Colors.grey, thickness: 1.5),
+          ),
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.location_on_rounded,
+                size: 18,
+                color: AppColors.error,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                ride.dropAddress,
+                style: AppTypography.bodyMedium(color: primaryTextColor),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons({
+    required AvailableRideEntity ride,
+    required BuildContext context,
+    required bool isThisRideAccepting,
+    required bool isThisRideDeclining,
+    required Color acceptColor,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: (isThisRideDeclining || isThisRideAccepting)
+                ? null
+                : () {
+                    context.read<HomeBloc>().add(
+                      DeclineRideRequestEvent(ride.id),
+                    );
+                  },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              disabledForegroundColor: AppColors.error.withValues(alpha: 0.5),
+              side: BorderSide(
+                color: (isThisRideDeclining || isThisRideAccepting)
+                    ? AppColors.error.withValues(alpha: 0.4)
+                    : AppColors.error,
+                width: 1.5,
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: isThisRideDeclining
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.error,
+                    ),
+                  )
+                : Text(
+                    'Decline',
+                    style: TextStyle(
+                      color: (isThisRideDeclining || isThisRideAccepting)
+                          ? AppColors.error.withValues(alpha: 0.5)
+                          : AppColors.error,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: (isThisRideAccepting || isThisRideDeclining)
+                ? null
+                : () {
+                    context.read<HomeBloc>().add(AcceptRideEvent(ride.id));
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: acceptColor,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: acceptColor.withValues(alpha: 0.6),
+              disabledForegroundColor: Colors.white.withValues(alpha: 0.8),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: isThisRideAccepting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Accept',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 

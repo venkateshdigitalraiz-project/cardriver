@@ -5,6 +5,16 @@ class GetProfileMenuUseCase {
   List<ProfileMenuItem> execute() {
     return const [
       ProfileMenuItem(
+        title: 'My Booking',
+        subtitle: 'View & Manage D-to-D Bookings',
+        icon: Icons.calendar_month_rounded,
+      ),
+      ProfileMenuItem(
+        title: 'Driver Jobs',
+        subtitle: 'View & Apply for Full-Time Jobs',
+        icon: Icons.work_rounded,
+      ),
+      ProfileMenuItem(
         title: 'Subscription',
         subtitle: 'Manage Your Plan & Benefits',
         icon: Icons.stars_rounded,

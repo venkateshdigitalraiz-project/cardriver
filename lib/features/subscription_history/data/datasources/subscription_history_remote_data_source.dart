@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/subscription_history_response_entity.dart';
 
 abstract class SubscriptionHistoryRemoteDataSource {
@@ -14,24 +15,22 @@ class SubscriptionHistoryRemoteDataSourceImpl
     implements SubscriptionHistoryRemoteDataSource {
   final http.Client _client;
 
-  // Default driver token from curl requests
-  static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTIxMjk0OTIsImV4cCI6MTc5MjczNDI5Mn0.kH366huiPeZurFW8CHmlsPmEljQOzag8sHKPmup-OBU';
-
   SubscriptionHistoryRemoteDataSourceImpl({http.Client? client})
       : _client = client ?? http.Client();
+
+  Future<String> _resolveCleanToken(String? provided) async {
+    final clean = (provided ?? '').trim();
+    if (clean.isNotEmpty) {
+      return LocalStorageService.cleanToken(clean);
+    }
+    return await LocalStorageService.getOrCollectToken();
+  }
 
   @override
   Future<SubscriptionHistoryResponseEntity> getSubscriptionHistory({
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverSubscription);
     log('🚀 [SubscriptionHistoryRemoteDataSource] GET $uri');

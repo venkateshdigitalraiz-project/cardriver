@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../../domain/entities/d_to_d_booking_entity.dart';
@@ -38,22 +39,20 @@ abstract class AvailableRidesRemoteDataSource {
 class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSource {
   final http.Client _client;
 
-  static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTE5NzEyODQsImV4cCI6MTc5MjU3NjA4NH0.L4T_-AyHasOEXO5onMJOI2ynFBu7rpUCoz5971nz3jk';
-
   AvailableRidesRemoteDataSourceImpl({http.Client? client})
       : _client = client ?? http.Client();
 
+  Future<String> _resolveCleanToken(String? provided) async {
+    final clean = (provided ?? '').trim();
+    if (clean.isNotEmpty) {
+      return LocalStorageService.cleanToken(clean);
+    }
+    return await LocalStorageService.getOrCollectToken();
+  }
+
   @override
   Future<List<AvailableRideEntity>> fetchAvailableRides(String token) async {
-    String cleanToken = token.trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverAvailableRides);
     log('🚀 [AvailableRidesRemoteDataSource] GET $uri with Bearer token');
@@ -123,13 +122,7 @@ class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSour
     required String rideId,
     required String token,
   }) async {
-    String cleanToken = token.trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverAcceptRide(rideId));
     log('🚀 [AvailableRidesRemoteDataSource] POST $uri with Bearer token');
@@ -183,13 +176,7 @@ class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSour
     required String token,
     String? reason,
   }) async {
-    String cleanToken = token.trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverRejectRide(rideId));
     log('🚀 [AvailableRidesRemoteDataSource] POST $uri with Bearer token');
@@ -240,14 +227,7 @@ class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSour
     required DtoDBookingRequestModel request,
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverDtoDBookings);
     final payload = request.toJson();
@@ -325,14 +305,7 @@ class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSour
     int? durationDays,
     int? durationHours,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final queryParams = <String, String>{
       'page': page.toString(),

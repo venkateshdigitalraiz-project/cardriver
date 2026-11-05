@@ -75,6 +75,16 @@ import 'features/wallet/domain/usecases/get_driver_wallet_transactions_usecase.d
 import 'features/wallet/domain/usecases/get_driver_wallet_usecase.dart';
 import 'features/wallet/domain/usecases/withdraw_wallet_funds_usecase.dart';
 import 'features/wallet/presentation/bloc/driver_wallet_bloc.dart';
+import 'features/driver_jobs/data/datasources/driver_jobs_remote_datasource.dart';
+import 'features/driver_jobs/data/repositories/driver_jobs_repository_impl.dart';
+import 'features/driver_jobs/domain/entities/driver_job_entity.dart';
+import 'features/driver_jobs/domain/repositories/driver_jobs_repository.dart';
+import 'features/driver_jobs/domain/usecases/accept_driver_job_usecase.dart';
+import 'features/driver_jobs/domain/usecases/get_driver_jobs_usecase.dart';
+import 'features/driver_jobs/domain/usecases/get_driver_job_details_usecase.dart';
+import 'features/driver_jobs/domain/usecases/reject_driver_job_usecase.dart';
+import 'features/driver_jobs/presentation/bloc/driver_jobs_bloc.dart';
+import 'features/driver_jobs/presentation/bloc/driver_job_details_bloc.dart';
 
 /// Service Locator / Dependency Injection Setup for Clean Architecture
 class InjectionContainer {
@@ -174,6 +184,8 @@ class InjectionContainer {
     // Core Services
     firebaseMessagingService = FirebaseMessagingService();
     localStorageService = LocalStorageService();
+    // Pre-collect token from SharedPreferences into static data cache
+    LocalStorageService.getOrCollectToken(localStorageService);
     // socketService is a singleton — no initialization needed here.
 
     // Data Sources
@@ -388,6 +400,47 @@ class InjectionContainer {
       getDriverWalletUseCase: getDriverWalletUseCase,
       withdrawWalletFundsUseCase: withdrawWalletFundsUseCase,
       addMoneyToDriverWalletUseCase: addMoneyToDriverWalletUseCase,
+    );
+  }
+
+  static DriverJobsBloc createDriverJobsBloc({String? driverToken}) {
+    final remoteDataSource = DriverJobsRemoteDataSourceImpl(
+      storageService: localStorageService,
+    );
+    final repository = DriverJobsRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+    final getJobsUseCase = GetDriverJobsUseCase(repository);
+    final getJobDetailsUseCase = GetDriverJobDetailsUseCase(repository);
+    final acceptJobUseCase = AcceptDriverJobUseCase(repository);
+    final rejectJobUseCase = RejectDriverJobUseCase(repository);
+
+    return DriverJobsBloc(
+      getDriverJobsUseCase: getJobsUseCase,
+      getDriverJobDetailsUseCase: getJobDetailsUseCase,
+      acceptDriverJobUseCase: acceptJobUseCase,
+      rejectDriverJobUseCase: rejectJobUseCase,
+      driverToken: driverToken,
+    );
+  }
+
+  static DriverJobDetailsBloc createDriverJobDetailsBloc({
+    required String jobId,
+    String? driverToken,
+    DriverJobEntity? initialJob,
+  }) {
+    final remoteDataSource = DriverJobsRemoteDataSourceImpl(
+      storageService: localStorageService,
+    );
+    final repository = DriverJobsRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+    final useCase = GetDriverJobDetailsUseCase(repository);
+
+    return DriverJobDetailsBloc(
+      getDriverJobDetailsUseCase: useCase,
+      driverToken: driverToken,
+      initialJob: initialJob,
     );
   }
 }

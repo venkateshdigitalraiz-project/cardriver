@@ -7,6 +7,65 @@ class LocalStorageService {
 
   LocalStorageService({this.preferences});
 
+  // Static in-memory cache for token collected from SharedPreferences
+  static String? _cachedToken;
+
+  /// Retrieves currently cached token synchronously if available
+  static String? get currentToken => _cachedToken;
+
+  /// Sets or clears the static token in memory
+  static void setStaticToken(String? token) {
+    if (token != null && token.trim().isNotEmpty) {
+      _cachedToken = cleanToken(token);
+    } else {
+      _cachedToken = null;
+    }
+  }
+
+  /// Cleans raw JWT strings from 'Bearer ', quotes, or cookies prefixes
+  static String cleanToken(String raw) {
+    var t = raw.trim();
+    if (t.contains('user_token=')) {
+      t = t.split('user_token=').last.split(';').first.trim();
+    } else if (t.contains('token=')) {
+      t = t.split('token=').last.split(';').first.trim();
+    } else if (t.contains('driver_token=')) {
+      t = t.split('driver_token=').last.split(';').first.trim();
+    } else if (t.contains(';')) {
+      t = t.split(';').first.trim();
+    }
+    if (t.toLowerCase().startsWith('bearer ')) {
+      t = t.substring(7).trim();
+    }
+    if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+      t = t.substring(1, t.length - 1).trim();
+    }
+    return t;
+  }
+
+  /// Collects token from SharedPreferences and caches it in static memory.
+  static Future<String> getOrCollectToken([LocalStorageService? service]) async {
+    if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+      return _cachedToken!;
+    }
+    try {
+      final prefs = service?.preferences ?? await SharedPreferences.getInstance();
+      for (final key in [keyToken, 'driver_token', 'jwt_token', 'auth_token', 'token']) {
+        final val = prefs.getString(key);
+        if (val != null && val.trim().isNotEmpty) {
+          final clean = cleanToken(val);
+          if (clean.isNotEmpty) {
+            _cachedToken = clean;
+            return clean;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [LocalStorageService] Error collecting token from SharedPreferences: $e');
+    }
+    return '';
+  }
+
   // Key names specified for driver login data persistence
   static const String keyToken = 'token';
   static const String keyDriverId = 'driver.id';
@@ -33,7 +92,8 @@ class LocalStorageService {
     try {
       final prefs = await _getPrefs();
       if (token.isNotEmpty) {
-        await prefs.setString(keyToken, token);
+        setStaticToken(token);
+        await prefs.setString(keyToken, cleanToken(token));
       }
       if (id.isNotEmpty) {
         await prefs.setString(keyDriverId, id);
@@ -93,13 +153,8 @@ class LocalStorageService {
 
   /// Retrieves stored authentication token.
   Future<String?> getToken() async {
-    try {
-      final prefs = await _getPrefs();
-      return prefs.getString(keyToken);
-    } catch (e) {
-      debugPrint('⚠️ [LocalStorageService] Error getting token: $e');
-      return null;
-    }
+    final t = await getOrCollectToken(this);
+    return t.isNotEmpty ? t : null;
   }
 
   /// Retrieves stored driver ID (driver.id).
@@ -196,6 +251,7 @@ class LocalStorageService {
   /// Clears only authentication and driver login keys without clearing unrelated preferences.
   Future<void> clearLoginData() async {
     try {
+      setStaticToken(null);
       final prefs = await _getPrefs();
       await prefs.remove(keyToken);
       await prefs.remove(keyDriverId);

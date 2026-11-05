@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../domain/entities/driver_profile_entity.dart';
 import '../../domain/usecases/get_driver_profile_usecase.dart';
 import '../../domain/usecases/get_profile_menu_usecase.dart';
@@ -51,12 +52,31 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       );
     } catch (e) {
       log('❌ [ProfileBloc] Failed to fetch driver profile: $e');
-      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      int? statusCode;
+      String errorMsg = e.toString().replaceFirst('Exception: ', '');
+
+      if (e is ServerException) {
+        statusCode = e.statusCode;
+        errorMsg = e.message;
+      } else {
+        final str = e.toString();
+        if (str.contains('401')) {
+          statusCode = 401;
+          errorMsg = 'Your session has expired. Please log in again to continue.';
+        } else if (str.contains('404')) {
+          statusCode = 404;
+          errorMsg = 'Driver profile not found. Please log in again.';
+        }
+      }
+
+      final isSessionExpired = statusCode == 401 || statusCode == 404;
 
       if (state is ProfileLoaded) {
         emit(
           (state as ProfileLoaded).copyWith(
             errorMessage: errorMsg,
+            statusCode: statusCode,
+            isSessionExpired: isSessionExpired,
             isRefreshing: false,
           ),
         );
@@ -67,6 +87,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             driverProfile: null,
             menuItems: menuItems,
             errorMessage: errorMsg,
+            statusCode: statusCode,
+            isSessionExpired: isSessionExpired,
           ),
         );
       }

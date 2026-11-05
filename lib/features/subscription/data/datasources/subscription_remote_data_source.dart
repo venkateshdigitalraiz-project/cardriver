@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/subscription_activation_entity.dart';
 import '../../domain/entities/subscription_plan_entity.dart';
 
@@ -19,24 +20,22 @@ class SubscriptionRemoteDataSourceImpl
     implements SubscriptionRemoteDataSource {
   final http.Client _client;
 
-  // Default driver token as provided in requests
-  static const String defaultDriverToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhY2YyZDY1NGViY2UxNDlhMzZlOWI1ZCIsInJvbGUiOiJkcml2ZXIiLCJpYXQiOjE3OTIxMjk0OTIsImV4cCI6MTc5MjczNDI5Mn0.kH366huiPeZurFW8CHmlsPmEljQOzag8sHKPmup-OBU';
-
   SubscriptionRemoteDataSourceImpl({http.Client? client})
       : _client = client ?? http.Client();
+
+  Future<String> _resolveCleanToken(String? provided) async {
+    final clean = (provided ?? '').trim();
+    if (clean.isNotEmpty) {
+      return LocalStorageService.cleanToken(clean);
+    }
+    return await LocalStorageService.getOrCollectToken();
+  }
 
   @override
   Future<List<SubscriptionPlanEntity>> getSubscriptionPlans({
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverSubscriptionPlans);
     log('🚀 [SubscriptionRemoteDataSource] GET $uri');
@@ -109,13 +108,7 @@ class SubscriptionRemoteDataSourceImpl
     required String paymentMethod,
     String? token,
   }) async {
-    String cleanToken = (token ?? '').trim();
-    if (cleanToken.toLowerCase().startsWith('bearer ')) {
-      cleanToken = cleanToken.substring(7).trim();
-    }
-    if (cleanToken.isEmpty) {
-      cleanToken = defaultDriverToken;
-    }
+    final cleanToken = await _resolveCleanToken(token);
 
     final uri = Uri.parse(ApiEndpoints.driverSubscription);
     log('🚀 [SubscriptionRemoteDataSource] POST $uri with planId: $planId, method: $paymentMethod');
