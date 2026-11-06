@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/driver_job_entity.dart';
 
@@ -39,7 +40,7 @@ class DriverJobsRemoteDataSourceImpl implements DriverJobsRemoteDataSource {
   DriverJobsRemoteDataSourceImpl({
     http.Client? client,
     this.storageService,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? LoggingHttpClient();
 
   Future<String> _resolveCleanToken(String? provided) async {
     String cleanToken = (provided ?? '').trim();

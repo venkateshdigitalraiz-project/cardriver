@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/common_charges_entity.dart';
 import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
 import '../../domain/repositories/home_repository.dart';
@@ -99,5 +100,10 @@ class HomeRepositoryImpl implements HomeRepository {
     } catch (_) {
       yield <AvailableRideEntity>[];
     }
+  }
+
+  @override
+  Future<List<CommonChargesEntity>> getCommonCharges({String? token}) async {
+    return await remoteDataSource.getCommonCharges(token: token);
   }
 }

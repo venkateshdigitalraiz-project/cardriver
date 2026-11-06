@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/subscription_activation_entity.dart';
 import '../../domain/entities/subscription_plan_entity.dart';
@@ -21,7 +22,7 @@ class SubscriptionRemoteDataSourceImpl
   final http.Client _client;
 
   SubscriptionRemoteDataSourceImpl({http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ?? LoggingHttpClient();
 
   Future<String> _resolveCleanToken(String? provided) async {
     final clean = (provided ?? '').trim();

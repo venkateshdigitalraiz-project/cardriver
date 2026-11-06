@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../../domain/entities/trip_status_update_result.dart';
@@ -24,7 +25,7 @@ abstract class TripRemoteDataSource {
 class TripRemoteDataSourceImpl implements TripRemoteDataSource {
   final http.Client _client;
 
-  TripRemoteDataSourceImpl({http.Client? client}) : _client = client ?? http.Client();
+  TripRemoteDataSourceImpl({http.Client? client}) : _client = client ?? LoggingHttpClient();
 
   Future<String> _resolveCleanToken(String? provided) async {
     final clean = (provided ?? '').trim();

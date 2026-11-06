@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/common_charges_entity.dart';
 import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
 
@@ -23,6 +24,11 @@ class HomeState extends Equatable {
   final DtoDBookingEntity? dtoDBookingSuccess;
   final String? dtoDBookingError;
 
+  // Common Charges fields
+  final bool isLoadingCommonCharges;
+  final List<CommonChargesEntity> commonChargesList;
+  final String? commonChargesError;
+
   const HomeState({
     this.isOnline = false,
     this.isLoadingRides = false,
@@ -39,6 +45,9 @@ class HomeState extends Equatable {
     this.isSubmittingDtoDBooking = false,
     this.dtoDBookingSuccess,
     this.dtoDBookingError,
+    this.isLoadingCommonCharges = false,
+    this.commonChargesList = const [],
+    this.commonChargesError,
   });
 
   /// Convenience getters for UI compatibility
@@ -46,6 +55,8 @@ class HomeState extends Equatable {
   List<String> get activeRequestIds => availableRides.map((r) => r.id).toList();
   bool get isAcceptingRide => acceptingRideId != null;
   bool get isDecliningRide => decliningRideId != null;
+  CommonChargesEntity? get currentCharges =>
+      commonChargesList.isNotEmpty ? commonChargesList.first : null;
 
   HomeState copyWith({
     bool? isOnline,
@@ -71,6 +82,10 @@ class HomeState extends Equatable {
     bool clearDtoDBookingSuccess = false,
     String? dtoDBookingError,
     bool clearDtoDBookingError = false,
+    bool? isLoadingCommonCharges,
+    List<CommonChargesEntity>? commonChargesList,
+    String? commonChargesError,
+    bool clearCommonChargesError = false,
   }) {
     return HomeState(
       isOnline: isOnline ?? this.isOnline,
@@ -103,6 +118,12 @@ class HomeState extends Equatable {
       dtoDBookingError: clearDtoDBookingError
           ? null
           : (dtoDBookingError ?? this.dtoDBookingError),
+      isLoadingCommonCharges:
+          isLoadingCommonCharges ?? this.isLoadingCommonCharges,
+      commonChargesList: commonChargesList ?? this.commonChargesList,
+      commonChargesError: clearCommonChargesError
+          ? null
+          : (commonChargesError ?? this.commonChargesError),
     );
   }
 
@@ -123,5 +144,8 @@ class HomeState extends Equatable {
     isSubmittingDtoDBooking,
     dtoDBookingSuccess,
     dtoDBookingError,
+    isLoadingCommonCharges,
+    commonChargesList,
+    commonChargesError,
   ];
 }

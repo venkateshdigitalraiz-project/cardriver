@@ -11,6 +11,7 @@ import '../../../../core/services/firebase_messaging_service.dart';
 import '../models/intro_banner_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../../../../core/network/api_logger.dart';
 
 abstract class AuthRemoteDataSource {
   Future<List<IntroBannerModel>> getIntroBanners();
@@ -81,6 +82,9 @@ abstract class AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final Dio _dio;
+
+  AuthRemoteDataSourceImpl({Dio? dio}) : _dio = dio ?? createLoggedDio();
   static final List<CustomerModel> mockCustomers = [
     const CustomerModel(
       id: 'cust_001',
@@ -190,19 +194,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<void> sendOtp({required String phone, String? fcmToken}) async {
-    final dio = Dio()
-      ..interceptors.add(
-        LogInterceptor(
-          request: true,
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          error: true,
-        ),
-      );
     try {
-      final response = await dio.post(
+      final response = await _dio.post(
         ApiEndpoints.driverLogin,
         options: Options(headers: {'content-type': 'application/json'}),
         data: {
@@ -234,20 +227,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String phone,
     required String otp,
   }) async {
-    final dio = Dio()
-      ..interceptors.add(
-        LogInterceptor(
-          request: true,
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          error: true,
-        ),
-      );
     try {
       final fcm = FirebaseMessagingService.cachedToken ?? '';
-      final response = await dio.post(
+      final response = await _dio.post(
         ApiEndpoints.driverVerifyOtp,
         options: Options(headers: {'content-type': 'application/json'}),
         data: {
@@ -403,20 +385,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String phone,
     required String otp,
   }) async {
-    final dio = Dio()
-      ..interceptors.add(
-        LogInterceptor(
-          request: true,
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          error: true,
-        ),
-      );
     try {
       final fcm = FirebaseMessagingService.cachedToken ?? '';
-      final response = await dio.post(
+      final response = await _dio.post(
         ApiEndpoints.driverVerifyOtp,
         options: Options(headers: {'content-type': 'application/json'}),
         data: {
@@ -549,24 +520,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? passportPath,
     String? profilePicPath,
   }) async {
-    final dio =
-        Dio(
-            BaseOptions(
-              connectTimeout: const Duration(seconds: 25),
-              receiveTimeout: const Duration(seconds: 25),
-            ),
-          )
-          ..interceptors.add(
-            LogInterceptor(
-              request: true,
-              requestHeader: true,
-              requestBody: true,
-              responseHeader: true,
-              responseBody: true,
-              error: true,
-            ),
-          );
-
     try {
       final FormData formData;
       if (body != null) {
@@ -721,7 +674,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
       debugPrint('════════════════════════════════════════════════════════════════════');
 
-      final response = await dio.post(
+      final response = await _dio.post(
         ApiEndpoints.driverRegister,
         options: Options(headers: {'content-type': 'multipart/form-data'}),
         data: formData,
@@ -871,10 +824,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<List<IntroBannerModel>> getIntroBanners() async {
-    final dio = Dio();
     try {
-      debugPrint('🌍 API Request -> GET ${ApiEndpoints.driverSettings}');
-      final response = await dio.get(
+      final response = await _dio.get(
         ApiEndpoints.driverSettings,
         options: Options(
           sendTimeout: const Duration(seconds: 10),

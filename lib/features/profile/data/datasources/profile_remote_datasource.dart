@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../models/driver_profile_model.dart';
 
@@ -13,6 +14,11 @@ abstract class ProfileRemoteDataSource {
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   final http.Client _client;
   final LocalStorageService? storageService;
+
+  ProfileRemoteDataSourceImpl({
+    http.Client? client,
+    this.storageService,
+  }) : _client = client ?? LoggingHttpClient();
 
   Future<String> _resolveCleanToken(String? provided) async {
     String cleanToken = (provided ?? '').trim();
@@ -36,13 +42,19 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       'Cookie': 'driver_token=$cleanToken',
     };
 
-    final response = await _client.get(uri, headers: headers).timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        log('⏱️ [ProfileRemoteDataSource] Request timed out for driver profile');
-        throw Exception('Connection timed out while fetching driver profile.');
-      },
-    );
+    final response = await _client
+        .get(uri, headers: headers)
+        .timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            log(
+              '⏱️ [ProfileRemoteDataSource] Request timed out for driver profile',
+            );
+            throw Exception(
+              'Connection timed out while fetching driver profile.',
+            );
+          },
+        );
 
     log('📥 [ProfileRemoteDataSource] Status: ${response.statusCode}');
     log('📥 [ProfileRemoteDataSource] Body: ${response.body}');
@@ -53,8 +65,9 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         final map = Map<String, dynamic>.from(decoded);
         final dynamic data = map['data'] ?? map['driver'] ?? map;
         if (data is Map) {
-          final model =
-              DriverProfileModel.fromJson(Map<String, dynamic>.from(data));
+          final model = DriverProfileModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
 
           // Also optionally persist updated details to local storage
           if (storageService != null) {
@@ -90,7 +103,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
             friendlyMessage.toLowerCase().contains('unauthorized') ||
             friendlyMessage.toLowerCase().contains('token') ||
             friendlyMessage.toLowerCase().contains('expired')) {
-          friendlyMessage = 'Your session has expired. Please log in again to continue.';
+          friendlyMessage =
+              'Your session has expired. Please log in again to continue.';
         }
         if (storageService != null) {
           try {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
@@ -40,7 +41,7 @@ class AvailableRidesRemoteDataSourceImpl implements AvailableRidesRemoteDataSour
   final http.Client _client;
 
   AvailableRidesRemoteDataSourceImpl({http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ?? LoggingHttpClient();
 
   Future<String> _resolveCleanToken(String? provided) async {
     final clean = (provided ?? '').trim();

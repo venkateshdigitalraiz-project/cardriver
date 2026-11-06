@@ -993,10 +993,18 @@ class _DtoDBookingCard extends StatelessWidget {
                     ),
                   ),
                   ...booking.driverReturnOption.map((opt) {
-                    final isBus = opt.toLowerCase().contains('bus');
+                    final lower = opt.toLowerCase();
+                    final isBus = lower.contains('bus');
+                    final isTrain = lower.contains('train');
+                    final isRapido = lower.contains('rapido') || lower.contains('bike');
+                    final isFoodRoom = lower.contains('food') || lower.contains('room') || lower.contains('accommodation');
                     final label = isBus
                         ? 'Bus'
-                        : (opt.toLowerCase().contains('train') ? 'Train' : opt);
+                        : (isTrain
+                            ? 'Train'
+                            : (isRapido
+                                ? 'Rapido'
+                                : (isFoodRoom ? 'Food & Room' : opt.replaceAll('ret-', '').toUpperCase())));
                     return Container(
                       margin: const EdgeInsets.only(right: 4),
                       padding: const EdgeInsets.symmetric(

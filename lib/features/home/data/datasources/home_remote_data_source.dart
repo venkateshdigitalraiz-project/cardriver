@@ -3,10 +3,12 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/rejected_ride_entity.dart';
 import '../models/available_ride_model.dart';
+import '../models/common_charges_model.dart';
 import '../models/d_to_d_booking_model.dart';
 
 abstract class HomeRemoteDataSource {
@@ -34,19 +36,21 @@ abstract class HomeRemoteDataSource {
     int? durationDays,
     int? durationHours,
   });
+  Future<List<CommonChargesModel>> getCommonCharges({String? token});
 }
 
 class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   final Dio dio;
 
   HomeRemoteDataSourceImpl({Dio? dioClient})
-      : dio = dioClient ??
-            Dio(
-              BaseOptions(
-                connectTimeout: const Duration(seconds: 15),
-                receiveTimeout: const Duration(seconds: 15),
-              ),
-            );
+    : dio =
+          dioClient ??
+          createLoggedDio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 15),
+            ),
+          );
 
   Future<String> _resolveCleanToken(String? provided) async {
     final clean = (provided ?? '').trim();
@@ -102,12 +106,15 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
         return rideListJson
             .whereType<Map>()
-            .map((item) =>
-                AvailableRideModel.fromJson(Map<String, dynamic>.from(item)))
+            .map(
+              (item) =>
+                  AvailableRideModel.fromJson(Map<String, dynamic>.from(item)),
+            )
             .toList();
       } else {
         throw ServerException(
-          message: 'Failed to fetch available rides: Status ${response.statusCode}',
+          message:
+              'Failed to fetch available rides: Status ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
@@ -115,7 +122,8 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         throw const AuthException(message: 'Authentication session expired.');
       }
       throw ServerException(
-        message: e.response?.data?['message']?.toString() ??
+        message:
+            e.response?.data?['message']?.toString() ??
             e.message ??
             'Network error while fetching available rides.',
       );
@@ -171,7 +179,8 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         throw const AuthException(message: 'Authentication session expired.');
       }
       throw ServerException(
-        message: e.response?.data?['message']?.toString() ??
+        message:
+            e.response?.data?['message']?.toString() ??
             e.message ??
             'Network error while accepting ride.',
       );
@@ -208,9 +217,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           response.statusCode! < 300) {
         final data = response.data;
         if (data is Map) {
-          return RejectedRideEntity.fromJson(
-            Map<String, dynamic>.from(data),
-          );
+          return RejectedRideEntity.fromJson(Map<String, dynamic>.from(data));
         }
         throw ServerException(
           message: 'Unexpected response format when rejecting ride.',
@@ -225,7 +232,8 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         throw const AuthException(message: 'Authentication session expired.');
       }
       throw ServerException(
-        message: e.response?.data?['message']?.toString() ??
+        message:
+            e.response?.data?['message']?.toString() ??
             e.message ??
             'Network error while rejecting ride.',
       );
@@ -248,8 +256,12 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     log('================================================================');
     log('🚀 [HomeRemoteDataSource] POST D-to-D Booking API');
     log('🌐 URL: $url');
-    log('🔑 Authorization: Bearer ${effectiveToken.length > 20 ? "${effectiveToken.substring(0, 15)}..." : effectiveToken}');
-    log('📦 Request Payload:\n${const JsonEncoder.withIndent('  ').convert(payload)}');
+    log(
+      '🔑 Authorization: Bearer ${effectiveToken.length > 20 ? "${effectiveToken.substring(0, 15)}..." : effectiveToken}',
+    );
+    log(
+      '📦 Request Payload:\n${const JsonEncoder.withIndent('  ').convert(payload)}',
+    );
     log('================================================================');
 
     try {
@@ -268,7 +280,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       log('📥 [HomeRemoteDataSource] D-to-D Booking Response Received');
       log('📊 Status Code: ${response.statusCode}');
       log('📋 Headers: ${response.headers.map}');
-      log('📄 Response Body:\n${response.data is Map || response.data is List ? const JsonEncoder.withIndent('  ').convert(response.data) : response.data}');
+      log(
+        '📄 Response Body:\n${response.data is Map || response.data is List ? const JsonEncoder.withIndent('  ').convert(response.data) : response.data}',
+      );
       log('================================================================');
 
       if (response.statusCode != null &&
@@ -292,7 +306,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         );
       }
     } on DioException catch (e) {
-      log('❌ [HomeRemoteDataSource] DioException in D-to-D Booking: ${e.message}');
+      log(
+        '❌ [HomeRemoteDataSource] DioException in D-to-D Booking: ${e.message}',
+      );
       if (e.response != null) {
         log('❌ [HomeRemoteDataSource] Error Status: ${e.response?.statusCode}');
         log('❌ [HomeRemoteDataSource] Error Data: ${e.response?.data}');
@@ -301,13 +317,17 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         throw const AuthException(message: 'Authentication session expired.');
       }
       final serverMsg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? e.response?.data['error'])?.toString()
+          ? (e.response?.data['message'] ?? e.response?.data['error'])
+                ?.toString()
           : null;
       throw ServerException(
-        message: serverMsg ?? e.message ?? 'Network error while creating booking.',
+        message:
+            serverMsg ?? e.message ?? 'Network error while creating booking.',
       );
     } catch (e) {
-      log('❌ [HomeRemoteDataSource] Unexpected Exception in D-to-D Booking: $e');
+      log(
+        '❌ [HomeRemoteDataSource] Unexpected Exception in D-to-D Booking: $e',
+      );
       if (e is ServerException || e is AuthException) rethrow;
       throw ServerException(message: 'Unexpected error: ${e.toString()}');
     }
@@ -331,13 +351,19 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       'limit': limit.toString(),
     };
 
-    if (status != null && status.trim().isNotEmpty && status.trim().toLowerCase() != 'all') {
+    if (status != null &&
+        status.trim().isNotEmpty &&
+        status.trim().toLowerCase() != 'all') {
       queryParams['status'] = status.trim().toLowerCase();
     }
-    if (serviceType != null && serviceType.trim().isNotEmpty && serviceType.trim().toLowerCase() != 'all') {
+    if (serviceType != null &&
+        serviceType.trim().isNotEmpty &&
+        serviceType.trim().toLowerCase() != 'all') {
       queryParams['serviceType'] = serviceType.trim().toLowerCase();
     }
-    if (tripType != null && tripType.trim().isNotEmpty && tripType.trim().toLowerCase() != 'all') {
+    if (tripType != null &&
+        tripType.trim().isNotEmpty &&
+        tripType.trim().toLowerCase() != 'all') {
       queryParams['tripType'] = tripType.trim().toLowerCase();
     }
     if (durationDays != null && durationDays > 0) {
@@ -347,13 +373,17 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       queryParams['durationHours'] = durationHours.toString();
     }
 
-    final uri = Uri.parse(ApiEndpoints.driverDtoDBookings).replace(queryParameters: queryParams);
+    final uri = Uri.parse(
+      ApiEndpoints.driverDtoDBookings,
+    ).replace(queryParameters: queryParams);
     final url = uri.toString();
 
     log('================================================================');
     log('🚀 [HomeRemoteDataSource] GET D-to-D Bookings API');
     log('🌐 URL: $url');
-    log('🔑 Authorization: Bearer ${effectiveToken.length > 20 ? "${effectiveToken.substring(0, 15)}..." : effectiveToken}');
+    log(
+      '🔑 Authorization: Bearer ${effectiveToken.length > 20 ? "${effectiveToken.substring(0, 15)}..." : effectiveToken}',
+    );
     log('📋 Query Parameters: $queryParams');
     log('================================================================');
 
@@ -371,7 +401,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       log('================================================================');
       log('📥 [HomeRemoteDataSource] D-to-D Bookings List Response Received');
       log('📊 Status Code: ${response.statusCode}');
-      log('📄 Response Body:\n${response.data is Map || response.data is List ? const JsonEncoder.withIndent('  ').convert(response.data) : response.data}');
+      log(
+        '📄 Response Body:\n${response.data is Map || response.data is List ? const JsonEncoder.withIndent('  ').convert(response.data) : response.data}',
+      );
       log('================================================================');
 
       if (response.statusCode != null &&
@@ -400,7 +432,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         );
       }
     } on DioException catch (e) {
-      log('❌ [HomeRemoteDataSource] DioException in GET D-to-D Bookings: ${e.message}');
+      log(
+        '❌ [HomeRemoteDataSource] DioException in GET D-to-D Bookings: ${e.message}',
+      );
       if (e.response != null) {
         log('❌ [HomeRemoteDataSource] Error Status: ${e.response?.statusCode}');
         log('❌ [HomeRemoteDataSource] Error Data: ${e.response?.data}');
@@ -409,14 +443,73 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         throw const AuthException(message: 'Authentication session expired.');
       }
       final serverMsg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? e.response?.data['error'])?.toString()
+          ? (e.response?.data['message'] ?? e.response?.data['error'])
+                ?.toString()
           : null;
       throw ServerException(
-        message: serverMsg ?? e.message ?? 'Network error while fetching bookings.',
+        message:
+            serverMsg ?? e.message ?? 'Network error while fetching bookings.',
       );
     } catch (e) {
-      log('❌ [HomeRemoteDataSource] Unexpected Exception in GET D-to-D Bookings: $e');
+      log(
+        '❌ [HomeRemoteDataSource] Unexpected Exception in GET D-to-D Bookings: $e',
+      );
       if (e is ServerException || e is AuthException) rethrow;
+      throw ServerException(message: 'Unexpected error: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<CommonChargesModel>> getCommonCharges({String? token}) async {
+    final effectiveToken = await _resolveCleanToken(token);
+    final url = ApiEndpoints.commonCharges;
+
+    log('📡 [HomeRemoteDataSource] Initiating GET $url');
+    try {
+      final response = await dio.get(
+        url,
+        options: Options(
+          headers: {
+            if (effectiveToken.isNotEmpty) 'Authorization': 'Bearer $effectiveToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      log('✅ [HomeRemoteDataSource] GET $url Response: ${response.statusCode}');
+      log('📦 [HomeRemoteDataSource] Response Data: ${jsonEncode(response.data)}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final dynamic resData = response.data;
+        if (resData is Map<String, dynamic>) {
+          final dataField = resData['data'];
+          if (dataField is List) {
+            return dataField
+                .map((item) => CommonChargesModel.fromJson(item as Map<String, dynamic>))
+                .toList();
+          } else if (dataField is Map<String, dynamic>) {
+            return [CommonChargesModel.fromJson(dataField)];
+          }
+        } else if (resData is List) {
+          return resData
+              .map((item) => CommonChargesModel.fromJson(item as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      log('❌ [HomeRemoteDataSource] DioException GET $url: ${e.message}');
+      if (e.response != null) {
+        log('❌ [HomeRemoteDataSource] Status: ${e.response?.statusCode}');
+        log('❌ [HomeRemoteDataSource] Error Data: ${e.response?.data}');
+      }
+      throw ServerException(
+        message: e.response?.data is Map
+            ? (e.response?.data['message'] ?? e.response?.data['error'])?.toString() ?? e.message ?? 'Failed to load common charges'
+            : e.message ?? 'Failed to load common charges',
+      );
+    } catch (e, stack) {
+      log('❌ [HomeRemoteDataSource] Unexpected Exception in GET $url: $e\n$stack');
       throw ServerException(message: 'Unexpected error: ${e.toString()}');
     }
   }

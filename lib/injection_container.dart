@@ -1,3 +1,6 @@
+import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
+import 'core/network/api_logger.dart';
 import 'core/services/firebase_messaging_service.dart';
 import 'core/services/socket_service.dart';
 import 'core/storage/local_storage_service.dart';
@@ -28,6 +31,7 @@ import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/domain/usecases/accept_ride_usecase.dart';
 import 'features/home/domain/usecases/create_d_to_d_booking_usecase.dart';
 import 'features/home/domain/usecases/get_available_rides_usecase.dart';
+import 'features/home/domain/usecases/get_common_charges_usecase.dart';
 import 'features/home/domain/usecases/get_d_to_d_bookings_usecase.dart';
 import 'features/home/domain/usecases/reject_ride_usecase.dart';
 import 'features/home/presentation/bloc/d_to_d_bookings/d_to_d_bookings_bloc.dart';
@@ -94,6 +98,8 @@ class InjectionContainer {
   static late final FirebaseMessagingService firebaseMessagingService;
   static late final LocalStorageService localStorageService;
   static final SocketService socketService = SocketService();
+  static final http.Client httpClient = LoggingHttpClient();
+  static final Dio dioClient = createLoggedDio();
 
   // Documents Data Sources & Repositories
   static late final DocumentsRemoteDataSource documentsRemoteDataSource;
@@ -112,6 +118,7 @@ class InjectionContainer {
   static late final RejectRideUseCase rejectRideUseCase;
   static late final CreateDtoDBookingUseCase createDtoDBookingUseCase;
   static late final GetDtoDBookingsUseCase getDtoDBookingsUseCase;
+  static late final GetCommonChargesUseCase getCommonChargesUseCase;
 
   // Trip Data Sources & Repositories
   static late final TripRemoteDataSource tripRemoteDataSource;
@@ -119,7 +126,8 @@ class InjectionContainer {
 
   // Trip UseCases
   static late final GetDriverBookingsUseCase getDriverBookingsUseCase;
-  static late final GetDriverBookingDetailsUseCase getDriverBookingDetailsUseCase;
+  static late final GetDriverBookingDetailsUseCase
+  getDriverBookingDetailsUseCase;
   static late final UpdateTripStatusUseCase updateTripStatusUseCase;
 
   // Subscription Data Sources & Repositories
@@ -131,7 +139,8 @@ class InjectionContainer {
   static late final ActivateSubscriptionUseCase activateSubscriptionUseCase;
 
   // Subscription History Data Sources & Repositories
-  static late final SubscriptionHistoryRemoteDataSource subscriptionHistoryRemoteDataSource;
+  static late final SubscriptionHistoryRemoteDataSource
+  subscriptionHistoryRemoteDataSource;
   static late final SubscriptionHistoryRepository subscriptionHistoryRepository;
 
   // Subscription History UseCases
@@ -178,7 +187,8 @@ class InjectionContainer {
   static late final GetDriverWalletUseCase getDriverWalletUseCase;
   static late final WithdrawWalletFundsUseCase withdrawWalletFundsUseCase;
   static late final AddMoneyToDriverWalletUseCase addMoneyToDriverWalletUseCase;
-  static late final GetDriverWalletTransactionsUseCase getDriverWalletTransactionsUseCase;
+  static late final GetDriverWalletTransactionsUseCase
+  getDriverWalletTransactionsUseCase;
 
   static void init() {
     // Core Services
@@ -189,7 +199,7 @@ class InjectionContainer {
     // socketService is a singleton — no initialization needed here.
 
     // Data Sources
-    authRemoteDataSource = AuthRemoteDataSourceImpl();
+    authRemoteDataSource = AuthRemoteDataSourceImpl(dio: dioClient);
     authLocalDataSource = AuthLocalDataSourceImpl(
       storageService: localStorageService,
     );
@@ -223,31 +233,39 @@ class InjectionContainer {
     refreshFcmTokenUseCase = RefreshFcmTokenUseCase(notificationRepository);
 
     // Home Data Sources & Repositories
-    homeRemoteDataSource = HomeRemoteDataSourceImpl();
+    homeRemoteDataSource = HomeRemoteDataSourceImpl(dioClient: dioClient);
     homeRepository = HomeRepositoryImpl(remoteDataSource: homeRemoteDataSource);
     getAvailableRidesUseCase = GetAvailableRidesUseCase(homeRepository);
     acceptRideUseCase = AcceptRideUseCase(homeRepository);
     rejectRideUseCase = RejectRideUseCase(homeRepository);
     createDtoDBookingUseCase = CreateDtoDBookingUseCase(homeRepository);
     getDtoDBookingsUseCase = GetDtoDBookingsUseCase(homeRepository);
+    getCommonChargesUseCase = GetCommonChargesUseCase(homeRepository);
 
     // Trip Data Sources & Repositories
-    tripRemoteDataSource = TripRemoteDataSourceImpl();
+    tripRemoteDataSource = TripRemoteDataSourceImpl(client: httpClient);
     tripRepository = TripRepositoryImpl(remoteDataSource: tripRemoteDataSource);
     getDriverBookingsUseCase = GetDriverBookingsUseCase(tripRepository);
-    getDriverBookingDetailsUseCase = GetDriverBookingDetailsUseCase(tripRepository);
+    getDriverBookingDetailsUseCase = GetDriverBookingDetailsUseCase(
+      tripRepository,
+    );
     updateTripStatusUseCase = UpdateTripStatusUseCase(tripRepository);
 
     // Subscription Data Sources & Repositories
-    subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl();
+    subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl(client: httpClient);
     subscriptionRepository = SubscriptionRepositoryImpl(
       remoteDataSource: subscriptionRemoteDataSource,
     );
-    getSubscriptionPlansUseCase = GetSubscriptionPlansUseCase(subscriptionRepository);
-    activateSubscriptionUseCase = ActivateSubscriptionUseCase(subscriptionRepository);
+    getSubscriptionPlansUseCase = GetSubscriptionPlansUseCase(
+      subscriptionRepository,
+    );
+    activateSubscriptionUseCase = ActivateSubscriptionUseCase(
+      subscriptionRepository,
+    );
 
     // Subscription History Data Sources & Repositories
-    subscriptionHistoryRemoteDataSource = SubscriptionHistoryRemoteDataSourceImpl();
+    subscriptionHistoryRemoteDataSource =
+        SubscriptionHistoryRemoteDataSourceImpl(client: httpClient);
     subscriptionHistoryRepository = SubscriptionHistoryRepositoryImpl(
       remoteDataSource: subscriptionHistoryRemoteDataSource,
     );
@@ -257,6 +275,7 @@ class InjectionContainer {
 
     // Profile Data Sources & Repositories
     profileRemoteDataSource = ProfileRemoteDataSourceImpl(
+      client: httpClient,
       storageService: localStorageService,
     );
     profileRepository = ProfileRepositoryImpl(
@@ -281,9 +300,15 @@ class InjectionContainer {
       localDataSource: driverWalletLocalDataSource,
     );
     getDriverWalletUseCase = GetDriverWalletUseCase(driverWalletRepository);
-    withdrawWalletFundsUseCase = WithdrawWalletFundsUseCase(driverWalletRepository);
-    addMoneyToDriverWalletUseCase = AddMoneyToDriverWalletUseCase(driverWalletRepository);
-    getDriverWalletTransactionsUseCase = GetDriverWalletTransactionsUseCase(driverWalletRepository);
+    withdrawWalletFundsUseCase = WithdrawWalletFundsUseCase(
+      driverWalletRepository,
+    );
+    addMoneyToDriverWalletUseCase = AddMoneyToDriverWalletUseCase(
+      driverWalletRepository,
+    );
+    getDriverWalletTransactionsUseCase = GetDriverWalletTransactionsUseCase(
+      driverWalletRepository,
+    );
   }
 
   static DocumentsBloc createDocumentsBloc({
@@ -294,11 +319,9 @@ class InjectionContainer {
     final bloc = DocumentsBloc(
       getDriverDocumentsUseCase: getDriverDocumentsUseCase,
     );
-    bloc.add(LoadDocumentsEvent(
-      documents: documents,
-      profile: profile,
-      token: token,
-    ));
+    bloc.add(
+      LoadDocumentsEvent(documents: documents, profile: profile, token: token),
+    );
     return bloc;
   }
 
@@ -342,6 +365,7 @@ class InjectionContainer {
       acceptRideUseCase: acceptRideUseCase,
       rejectRideUseCase: rejectRideUseCase,
       createDtoDBookingUseCase: createDtoDBookingUseCase,
+      getCommonChargesUseCase: getCommonChargesUseCase,
     );
   }
 
@@ -405,6 +429,7 @@ class InjectionContainer {
 
   static DriverJobsBloc createDriverJobsBloc({String? driverToken}) {
     final remoteDataSource = DriverJobsRemoteDataSourceImpl(
+      client: httpClient,
       storageService: localStorageService,
     );
     final repository = DriverJobsRepositoryImpl(
@@ -430,6 +455,7 @@ class InjectionContainer {
     DriverJobEntity? initialJob,
   }) {
     final remoteDataSource = DriverJobsRemoteDataSourceImpl(
+      client: httpClient,
       storageService: localStorageService,
     );
     final repository = DriverJobsRepositoryImpl(

@@ -14,8 +14,16 @@ import '../utils/place_address_utils.dart';
 class LocationPickerMapScreen extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
+  final String? title;
+  final bool? isPickup;
 
-  const LocationPickerMapScreen({super.key, this.initialLat, this.initialLng});
+  const LocationPickerMapScreen({
+    super.key,
+    this.initialLat,
+    this.initialLng,
+    this.title,
+    this.isPickup,
+  });
 
   @override
   State<LocationPickerMapScreen> createState() =>
@@ -263,13 +271,19 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final String screenTitle = widget.title ??
+        (widget.isPickup == true
+            ? 'Pickup Location'
+            : widget.isPickup == false
+                ? 'Drop Location'
+                : 'Pick Location');
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          'Pick Location',
+          screenTitle,
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -345,7 +359,11 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                     inputDecoration: InputDecoration(
                       filled: true,
                       fillColor: AppColors.white,
-                      hintText: 'Search for a location (e.g. Ameerpet)',
+                      hintText: widget.isPickup == true
+                          ? 'Search for pickup location (e.g. Ameerpet)'
+                          : widget.isPickup == false
+                              ? 'Search for drop location (e.g. Hitec City)'
+                              : 'Search for a location (e.g. Ameerpet)',
                       hintStyle: GoogleFonts.inter(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -515,7 +533,7 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                               elevation: 0,
                             ),
                             child: Text(
-                              'Confirm Location',
+                              'Confirm $screenTitle',
                               style: GoogleFonts.inter(
                                 color: Colors.black87,
                                 fontWeight: FontWeight.w600,

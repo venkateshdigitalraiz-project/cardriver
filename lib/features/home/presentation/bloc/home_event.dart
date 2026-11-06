@@ -169,3 +169,14 @@ class CreateDtoDBookingEvent extends HomeEvent {
 /// Clears D-to-D booking success/error state.
 class ClearDtoDBookingStatusEvent extends HomeEvent {}
 
+/// Dispatched to load common charges from GET /api/common/charges.
+class LoadCommonChargesEvent extends HomeEvent {
+  final String? token;
+  final bool silent;
+
+  const LoadCommonChargesEvent({this.token, this.silent = false});
+
+  @override
+  List<Object?> get props => [token, silent];
+}
+

@@ -1,6 +1,7 @@
 import '../../data/models/d_to_d_booking_model.dart';
 import '../entities/accepted_ride_entity.dart';
 import '../entities/available_ride_entity.dart';
+import '../entities/common_charges_entity.dart';
 import '../entities/d_to_d_booking_entity.dart';
 import '../entities/rejected_ride_entity.dart';
 
@@ -33,4 +34,5 @@ abstract class HomeRepository {
     int? durationDays,
     int? durationHours,
   });
+  Future<List<CommonChargesEntity>> getCommonCharges({String? token});
 }

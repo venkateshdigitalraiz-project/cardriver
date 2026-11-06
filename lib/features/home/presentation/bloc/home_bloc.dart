@@ -3,15 +3,18 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/socket_service.dart';
 import '../../../../core/services/firebase_messaging_service.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../data/datasources/available_rides_remote_data_source.dart';
 import '../../domain/entities/available_ride_entity.dart';
+import '../../domain/entities/common_charges_entity.dart';
 import '../../domain/entities/d_to_d_booking_entity.dart';
 import '../../domain/usecases/accept_ride_usecase.dart';
 import '../../domain/usecases/create_d_to_d_booking_usecase.dart';
 import '../../domain/usecases/create_manual_ride_usecase.dart';
+import '../../domain/usecases/get_common_charges_usecase.dart';
 import '../../domain/usecases/reject_ride_usecase.dart';
 import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import 'home_event.dart';
@@ -26,6 +29,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final CreateManualRideUseCase createManualRideUseCase;
   final OpenWhatsAppHelplineUseCase openWhatsAppHelplineUseCase;
   final CreateDtoDBookingUseCase? createDtoDBookingUseCase;
+  final GetCommonChargesUseCase? getCommonChargesUseCase;
 
   StreamSubscription<void>? _connectedSubscription;
   StreamSubscription<dynamic>? _rideNewAvailableSubscription;
@@ -45,6 +49,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     CreateManualRideUseCase? createManualRideUseCase,
     OpenWhatsAppHelplineUseCase? openWhatsAppHelplineUseCase,
     this.createDtoDBookingUseCase,
+    this.getCommonChargesUseCase,
   }) : createManualRideUseCase =
            createManualRideUseCase ?? const CreateManualRideUseCase(),
        openWhatsAppHelplineUseCase =
@@ -66,6 +71,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<CreateManualRideEvent>(_onCreateManualRide);
     on<CreateDtoDBookingEvent>(_onCreateDtoDBooking);
     on<ClearDtoDBookingStatusEvent>(_onClearDtoDBookingStatus);
+    on<LoadCommonChargesEvent>(_onLoadCommonCharges);
 
     // 3. Listen to socket connection / reconnection
     _connectedSubscription = socketService.onConnected.listen((_) {
@@ -730,6 +736,56 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       await openWhatsAppHelplineUseCase.execute(message: event.message);
     } catch (e) {
       log('❌ [HomeBloc] Failed to launch WhatsApp helpline: $e');
+    }
+  }
+
+  Future<void> _onLoadCommonCharges(
+    LoadCommonChargesEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    if (!event.silent) {
+      emit(
+        state.copyWith(
+          isLoadingCommonCharges: true,
+          clearCommonChargesError: true,
+        ),
+      );
+    }
+    log('🚀 [HomeBloc] Loading common charges from ${ApiEndpoints.commonCharges}');
+    try {
+      final charges = await (getCommonChargesUseCase?.call(
+            token: event.token ?? driverToken,
+          ) ??
+          Future.value(<CommonChargesEntity>[]));
+
+      log('✅ [HomeBloc] Common charges loaded successfully: ${charges.length} record(s) found');
+      if (charges.isNotEmpty) {
+        final c = charges.first;
+        log('📊 [HomeBloc] Local OneWay morning: ₹${c.local?.oneWay?.morningHours?.driverPrice} (driver) / ₹${c.local?.oneWay?.morningHours?.customerPrice} (customer)');
+        log('📊 [HomeBloc] Outstation OneWay: ₹${c.outstation?.oneWay?.driverPrice} (driver) / ₹${c.outstation?.oneWay?.customerPrice} (customer)');
+        if (c.local?.oneWay?.returnVehicles.isNotEmpty ?? false) {
+          log('🚌 [HomeBloc] Local OneWay Return Vehicles: ${c.local?.oneWay?.returnVehicles}');
+        }
+        if (c.outstation?.oneWay?.returnVehicles.isNotEmpty ?? false) {
+          log('🚆 [HomeBloc] Outstation OneWay Return Vehicles: ${c.outstation?.oneWay?.returnVehicles}');
+        }
+      }
+
+      emit(
+        state.copyWith(
+          isLoadingCommonCharges: false,
+          commonChargesList: charges,
+          clearCommonChargesError: true,
+        ),
+      );
+    } catch (e) {
+      log('❌ [HomeBloc] Error loading common charges: $e');
+      emit(
+        state.copyWith(
+          isLoadingCommonCharges: false,
+          commonChargesError: e.toString(),
+        ),
+      );
     }
   }
 

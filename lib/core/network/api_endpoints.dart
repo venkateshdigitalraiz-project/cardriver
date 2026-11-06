@@ -43,6 +43,10 @@ class ApiEndpoints {
   static String driverAcceptJob(String jobId) => '$driverJobs/$jobId/accept';
   static String driverRejectJob(String jobId) => '$driverJobs/$jobId/reject';
 
+  // Common Charges
+  static const String commonCharges = '$baseUrl/common/charges';
+  static const String charges = '$baseUrl/common/charges';
+
   /// Helper to convert relative server paths (like /uploads/xyz.jpg) to full URLs
   static String resolveImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';

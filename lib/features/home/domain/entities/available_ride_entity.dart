@@ -228,6 +228,8 @@ class AvailableRideEntity extends Equatable {
       if (cleaned == 'train') return 'Train';
       if (cleaned == 'flight') return 'Flight';
       if (cleaned == 'cab') return 'Cab';
+      if (cleaned == 'rapido') return 'Rapido';
+      if (cleaned.contains('food') || cleaned.contains('room')) return 'Food & Room';
       return opt.replaceAll('ret-', '').toUpperCase();
     }).join(' • ');
   }

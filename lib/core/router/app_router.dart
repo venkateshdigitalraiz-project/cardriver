@@ -341,14 +341,20 @@ class AppRouter {
           builder: (context, state) {
             double? initialLat;
             double? initialLng;
+            String? title;
+            bool? isPickup;
             if (state.extra is Map) {
               final map = state.extra as Map;
               initialLat = (map['initialLat'] as num?)?.toDouble();
               initialLng = (map['initialLng'] as num?)?.toDouble();
+              title = map['title'] as String?;
+              isPickup = map['isPickup'] as bool?;
             }
             return LocationPickerMapScreen(
               initialLat: initialLat,
               initialLng: initialLng,
+              title: title,
+              isPickup: isPickup,
             );
           },
         ),
