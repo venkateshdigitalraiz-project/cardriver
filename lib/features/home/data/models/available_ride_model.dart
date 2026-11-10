@@ -174,15 +174,32 @@ class AvailableRideModel extends AvailableRideEntity {
         ? Map<String, dynamic>.from(rawSourceDriver)
         : null;
 
-    final bool isD2D = json['isDriverToDriver'] == true ||
-        json['is_driver_to_driver'] == true ||
-        json['isDriver2Driver'] == true ||
-        json['bookingType']?.toString().toLowerCase() == 'driver_to_driver' ||
-        json['bookingType']?.toString().toLowerCase() == 'd_to_d' ||
-        json['bookingType']?.toString().toLowerCase() == 'd2d' ||
-        sourceDriverDetails != null ||
-        (json['driverReturnOption'] is List &&
-            (json['driverReturnOption'] as List).isNotEmpty);
+    // Determine whether this is a Driver-to-Driver (D2D) or User-to-Driver booking:
+    // If "isDriverToDriver" is false (or bookingType == "user"), it is a User-to-Driver booking.
+    // If "isDriverToDriver" is true (or bookingType == "driver_to_driver" / "d_to_d" / "d2d"), it is D2D.
+    bool isD2D = false;
+    final rawIsD2D = json['isDriverToDriver'] ??
+        json['is_driver_to_driver'] ??
+        json['isDriver2Driver'];
+    final bookingType =
+        json['bookingType']?.toString().trim().toLowerCase() ?? '';
+
+    if (rawIsD2D != null) {
+      isD2D = rawIsD2D == true || rawIsD2D.toString().toLowerCase() == 'true';
+    } else if (bookingType == 'user') {
+      isD2D = false;
+    } else if (bookingType == 'driver_to_driver' ||
+        bookingType == 'd_to_d' ||
+        bookingType == 'd2d' ||
+        bookingType == 'driver') {
+      isD2D = true;
+    } else if (sourceDriverDetails != null &&
+        sourceDriverDetails.isNotEmpty &&
+        (sourceDriverDetails['name'] != null ||
+            sourceDriverDetails['phone'] != null ||
+            sourceDriverDetails['driverId'] != null)) {
+      isD2D = true;
+    }
 
     final transmission = json['transmission']?.toString() ??
         json['gearType']?.toString() ??

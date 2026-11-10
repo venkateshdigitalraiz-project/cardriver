@@ -72,6 +72,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<CreateDtoDBookingEvent>(_onCreateDtoDBooking);
     on<ClearDtoDBookingStatusEvent>(_onClearDtoDBookingStatus);
     on<LoadCommonChargesEvent>(_onLoadCommonCharges);
+    on<ClearHomeErrorEvent>((event, emit) => emit(state.copyWith(clearError: true)));
 
     // 3. Listen to socket connection / reconnection
     _connectedSubscription = socketService.onConnected.listen((_) {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/router/app_router.dart';
 
@@ -50,11 +52,13 @@ class _HomeView extends StatelessWidget {
 
     return BlocListener<HomeBloc, HomeState>(
       listenWhen: (previous, current) =>
-          previous.errorMessage != current.errorMessage ||
+          (current.errorMessage != null &&
+              previous.errorMessage != current.errorMessage) ||
           previous.acceptedRide != current.acceptedRide ||
           previous.rejectedRide != current.rejectedRide,
       listener: (context, state) {
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
@@ -62,6 +66,7 @@ class _HomeView extends StatelessWidget {
               behavior: SnackBarBehavior.floating,
             ),
           );
+          context.read<HomeBloc>().add(ClearHomeErrorEvent());
         }
 
         if (state.rejectedRide != null) {
@@ -214,7 +219,7 @@ class _HomeView extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               state.isOnline
-                                  ? 'Online • Live Radar'
+                                  ? 'Online' // • Live Radar'
                                   : 'Offline',
                               style: AppTypography.bodySmall(
                                 color: state.isOnline
@@ -232,6 +237,7 @@ class _HomeView extends StatelessWidget {
               ),
               actions: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       state.isOnline ? 'OFFLINE' : 'ONLINE',
@@ -243,8 +249,10 @@ class _HomeView extends StatelessWidget {
                             : secondaryTextColor,
                       ),
                     ),
+                    const SizedBox(width: 4),
                     Switch(
                       value: state.isOnline,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       activeThumbColor: const Color(0xFF10B981),
                       activeTrackColor: const Color(
                         0xFF10B981,
@@ -256,9 +264,38 @@ class _HomeView extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 4),
+                    // Circle Driver Jobs Icon Button
+                    IconButton(
+                      tooltip: 'Driver Jobs',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2563EB),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.work_outline_rounded,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                      ),
+                      onPressed: () {
+                        context.push(
+                          AppRoutes.driverJobs,
+                          extra: customer.token,
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 4),
                     // WhatsApp Helpline Icon Button in AppBar right corner
                     IconButton(
                       tooltip: 'WhatsApp Helpline',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                       icon: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
@@ -276,10 +313,8 @@ class _HomeView extends StatelessWidget {
                           const OpenWhatsAppSupportEvent(),
                         );
                       },
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                   ],
                 ),
               ],
@@ -1827,6 +1862,124 @@ class _HomeView extends StatelessWidget {
           letterSpacing: 0.5,
         ),
       ),
+    );
+  }
+
+  void _showShareDialog(BuildContext context) {
+    const shareText =
+        'Join me on the Car Driver app! Earn more with flexible bookings. Download now: https://play.google.com/store/apps/details?id=com.cardriver.app';
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Share Car Driver App',
+                      style: AppTypography.headingSmall(
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(sheetContext),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Share the app with fellow drivers and colleagues.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF25D366),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const FaIcon(
+                      FontAwesomeIcons.whatsapp,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  title: const Text(
+                    'Share on WhatsApp',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    final waUri = Uri.parse(
+                      'whatsapp://send?text=${Uri.encodeComponent(shareText)}',
+                    );
+                    final webWaUri = Uri.parse(
+                      'https://wa.me/?text=${Uri.encodeComponent(shareText)}',
+                    );
+                    try {
+                      if (await canLaunchUrl(waUri)) {
+                        await launchUrl(
+                          waUri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } else {
+                        await launchUrl(
+                          webWaUri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    } catch (_) {}
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEFF6FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.copy_rounded,
+                      color: Color(0xFF2563EB),
+                      size: 18,
+                    ),
+                  ),
+                  title: const Text(
+                    'Copy Link',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Clipboard.setData(const ClipboardData(text: shareText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('App link copied to clipboard!'),
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

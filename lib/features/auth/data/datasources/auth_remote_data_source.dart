@@ -197,20 +197,83 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         ApiEndpoints.driverLogin,
-        options: Options(headers: {'content-type': 'application/json'}),
+        options: Options(
+          headers: {'content-type': 'application/json'},
+          validateStatus: (status) => true, // Handle all status codes (401, 402, 403, 404, 500, etc.)
+        ),
         data: {
           'phone': phone.replaceAll(RegExp(r'\D'), ''),
           'fcmToken': fcmToken ?? '',
         },
       );
 
+      // If response status is not 200 or 201 (e.g. 401, 402, 403, 404, 500)
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw AuthException(
-          message:
-              'Failed to send OTP. Server responded with ${response.statusCode}',
-        );
+        String? serverMsg;
+        final resData = response.data;
+        if (resData is Map && resData['message'] != null && resData['message'].toString().isNotEmpty) {
+          serverMsg = resData['message'].toString();
+        } else if (resData is String && resData.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(resData);
+            if (decoded is Map && decoded['message'] != null) {
+              serverMsg = decoded['message'].toString();
+            }
+          } catch (_) {}
+        }
+
+        if (serverMsg != null && serverMsg.trim().isNotEmpty) {
+          throw AuthException(message: serverMsg.trim());
+        }
+
+        switch (response.statusCode) {
+          case 401:
+            throw const AuthException(message: 'Unauthorized (Error 401). Invalid credentials or unregistered mobile.');
+          case 402:
+            throw const AuthException(message: 'Payment Required (Error 402).');
+          case 403:
+            throw const AuthException(message: 'Access Forbidden (Error 403).');
+          case 404:
+            throw const AuthException(message: 'Driver not registered (Error 404). Please create an account.');
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            throw const AuthException(message: 'Server is currently down or experiencing issues (Error 500). Please try again later.');
+          default:
+            throw AuthException(message: 'Login failed with status ${response.statusCode}. Please try again.');
+        }
+      }
+
+      // Check success flag in response body if 200/201
+      final resData = response.data;
+      Map<dynamic, dynamic> body = {};
+      if (resData is Map) {
+        body = resData;
+      } else if (resData is String && resData.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(resData);
+          if (decoded is Map) body = decoded;
+        } catch (_) {}
+      }
+
+      if (body['success'] == false ||
+          body['success']?.toString().toLowerCase() == 'false' ||
+          body['status'] == false ||
+          body['status']?.toString().toLowerCase() == 'false' ||
+          body['status'] == 'failed') {
+        final msg = body['message']?.toString() ?? 'Failed to send OTP. Please try again.';
+        throw AuthException(message: msg);
       }
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw const AuthException(
+          message: 'Server is currently down or unreachable. Please try again later.',
+        );
+      }
       throw AuthException(message: _handleDioError(e));
     } catch (e) {
       if (e is AuthException) {
@@ -313,6 +376,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw const AuthException(
+          message: 'Server is currently unreachable. Please try again later.',
+        );
+      }
       throw AuthException(message: _handleDioError(e));
     } catch (e) {
       if (e is AuthException) rethrow;
@@ -389,13 +460,65 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final fcm = FirebaseMessagingService.cachedToken ?? '';
       final response = await _dio.post(
         ApiEndpoints.driverVerifyOtp,
-        options: Options(headers: {'content-type': 'application/json'}),
+        options: Options(
+          headers: {'content-type': 'application/json'},
+          validateStatus: (status) => true,
+        ),
         data: {
-          'phone': phone,
-          'otp': otp,
+          'phone': phone.replaceAll(RegExp(r'\D'), ''),
+          'otp': otp.trim(),
           if (fcm.isNotEmpty) 'fcmToken': fcm,
         },
       );
+
+      // Handle non-200 / non-201 status codes (400, 401, 403, 404, 500, etc.)
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        String? serverMsg;
+        final resData = response.data;
+        if (resData is Map &&
+            resData['message'] != null &&
+            resData['message'].toString().isNotEmpty) {
+          serverMsg = resData['message'].toString();
+        } else if (resData is String && resData.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(resData);
+            if (decoded is Map && decoded['message'] != null) {
+              serverMsg = decoded['message'].toString();
+            }
+          } catch (_) {}
+        }
+
+        if (serverMsg != null && serverMsg.trim().isNotEmpty) {
+          throw AuthException(message: serverMsg.trim());
+        }
+
+        switch (response.statusCode) {
+          case 400:
+          case 401:
+            throw const AuthException(
+              message: 'Invalid or expired OTP. Please try again.',
+            );
+          case 403:
+            throw const AuthException(
+              message: 'Access forbidden. Please contact support.',
+            );
+          case 404:
+            throw const AuthException(
+              message: 'Driver not found. Please register first.',
+            );
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            throw const AuthException(
+              message: 'Server error. Please try again later.',
+            );
+          default:
+            throw AuthException(
+              message: 'Verification failed (Status ${response.statusCode}).',
+            );
+        }
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resData = response.data;
@@ -473,6 +596,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw const AuthException(
+          message: 'Server is currently unreachable. Please try again later.',
+        );
+      }
       throw AuthException(message: _handleDioError(e));
     } catch (e) {
       if (e is AuthException) rethrow;

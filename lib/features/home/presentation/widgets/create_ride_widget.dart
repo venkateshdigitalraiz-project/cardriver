@@ -71,8 +71,15 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     // Default vehicleType to 'suv'
     _vehicleTypeController.text = 'suv';
 
-    // Default to current time plus 30 minutes
-    _selectedDateTime = DateTime.now().add(const Duration(minutes: 30));
+    // Default to next date (tomorrow) plus 30 minutes
+    final now = DateTime.now();
+    _selectedDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day + 1,
+      now.hour,
+      now.minute,
+    ).add(const Duration(minutes: 30));
     _updateDateTimeDisplay();
 
     // Reactive listeners for dynamic summary updates
@@ -106,12 +113,22 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
-    final initialDate = _selectedDateTime ?? now;
+    final nextDate = DateTime(now.year, now.month, now.day + 1);
+    final initialDate =
+        (_selectedDateTime != null && !_selectedDateTime!.isBefore(nextDate))
+            ? _selectedDateTime!
+            : DateTime(
+                nextDate.year,
+                nextDate.month,
+                nextDate.day,
+                now.hour,
+                now.minute,
+              );
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: initialDate.isBefore(now) ? now : initialDate,
-      firstDate: now.subtract(const Duration(days: 1)),
-      lastDate: now.add(const Duration(days: 90)),
+      initialDate: initialDate,
+      firstDate: nextDate,
+      lastDate: nextDate.add(const Duration(days: 90)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -646,9 +663,14 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
               _foodAndRoomSelected = false;
               _selectedReturnVehicles.clear();
               _durationController.text = '2';
-              _selectedDateTime = DateTime.now().add(
-                const Duration(minutes: 30),
-              );
+              final now = DateTime.now();
+              _selectedDateTime = DateTime(
+                now.year,
+                now.month,
+                now.day + 1,
+                now.hour,
+                now.minute,
+              ).add(const Duration(minutes: 30));
               _updateDateTimeDisplay();
             });
           },
@@ -1025,6 +1047,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
           // Conditional Additional Charges (Return Vehicles / Food & Room)
           if (_shouldShowAdditionalCharges) ...[
             // Case 2: Outstation + One Way -> Remove the _buildFieldSectionLabel() widget
+            const SizedBox(height: 16),
+            _buildFieldSectionLabel('Return Charges'),
+
             if (!(!isLocal && _tripType == 'one_way')) ...[
               const SizedBox(height: 16),
               _buildFieldSectionLabel(
@@ -1229,6 +1254,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                       if (isSelected) {
                         _selectedReturnVehicles.remove(vehicle);
                       } else {
+                        _selectedReturnVehicles.clear();
                         _selectedReturnVehicles.add(vehicle);
                       }
                     });
@@ -1249,14 +1275,15 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     required bool isLocal,
     required VoidCallback onTap,
   }) {
-    final Color activeBorderColor =
-        isLocal ? const Color(0xFFD97706) : const Color(0xFF2563EB);
-    final Color activeBgColor =
-        isSelected
-            ? (isLocal ? const Color(0xFFFFFBEB) : const Color(0xFFEFF6FF))
-            : Colors.white;
-    final Color activeIndicatorColor =
-        isLocal ? const Color(0xFFD97706) : const Color(0xFF2563EB);
+    final Color activeBorderColor = isLocal
+        ? const Color(0xFFD97706)
+        : const Color(0xFF2563EB);
+    final Color activeBgColor = isSelected
+        ? (isLocal ? const Color(0xFFFFFBEB) : const Color(0xFFEFF6FF))
+        : Colors.white;
+    final Color activeIndicatorColor = isLocal
+        ? const Color(0xFFD97706)
+        : const Color(0xFF2563EB);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -1269,9 +1296,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(
-              alpha: isSelected ? 0.05 : 0.02,
-            ),
+            color: const Color(
+              0xFF0F172A,
+            ).withValues(alpha: isSelected ? 0.05 : 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1293,10 +1320,14 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: isSelected ? activeIndicatorColor : Colors.transparent,
+                    color: isSelected
+                        ? activeIndicatorColor
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(
-                      color: isSelected ? activeIndicatorColor : const Color(0xFFCBD5E1),
+                      color: isSelected
+                          ? activeIndicatorColor
+                          : const Color(0xFFCBD5E1),
                       width: 1.6,
                     ),
                   ),
@@ -1315,7 +1346,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                 Icon(
                   _getTransitIcon(vehicle),
                   size: 18,
-                  color: isSelected ? activeIndicatorColor : const Color(0xFF64748B),
+                  color: isSelected
+                      ? activeIndicatorColor
+                      : const Color(0xFF64748B),
                 ),
                 const SizedBox(width: 8),
                 // Vehicle Name
@@ -1324,7 +1357,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF334155),
                   ),
                 ),
               ],
@@ -1344,7 +1379,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
       return Icons.train_rounded;
     } else if (lower.contains('cab') || lower.contains('taxi')) {
       return Icons.local_taxi_rounded;
-    } else if (lower.contains('bike') || lower.contains('rapido') || lower.contains('two')) {
+    } else if (lower.contains('bike') ||
+        lower.contains('rapido') ||
+        lower.contains('two')) {
       return Icons.two_wheeler_rounded;
     } else {
       return Icons.directions_car_rounded;
@@ -1356,9 +1393,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: _foodAndRoomSelected
-            ? const Color(0xFFF0FDF4)
-            : Colors.white,
+        color: _foodAndRoomSelected ? const Color(0xFFF0FDF4) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _foodAndRoomSelected
@@ -1368,9 +1403,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(
-              alpha: _foodAndRoomSelected ? 0.06 : 0.02,
-            ),
+            color: const Color(
+              0xFF0F172A,
+            ).withValues(alpha: _foodAndRoomSelected ? 0.06 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1520,706 +1555,594 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
 
   /// Segmented pill tab button
   Widget _buildSegmentOption({
-  required String title,
-  required String subtitle,
-  required IconData icon,
-  required bool isSelected,
-  required VoidCallback onTap,
-}) {
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(10),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF475569),
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  ),
                 ),
-              ]
-            : null,
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: isSelected
+                        ? const Color(0xFF64748B)
+                        : const Color(0xFF94A3B8),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: isSelected
-                ? const Color(0xFF0F172A)
-                : const Color(0xFF64748B),
-          ),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: isSelected
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFF475569),
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: isSelected
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
+    );
+  }
+
+  /// Section 3: Schedule Date & Time Card
+  Widget _buildScheduleCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    ),
-  );
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFieldSectionLabel('Pickup Schedule'),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: _pickDateTime,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.event_note_rounded,
+                      color: Color(0xFF0F172A),
+                      size: 19,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Date & Time',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _selectedDateTime != null &&
+                                  _dateTimeController.text.isNotEmpty
+                              ? _dateTimeController.text
+                              : 'Tap to select date & time',
+                          style: TextStyle(
+                            color: _selectedDateTime != null
+                                ? const Color(0xFF0F172A)
+                                : const Color(0xFF94A3B8),
+                            fontSize: 13.5,
+                            fontWeight: _selectedDateTime != null
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                    ),
+                    child: const Text(
+                      'Change',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-/// Section 3: Schedule Date & Time Card
-Widget _buildScheduleCard() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE2E8F0)),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildFieldSectionLabel('Pickup Schedule'),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: _pickDateTime,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+  /// Section 4: Driver Phone & Fare Details Card
+  Widget _buildDriverAndFareCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Driver Mobile Number
+          _buildFieldSectionLabel('Driver Mobile Number'),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.event_note_rounded,
-                    color: Color(0xFF0F172A),
-                    size: 19,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Date & Time',
+            cursorColor: const Color(0xFF0F172A),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
+            decoration: InputDecoration(
+              hintText: '98765 43210',
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: Container(
+                padding: const EdgeInsets.only(left: 12, right: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.phone_outlined,
+                      size: 18,
+                      color: Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '+91',
                         style: TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _selectedDateTime != null &&
-                                _dateTimeController.text.isNotEmpty
-                            ? _dateTimeController.text
-                            : 'Tap to select date & time',
-                        style: TextStyle(
-                          color: _selectedDateTime != null
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFF94A3B8),
-                          fontSize: 13.5,
-                          fontWeight: _selectedDateTime != null
-                              ? FontWeight.w700
-                              : FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      height: 16,
+                      width: 1,
+                      color: const Color(0xFFE2E8F0),
+                    ),
+                  ],
                 ),
-                Container(
+              ),
+              suffixIcon: _phoneController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      onPressed: () {
+                        _phoneController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0F172A),
+                  width: 1.5,
+                ),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Enter 10-digit driver mobile number';
+              }
+              final trimmed = value.trim();
+              if (trimmed.length != 10 ||
+                  !RegExp(r'^\d{10}$').hasMatch(trimmed)) {
+                return 'Driver mobile number must be 10 digits';
+              }
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // 2. Ride Price / Fare
+          _buildFieldSectionLabel('Ride Price / Fare (₹)'),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _priceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+            cursorColor: const Color(0xFF0F172A),
+            decoration: InputDecoration(
+              hintText: '0',
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: const Padding(
+                padding: EdgeInsets.only(left: 14, right: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '₹',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    SizedBox(
+                      height: 18,
+                      child: VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        color: Color(0xFFE2E8F0),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              suffixIcon: _priceController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      onPressed: () {
+                        _priceController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0F172A),
+                  width: 1.5,
+                ),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Enter ride price / fare';
+              }
+              final parsed = double.tryParse(value.trim());
+              if (parsed == null || parsed <= 0) {
+                return 'Enter a valid price greater than ₹0';
+              }
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // 3. Vehicle Type
+          _buildFieldSectionLabel('vehicleType'),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _vehicleTypeController,
+            keyboardType: TextInputType.text,
+            textCapitalization: TextCapitalization.none,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            cursorColor: const Color(0xFF0F172A),
+            decoration: InputDecoration(
+              hintText: 'e.g. suv, sedan, hatchback',
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: const Icon(
+                Icons.directions_car_filled_rounded,
+                size: 20,
+                color: Color(0xFF64748B),
+              ),
+              suffixIcon: _vehicleTypeController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      onPressed: () {
+                        _vehicleTypeController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0F172A),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: ['suv', 'sedan', 'hatchback'].map((type) {
+              final isSelected =
+                  _vehicleTypeController.text.trim().toLowerCase() == type;
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _vehicleTypeController.text = type;
+                  });
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                  ),
-                  child: const Text(
-                    'Change',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFCBD5E1),
                     ),
+                  ),
+                  child: Text(
+                    type.toUpperCase(),
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF0F172A),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 4. Transmission
+          _buildFieldSectionLabel('transmission'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildSegmentOption(
+                    title: 'Manual',
+                    subtitle: 'Manual gear',
+                    icon: Icons.tune_rounded,
+                    isSelected: _transmission == 'manual',
+                    onTap: () {
+                      if (_transmission != 'manual') {
+                        setState(() => _transmission = 'manual');
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: _buildSegmentOption(
+                    title: 'Automatic',
+                    subtitle: 'Auto gear',
+                    icon: Icons.directions_car_rounded,
+                    isSelected: _transmission == 'automatic',
+                    onTap: () {
+                      if (_transmission != 'automatic') {
+                        setState(() => _transmission = 'automatic');
+                      }
+                    },
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Sticky Bottom Action Bar with Real-time Summary
+  Widget _buildBottomActionBar() {
+    final fareText = _priceController.text.trim();
+    final driverPhone = _phoneController.text.trim();
+    final vehicleType = _vehicleTypeController.text.trim();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
-      ],
-    ),
-  );
-}
-
-/// Section 4: Driver Phone & Fare Details Card
-Widget _buildDriverAndFareCard() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE2E8F0)),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 1. Driver Mobile Number
-        _buildFieldSectionLabel('Driver Mobile Number'),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          style: const TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
           ),
-          cursorColor: const Color(0xFF0F172A),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10),
-          ],
-          decoration: InputDecoration(
-            hintText: '98765 43210',
-            hintStyle: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-            prefixIcon: Container(
-              padding: const EdgeInsets.only(left: 12, right: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.phone_outlined,
-                    size: 18,
-                    color: Color(0xFF64748B),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      '+91',
-                      style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    height: 16,
-                    width: 1,
-                    color: const Color(0xFFE2E8F0),
-                  ),
-                ],
-              ),
-            ),
-            suffixIcon: _phoneController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    onPressed: () {
-                      _phoneController.clear();
-                      setState(() {});
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF0F172A),
-                width: 1.5,
-              ),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Enter 10-digit driver mobile number';
-            }
-            final trimmed = value.trim();
-            if (trimmed.length != 10 ||
-                !RegExp(r'^\d{10}$').hasMatch(trimmed)) {
-              return 'Driver mobile number must be 10 digits';
-            }
-            return null;
-          },
-        ),
-
-        const SizedBox(height: 16),
-
-        // 2. Ride Price / Fare
-        _buildFieldSectionLabel('Ride Price / Fare (₹)'),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _priceController,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-          cursorColor: const Color(0xFF0F172A),
-          decoration: InputDecoration(
-            hintText: '0',
-            hintStyle: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-            ),
-            prefixIcon: const Padding(
-              padding: EdgeInsets.only(left: 14, right: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '₹',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  SizedBox(
-                    height: 18,
-                    child: VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: Color(0xFFE2E8F0),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            suffixIcon: _priceController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    onPressed: () {
-                      _priceController.clear();
-                      setState(() {});
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF0F172A),
-                width: 1.5,
-              ),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Enter ride price / fare';
-            }
-            final parsed = double.tryParse(value.trim());
-            if (parsed == null || parsed <= 0) {
-              return 'Enter a valid price greater than ₹0';
-            }
-            return null;
-          },
-        ),
-
-        const SizedBox(height: 16),
-
-        // 3. Vehicle Type
-        _buildFieldSectionLabel('vehicleType'),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _vehicleTypeController,
-          keyboardType: TextInputType.text,
-          textCapitalization: TextCapitalization.none,
-          style: const TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
-          cursorColor: const Color(0xFF0F172A),
-          decoration: InputDecoration(
-            hintText: 'e.g. suv, sedan, hatchback',
-            hintStyle: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-            prefixIcon: const Icon(
-              Icons.directions_car_filled_rounded,
-              size: 20,
-              color: Color(0xFF64748B),
-            ),
-            suffixIcon: _vehicleTypeController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    onPressed: () {
-                      _vehicleTypeController.clear();
-                      setState(() {});
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF0F172A),
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: ['suv', 'sedan', 'hatchback'].map((type) {
-            final isSelected =
-                _vehicleTypeController.text.trim().toLowerCase() == type;
-            return InkWell(
-              onTap: () {
-                setState(() {
-                  _vehicleTypeController.text = type;
-                });
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFFCBD5E1),
-                  ),
-                ),
-                child: Text(
-                  type.toUpperCase(),
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF0F172A),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 4. Transmission
-        _buildFieldSectionLabel('transmission'),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildSegmentOption(
-                  title: 'Manual',
-                  subtitle: 'Manual gear',
-                  icon: Icons.tune_rounded,
-                  isSelected: _transmission == 'manual',
-                  onTap: () {
-                    if (_transmission != 'manual') {
-                      setState(() => _transmission = 'manual');
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: _buildSegmentOption(
-                  title: 'Automatic',
-                  subtitle: 'Auto gear',
-                  icon: Icons.directions_car_rounded,
-                  isSelected: _transmission == 'automatic',
-                  onTap: () {
-                    if (_transmission != 'automatic') {
-                      setState(() => _transmission = 'automatic');
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Sticky Bottom Action Bar with Real-time Summary
-Widget _buildBottomActionBar() {
-  final fareText = _priceController.text.trim();
-  final driverPhone = _phoneController.text.trim();
-  final vehicleType = _vehicleTypeController.text.trim();
-
-  return Container(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: const Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-          blurRadius: 10,
-          offset: const Offset(0, -3),
-        ),
-      ],
-    ),
-    child: SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Summary strip
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${_serviceType == 'local' ? 'Local' : 'Outstation'} • ${_tripType == 'one_way' ? 'One Way' : 'Round Trip'}',
-                          style: const TextStyle(
-                            color: Color(0xFF0F172A),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (_tripType == 'one_way' &&
-                          _selectedReturnVehicles.isNotEmpty) ...[
-                        for (final vehicle in _selectedReturnVehicles) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _serviceType == 'local'
-                                  ? const Color(0xFFFEF3C7)
-                                  : const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '+ $vehicle',
-                              style: TextStyle(
-                                color: _serviceType == 'local'
-                                    ? const Color(0xFFD97706)
-                                    : const Color(0xFF2563EB),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ] else if (_serviceType == 'local' &&
-                          _tripType == 'one_way' &&
-                          _rapidoChargesSelected) ...[
-                        const SizedBox(width: 6),
+        ],
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Summary strip
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            '+ Rapido',
-                            style: TextStyle(
-                              color: Color(0xFFD97706),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ] else if (_serviceType == 'outstation' &&
-                          _tripType == 'one_way' &&
-                          _selectedOutstationTransit != null) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            _selectedOutstationTransit == 'bus'
-                                ? '+ Bus'
-                                : '+ Train',
-                            style: const TextStyle(
-                              color: Color(0xFF2563EB),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ] else if (_serviceType == 'outstation' &&
-                          _tripType == 'round_trip' &&
-                          _foodAndRoomSelected) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            '+ Food & Room',
-                            style: TextStyle(
-                              color: Color(0xFF059669),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (vehicleType.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
+                            horizontal: 8,
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
@@ -2227,100 +2150,216 @@ Widget _buildBottomActionBar() {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            vehicleType.toUpperCase(),
+                            '${_serviceType == 'local' ? 'Local' : 'Outstation'} • ${_tripType == 'one_way' ? 'One Way' : 'Round Trip'}',
                             style: const TextStyle(
                               color: Color(0xFF0F172A),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                      ],
-                      if (driverPhone.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          '+91 $driverPhone',
-                          style: const TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                fareText.isNotEmpty ? '₹$fareText' : 'Price pending',
-                style: TextStyle(
-                  color: fareText.isNotEmpty
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFF94A3B8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // Primary CTA button with Clean Architecture Bloc State Integration
-          BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              final isSubmitting = state.isSubmittingDtoDBooking;
-              return SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: isSubmitting ? null : _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(
-                      0xFF0F172A,
-                    ).withValues(alpha: 0.6),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Confirm Driver Booking',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.2,
+                        if (_tripType == 'one_way' &&
+                            _selectedReturnVehicles.isNotEmpty) ...[
+                          for (final vehicle in _selectedReturnVehicles) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _serviceType == 'local'
+                                    ? const Color(0xFFFEF3C7)
+                                    : const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '+ $vehicle',
+                                style: TextStyle(
+                                  color: _serviceType == 'local'
+                                      ? const Color(0xFFD97706)
+                                      : const Color(0xFF2563EB),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 18),
                           ],
-                        ),
+                        ] else if (_serviceType == 'local' &&
+                            _tripType == 'one_way' &&
+                            _rapidoChargesSelected) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              '+ Rapido',
+                              style: TextStyle(
+                                color: Color(0xFFD97706),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ] else if (_serviceType == 'outstation' &&
+                            _tripType == 'one_way' &&
+                            _selectedOutstationTransit != null) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _selectedOutstationTransit == 'bus'
+                                  ? '+ Bus'
+                                  : '+ Train',
+                              style: const TextStyle(
+                                color: Color(0xFF2563EB),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ] else if (_serviceType == 'outstation' &&
+                            _tripType == 'round_trip' &&
+                            _foodAndRoomSelected) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              '+ Food & Room',
+                              style: TextStyle(
+                                color: Color(0xFF059669),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (vehicleType.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              vehicleType.toUpperCase(),
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (driverPhone.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '+91 $driverPhone',
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-              );
-            },
-          ),
-        ],
+                const SizedBox(width: 10),
+                Text(
+                  fareText.isNotEmpty ? '₹$fareText' : 'Price pending',
+                  style: TextStyle(
+                    color: fareText.isNotEmpty
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF94A3B8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // Primary CTA button with Clean Architecture Bloc State Integration
+            BlocBuilder<HomeBloc, HomeState>(
+              builder: (context, state) {
+                final isSubmitting = state.isSubmittingDtoDBooking;
+                return SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F172A),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(
+                        0xFF0F172A,
+                      ).withValues(alpha: 0.6),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: isSubmitting
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Confirm Driver Booking',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 18),
+                            ],
+                          ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildFieldSectionLabel(String label) {

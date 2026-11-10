@@ -94,7 +94,9 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
         ),
       ),
       body: BlocConsumer<DriverJobsBloc, DriverJobsState>(
-        listenWhen: (previous, current) => current.actionMessage != null,
+        listenWhen: (previous, current) =>
+            current.actionMessage != null &&
+            previous.actionMessage != current.actionMessage,
         listener: (context, state) {
           if (state.actionMessage != null) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();

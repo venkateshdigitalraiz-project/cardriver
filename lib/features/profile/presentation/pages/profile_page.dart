@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cardriver/features/profile/domain/entities/driver_profile_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import '../bloc/profile_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../legal/presentation/pages/legal_page.dart';
+import '../../../rating/presentation/pages/rating_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final String userName;
@@ -39,14 +41,27 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ProfileBloc, ProfileState>(
+      listenWhen: (previous, current) {
+        if (current is ProfileLoaded && current.errorMessage != null) {
+          if (previous is! ProfileLoaded) return true;
+          return previous.errorMessage != current.errorMessage;
+        }
+        if (current is ProfileError) {
+          if (previous is! ProfileError) return true;
+          return previous.message != current.message;
+        }
+        return false;
+      },
       listener: (context, state) {
         if (state is ProfileLoaded && state.errorMessage != null) {
           if (state.isSessionExpired ||
               state.statusCode == 401 ||
               state.statusCode == 404) {
-            final friendlyMsg = state.errorMessage ??
+            final friendlyMsg =
+                state.errorMessage ??
                 'Your session has expired. Please log in again to continue.';
 
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(friendlyMsg),
@@ -61,6 +76,7 @@ class _ProfileView extends StatelessWidget {
             return;
           }
 
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
@@ -278,6 +294,9 @@ class _ProfileView extends StatelessWidget {
                       children: [
                         const SizedBox(height: 8),
 
+                        // Driver Rating & Feedback Card
+                        _buildRatingCard(context, profile, driverToken),
+
                         // Menu List (BlocBuilder)
                         BlocBuilder<ProfileBloc, ProfileState>(
                           builder: (context, menuState) {
@@ -393,7 +412,7 @@ class _ProfileView extends StatelessWidget {
                                                 'My Tickets') {
                                               _showMyTicketsSheet(context);
                                             } else if (item.title ==
-                                                'My Booking' ||
+                                                    'My Booking' ||
                                                 item.title == 'My Bookings') {
                                               context.push(
                                                 AppRoutes.dToDBookings,
@@ -941,6 +960,169 @@ class _ProfileView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRatingCard(
+    BuildContext context,
+    DriverProfileEntity? profile,
+    String? driverToken,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Star badge circle
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFB800), Color(0xFFF59E0B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFB800).withValues(alpha: 0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.star_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Rating info
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '4.9',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(
+                            Icons.star_rounded,
+                            size: 18,
+                            color: Color(0xFFFFB800),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '• Top Rated Partner',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '98% positive reviews from passengers',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          InkWell(
+            onTap: () {
+              context.push(
+                AppRoutes.rateTrip,
+                extra: RatingPageArgs(
+                  bookingId: '',
+                  customerName: 'Customer',
+                  pickupAddress: 'Recent Ride',
+                  dropAddress: '',
+                  totalFare: '',
+                  driverToken: driverToken,
+                ),
+              );
+            },
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0066FF).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.rate_review_rounded,
+                          size: 15,
+                          color: Color(0xFF0066FF),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Rate Customer / Trip Experience',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0066FF),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: Color(0xFF0066FF),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

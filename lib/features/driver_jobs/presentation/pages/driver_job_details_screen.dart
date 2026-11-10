@@ -52,10 +52,13 @@ class _DriverJobDetailsView extends StatelessWidget {
     return BlocConsumer<DriverJobDetailsBloc, DriverJobDetailsState>(
       listenWhen: (previous, current) =>
           previous.status != current.status ||
-          current.errorMessage != null ||
-          current.successMessage != null,
+          (current.errorMessage != null &&
+              previous.errorMessage != current.errorMessage) ||
+          (current.successMessage != null &&
+              previous.successMessage != current.successMessage),
       listener: (context, state) {
         if (state.successMessage != null) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(

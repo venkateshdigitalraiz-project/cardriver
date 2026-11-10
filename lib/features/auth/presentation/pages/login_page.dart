@@ -29,6 +29,7 @@ class _LoginPageState extends State<LoginPage> {
   );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   bool _isOtpSentLocal = false;
+  bool _isSubmittingOtp = false;
   bool _keepMeSignedIn = true;
   late final PageController _pageController;
   Timer? _autoScrollTimer;
@@ -84,6 +85,7 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() {
       _isOtpSentLocal = false;
+      _isSubmittingOtp = false;
       for (var c in _otpControllers) {
         c.clear();
       }
@@ -107,6 +109,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onSendOtp() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState.isLoading) return;
+
     final raw = _phoneController.text.trim();
     final phone = raw.replaceAll(RegExp(r'\D'), '');
 
@@ -125,9 +130,6 @@ class _LoginPageState extends State<LoginPage> {
 
     if (_phoneFormKey.currentState?.validate() ?? false) {
       _phoneFocusNode.unfocus();
-      setState(() {
-        _isOtpSentLocal = true;
-      });
       // Send the digits-only phone and device FCM token for push notifications
       final fcmToken = FirebaseMessagingService.cachedToken ?? '';
       context.read<AuthBloc>().add(
@@ -140,11 +142,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onVerifyOtp() {
+    final authState = context.read<AuthBloc>().state;
+    if (_isSubmittingOtp || authState.isLoading) return;
+
     final otp = _otpControllers.map((c) => c.text.trim()).join();
     if (otp.length != 4) {
       AppSnackBar.showError(context, 'Please enter exactly 4 digits for OTP.');
       return;
     }
+
+    setState(() => _isSubmittingOtp = true);
+
     // Use digits-only phone — must match what was sent in sendOtp.
     final phone = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
     context.read<AuthBloc>().add(VerifyOtpEvent(phone: phone, otp: otp));
@@ -156,12 +164,38 @@ class _LoginPageState extends State<LoginPage> {
     //final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocConsumer<AuthBloc, AuthState>(
+      listenWhen: (previous, current) {
+        // Prevent duplicate SnackBar/indicator displays when non-auth events (such as banner timer scroll) emit new states
+        if (previous.status != current.status) return true;
+        if (current.status == AuthStatus.error &&
+            previous.errorMessage != current.errorMessage &&
+            current.errorMessage != null) {
+          return true;
+        }
+        if (previous.introBanners.isEmpty && current.introBanners.isNotEmpty) {
+          return true;
+        }
+        return false;
+      },
       listener: (context, state) {
+        if (_isSubmittingOtp && state.status != AuthStatus.loading) {
+          setState(() {
+            _isSubmittingOtp = false;
+          });
+        }
+
         if (state.introBanners.isNotEmpty && _autoScrollTimer == null) {
           _startAutoScroll(state.introBanners.length);
         }
 
         if (state.status == AuthStatus.error && state.errorMessage != null) {
+          if (state.pendingPhoneNumber == null) {
+            if (_isOtpSentLocal) {
+              setState(() {
+                _isOtpSentLocal = false;
+              });
+            }
+          }
           AppSnackBar.showError(context, state.errorMessage!);
         } else if (state.status == AuthStatus.otpSent &&
             state.pendingPhoneNumber != null) {
@@ -189,7 +223,8 @@ class _LoginPageState extends State<LoginPage> {
         }
       },
       builder: (context, state) {
-        final isOtpSent = _isOtpSentLocal || state.status == AuthStatus.otpSent;
+        final isOtpSent = (_isOtpSentLocal || state.status == AuthStatus.otpSent) &&
+            state.pendingPhoneNumber != null;
 
         return PopScope(
           canPop: !isOtpSent,

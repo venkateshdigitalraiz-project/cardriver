@@ -96,8 +96,17 @@ class _SubscriptionScaffold extends StatelessWidget {
         ],
       ),
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
+        listenWhen: (previous, current) =>
+            (current.errorMessage != null &&
+                previous.errorMessage != current.errorMessage) ||
+            (current.activationErrorMessage != null &&
+                previous.activationErrorMessage !=
+                    current.activationErrorMessage) ||
+            (current.activationResult != null &&
+                previous.activationResult != current.activationResult),
         listener: (context, state) {
           if (state.errorMessage != null && state.plans.isNotEmpty) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
@@ -107,6 +116,7 @@ class _SubscriptionScaffold extends StatelessWidget {
             );
           }
           if (state.activationErrorMessage != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(

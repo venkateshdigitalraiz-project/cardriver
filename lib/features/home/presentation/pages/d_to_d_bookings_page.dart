@@ -260,8 +260,14 @@ class _DtoDBookingsViewState extends State<_DtoDBookingsView> {
         ],
       ),
       body: BlocConsumer<DtoDBookingsBloc, DtoDBookingsState>(
+        listenWhen: (previous, current) =>
+            current is DtoDBookingsLoaded &&
+            current.loadMoreError != null &&
+            (previous is! DtoDBookingsLoaded ||
+                previous.loadMoreError != current.loadMoreError),
         listener: (context, state) {
           if (state is DtoDBookingsLoaded && state.loadMoreError != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.loadMoreError!),

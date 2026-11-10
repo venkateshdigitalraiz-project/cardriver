@@ -100,6 +100,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Map<String, dynamic> get apiRequestBody => _buildApiRequestBody().toMap();
 
   void _onRegisterSubmit() {
+    if (context.read<AuthBloc>().state.isLoading) return;
     if (!_termsAgreed) {
       AppSnackBar.showError(
         context,
@@ -486,6 +487,11 @@ class _RegisterPageState extends State<RegisterPage> {
     final size = MediaQuery.of(context).size;
 
     return BlocConsumer<AuthBloc, AuthState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status ||
+          (current.status == AuthStatus.error &&
+              previous.errorMessage != current.errorMessage &&
+              current.errorMessage != null),
       listener: (context, state) {
         if (state.status == AuthStatus.error && state.errorMessage != null) {
           debugPrint('❌ [RegisterPage] Registration failed with message: ${state.errorMessage}');

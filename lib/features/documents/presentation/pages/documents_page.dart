@@ -72,8 +72,20 @@ class _DocumentsView extends StatelessWidget {
         ],
       ),
       body: BlocConsumer<DocumentsBloc, DocumentsState>(
+        listenWhen: (previous, current) {
+          if (current is DocumentsLoaded && current.message != null) {
+            return previous is! DocumentsLoaded ||
+                previous.message != current.message;
+          }
+          if (current is DocumentsError) {
+            return previous is! DocumentsError ||
+                previous.message != current.message;
+          }
+          return false;
+        },
         listener: (context, state) {
           if (state is DocumentsLoaded && state.message != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message!),
@@ -83,6 +95,7 @@ class _DocumentsView extends StatelessWidget {
               ),
             );
           } else if (state is DocumentsError) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),

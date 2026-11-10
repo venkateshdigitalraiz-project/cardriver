@@ -159,6 +159,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onSendOtp(SendOtpEvent event, Emitter<AuthState> emit) async {
+    if (state.isLoading) return;
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
       await sendOtpUseCase(
@@ -189,6 +190,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     VerifyOtpEvent event,
     Emitter<AuthState> emit,
   ) async {
+    if (state.isLoading) return;
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
       final driver = await verifyOtpUseCase(

@@ -1,6 +1,8 @@
+import 'package:cardriver/features/rating/presentation/pages/rating_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_typography.dart';
@@ -156,6 +158,12 @@ class _TripDetailsView extends StatelessWidget {
                   // 3. Route & Schedule Card (Pickup, Drop, Coordinates, Timing)
                   _buildRouteCard(trip),
 
+                  if (trip.driverReturnOption.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    // Driver Return Option Card (e.g. Intercity Cab / Taxi, Rapido Charges)
+                    _buildDriverReturnOptionCard(trip),
+                  ],
+
                   const SizedBox(height: 16),
 
                   // 4. Passenger Details Card (Name, Phone, Email, Address, CustId)
@@ -170,6 +178,12 @@ class _TripDetailsView extends StatelessWidget {
 
                   // 6. Detailed Fare Breakdown Card
                   _buildFareBreakdownCard(trip),
+
+                  // 7. Rate Passenger Section (When completed)
+                  if (trip.isTripCompleted) ...[
+                    const SizedBox(height: 16),
+                    _buildRateCustomerCard(context, trip),
+                  ],
 
                   const SizedBox(height: 24),
                 ],
@@ -586,6 +600,221 @@ class _TripDetailsView extends StatelessWidget {
     );
   }
 
+  // ================= 3.5. Driver Return Option Card =================
+
+  Widget _buildDriverReturnOptionCard(TripEntity trip) {
+    final options = trip.driverReturnOption;
+    if (options.isEmpty) return const SizedBox.shrink();
+
+    final String optionTitle = options.join(', ');
+    final lower = optionTitle.toLowerCase();
+    final bool isRapido = lower.contains('rapido') || lower.contains('bike');
+    final bool isTrain = lower.contains('train');
+    final bool isCab =
+        lower.contains('cab') ||
+        lower.contains('taxi') ||
+        lower.contains('car');
+    final bool isBus = lower.contains('bus');
+
+    IconData returnIcon = Icons.transfer_within_a_station_rounded;
+    if (isRapido) {
+      returnIcon = Icons.two_wheeler_rounded;
+    } else if (isTrain) {
+      returnIcon = Icons.train_rounded;
+    } else if (isCab) {
+      returnIcon = Icons.local_taxi_rounded;
+    } else if (isBus) {
+      returnIcon = Icons.directions_bus_filled_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.transfer_within_a_station_rounded,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Driver Return Option',
+                style: AppTypography.headingSmall(
+                  color: AppColors.textPrimaryLight,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isRapido
+                      ? const Color(0xFFFEF3C7)
+                      : const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Included',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isRapido
+                        ? const Color(0xFFB45309)
+                        : const Color(0xFF047857),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isRapido
+                  ? const Color(0xFFFFFBEB)
+                  : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isRapido
+                    ? const Color(0xFFFCD34D)
+                    : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isRapido ? const Color(0xFFFEF3C7) : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isRapido
+                          ? const Color(0xFFFDE68A)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Icon(
+                    returnIcon,
+                    size: 22,
+                    color: isRapido
+                        ? const Color(0xFFD97706)
+                        : AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'RETURN TRAVEL CHARGES',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: isRapido
+                                  ? const Color(0xFFB45309)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isRapido
+                                  ? const Color(
+                                      0xFFD97706,
+                                    ).withValues(alpha: 0.15)
+                                  : const Color(
+                                      0xFF0F172A,
+                                    ).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              trip.serviceType.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: isRapido
+                                    ? const Color(0xFF92400E)
+                                    : const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        optionTitle,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isRapido
+                              ? const Color(0xFF78350F)
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      if (options.length > 1) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: options.map((opt) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD5E1),
+                                ),
+                              ),
+                              child: Text(
+                                opt,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ================= 4. Passenger Details Card =================
 
   Widget _buildPassengerCard(BuildContext context, TripEntity trip) {
@@ -925,6 +1154,122 @@ class _TripDetailsView extends StatelessWidget {
                   (isTotal ? AppColors.primary : AppColors.textPrimaryLight),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ================= 7. Rate Passenger Card =================
+
+  Widget _buildRateCustomerCard(BuildContext context, TripEntity trip) {
+    final bool isAlreadyRated = trip.isDriverRated;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.star_rounded,
+                size: 20,
+                color: Color(0xFFFFB800),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isAlreadyRated ? 'Customer Rated' : 'Rate Your Passenger',
+                style: AppTypography.headingSmall(
+                  color: AppColors.textPrimaryLight,
+                ),
+              ),
+              const Spacer(),
+              if (isAlreadyRated)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Rated',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF047857),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isAlreadyRated
+                ? 'Thank you for rating ${trip.customerName}. Your feedback helps our community.'
+                : 'Help us recognize great passengers by leaving a rating for ${trip.customerName}.',
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+          ),
+          if (!isAlreadyRated) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await context.push(
+                    AppRoutes.rateTrip,
+                    extra: RatingPageArgs(
+                      bookingId: trip.bookingId.isNotEmpty
+                          ? trip.bookingId
+                          : trip.id,
+                      customerName: trip.customerName,
+                      customerId: trip.userId,
+                      pickupAddress: trip.pickupAddress,
+                      dropAddress: trip.dropAddress,
+                      totalFare: trip.formattedTotalFare,
+                      driverToken: driverToken,
+                    ),
+                  );
+                  if (result == true && context.mounted) {
+                    context.read<TripDetailsBloc>().add(
+                      RefreshTripDetailsEvent(
+                        bookingId: bookingId,
+                        token: driverToken,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.star_outline_rounded, size: 18),
+                label: const Text(
+                  'Rate Passenger',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: const Color(0xFF0F172A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

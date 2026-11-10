@@ -52,6 +52,9 @@ class TripEntity extends Equatable {
   final double actualDistance;
   final String tripStartedAt;
   final String tripCompletedAt;
+  final List<String> driverReturnOption;
+  final bool isUserRated;
+  final bool isDriverRated;
 
   const TripEntity({
     required this.id,
@@ -102,6 +105,9 @@ class TripEntity extends Equatable {
     this.actualDistance = 0.0,
     this.tripStartedAt = '',
     this.tripCompletedAt = '',
+    this.driverReturnOption = const [],
+    this.isUserRated = false,
+    this.isDriverRated = false,
   });
 
   // ================= Backwards Compatibility Getters =================
@@ -383,6 +389,7 @@ class TripEntity extends Equatable {
     double? actualDistance,
     String? tripStartedAt,
     String? tripCompletedAt,
+    List<String>? driverReturnOption,
   }) {
     return TripEntity(
       id: id ?? this.id,
@@ -433,6 +440,9 @@ class TripEntity extends Equatable {
       actualDistance: actualDistance ?? this.actualDistance,
       tripStartedAt: tripStartedAt ?? this.tripStartedAt,
       tripCompletedAt: tripCompletedAt ?? this.tripCompletedAt,
+      driverReturnOption: driverReturnOption ?? this.driverReturnOption,
+      isUserRated: isUserRated ?? this.isUserRated,
+      isDriverRated: isDriverRated ?? this.isDriverRated,
     );
   }
 
@@ -496,6 +506,18 @@ class TripEntity extends Equatable {
     final user = json['userDetails'] ?? const {};
     final userMap = user is Map ? user : const {};
 
+    // Driver return option parsing
+    List<String> returnOptions = [];
+    final rawRetOpt = json['driverReturnOption'] ??
+        json['returnOptions'] ??
+        json['driver_return_option'] ??
+        json['returnVehicle'];
+    if (rawRetOpt is List) {
+      returnOptions = rawRetOpt.map((e) => e.toString()).toList();
+    } else if (rawRetOpt is String && rawRetOpt.trim().isNotEmpty) {
+      returnOptions = [rawRetOpt.trim()];
+    }
+
     return TripEntity(
       id: toS(json['_id'] ?? json['id'] ?? json['bookingId']),
       bookingId: toS(json['bookingId']),
@@ -545,6 +567,9 @@ class TripEntity extends Equatable {
       actualDistance: toD(json['actualDistance']),
       tripStartedAt: toS(json['tripStartedAt']),
       tripCompletedAt: toS(json['tripCompletedAt']),
+      driverReturnOption: returnOptions,
+      isUserRated: json['isUserRated'] == true,
+      isDriverRated: json['isDriverRated'] == true,
     );
   }
 
@@ -598,5 +623,8 @@ class TripEntity extends Equatable {
         actualDistance,
         tripStartedAt,
         tripCompletedAt,
+        driverReturnOption,
+        isUserRated,
+        isDriverRated,
       ];
 }

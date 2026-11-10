@@ -118,9 +118,9 @@ Dio createLoggedDio([BaseOptions? options]) {
   final dio = Dio(
     options ??
         BaseOptions(
-          connectTimeout: const Duration(seconds: 25),
-          receiveTimeout: const Duration(seconds: 25),
-          sendTimeout: const Duration(seconds: 25),
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
         ),
   );
   dio.interceptors.add(DioApiLogInterceptor());

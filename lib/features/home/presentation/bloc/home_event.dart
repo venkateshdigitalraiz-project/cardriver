@@ -180,3 +180,6 @@ class LoadCommonChargesEvent extends HomeEvent {
   List<Object?> get props => [token, silent];
 }
 
+/// Dispatched to clear general error message from HomeState.
+class ClearHomeErrorEvent extends HomeEvent {}
+

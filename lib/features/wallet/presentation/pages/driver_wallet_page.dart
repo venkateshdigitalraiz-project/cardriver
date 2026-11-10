@@ -334,8 +334,20 @@ class _DriverWalletViewState extends State<_DriverWalletView> {
         ],
       ),
       body: BlocConsumer<DriverWalletBloc, DriverWalletState>(
+        listenWhen: (previous, current) {
+          if (current is DriverWalletLoaded && current.successMessage != null) {
+            return previous is! DriverWalletLoaded ||
+                previous.successMessage != current.successMessage;
+          }
+          if (current is DriverWalletError) {
+            return previous is! DriverWalletError ||
+                previous.message != current.message;
+          }
+          return false;
+        },
         listener: (context, state) {
           if (state is DriverWalletLoaded && state.successMessage != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
@@ -344,6 +356,7 @@ class _DriverWalletViewState extends State<_DriverWalletView> {
               ),
             );
           } else if (state is DriverWalletError) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),

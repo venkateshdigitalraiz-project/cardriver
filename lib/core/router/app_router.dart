@@ -35,6 +35,7 @@ import '../../features/trip/domain/entities/trip_entity.dart';
 import '../../features/trip/presentation/pages/trip_details_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
 import '../../features/wallet/presentation/pages/driver_wallet_page.dart';
+import '../../features/rating/presentation/pages/rating_page.dart';
 import '../../injection_container.dart';
 import '../style/app_colors.dart';
 import '../widgets/location_picker_map_screen.dart';
@@ -68,6 +69,7 @@ class AppRoutes {
   static const String driverJobDetails = '/driver-job-details';
   static const String driverJobDetailsWithParam = '/driver-job-details/:jobId';
   static const String locationPickerMap = '/location-picker-map';
+  static const String rateTrip = '/rate-trip';
 }
 
 /// Centralized route names for named navigation
@@ -98,6 +100,7 @@ class AppRouteNames {
   static const String wallet = 'wallet';
   static const String driverJobs = 'driverJobs';
   static const String driverJobDetails = 'driverJobDetails';
+  static const String rateTrip = 'rateTrip';
 }
 
 /// Helper that converts any Stream into a Listenable for GoRouter
@@ -545,6 +548,33 @@ class AppRouter {
               initialJob: initialJob,
               driverToken: driverToken,
             );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.rateTrip,
+          name: AppRouteNames.rateTrip,
+          builder: (context, state) {
+            RatingPageArgs args;
+            if (state.extra is RatingPageArgs) {
+              args = state.extra as RatingPageArgs;
+            } else if (state.extra is Map) {
+              final map = state.extra as Map;
+              args = RatingPageArgs(
+                bookingId: map['bookingId']?.toString() ?? '',
+                customerName: map['customerName']?.toString() ?? '',
+                customerId: map['customerId']?.toString() ?? '',
+                pickupAddress: map['pickupAddress']?.toString() ?? '',
+                dropAddress: map['dropAddress']?.toString() ?? '',
+                totalFare: map['totalFare']?.toString() ?? '',
+                driverToken: map['driverToken']?.toString(),
+              );
+            } else {
+              args = RatingPageArgs(
+                bookingId: state.uri.queryParameters['bookingId'] ?? '',
+                customerName: state.uri.queryParameters['customerName'] ?? '',
+              );
+            }
+            return RatingPage(args: args);
           },
         ),
       ],

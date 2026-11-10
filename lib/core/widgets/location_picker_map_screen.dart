@@ -63,7 +63,8 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      _hasLocationPermission = (permission == LocationPermission.always ||
+      _hasLocationPermission =
+          (permission == LocationPermission.always ||
           permission == LocationPermission.whileInUse);
 
       if (widget.initialLat != null && widget.initialLng != null) {
@@ -271,12 +272,9 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final String screenTitle = widget.title ??
-        (widget.isPickup == true
-            ? 'Pickup Location'
-            : widget.isPickup == false
-                ? 'Drop Location'
-                : 'Pick Location');
+    final String screenTitle =
+        widget.title ??
+        (widget.isPickup == true ? 'Pickup Location' : 'Drop Location');
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -362,8 +360,8 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                       hintText: widget.isPickup == true
                           ? 'Search for pickup location (e.g. Ameerpet)'
                           : widget.isPickup == false
-                              ? 'Search for drop location (e.g. Hitec City)'
-                              : 'Search for a location (e.g. Ameerpet)',
+                          ? 'Search for drop location (e.g. Hitec City)'
+                          : 'Search for a location (e.g. Ameerpet)',
                       hintStyle: GoogleFonts.inter(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -488,10 +486,11 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                         Text(
                           _resolving
                               ? 'Locating...'
-                              : (_resolvedDetails?.shortAddress.isNotEmpty == true
+                              : (_resolvedDetails?.shortAddress.isNotEmpty ==
+                                        true
                                     ? _resolvedDetails!.shortAddress
                                     : (_resolvedDetails?.formattedAddress ??
-                                        'Move the map to select a location')),
+                                          'Move the map to select a location')),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(

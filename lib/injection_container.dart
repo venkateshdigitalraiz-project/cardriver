@@ -89,6 +89,10 @@ import 'features/driver_jobs/domain/usecases/get_driver_job_details_usecase.dart
 import 'features/driver_jobs/domain/usecases/reject_driver_job_usecase.dart';
 import 'features/driver_jobs/presentation/bloc/driver_jobs_bloc.dart';
 import 'features/driver_jobs/presentation/bloc/driver_job_details_bloc.dart';
+import 'features/rating/data/datasources/rating_remote_datasource.dart';
+import 'features/rating/data/repositories/rating_repository_impl.dart';
+import 'features/rating/domain/usecases/submit_rating_usecase.dart';
+import 'features/rating/presentation/bloc/rating_bloc.dart';
 
 /// Service Locator / Dependency Injection Setup for Clean Architecture
 class InjectionContainer {
@@ -468,5 +472,13 @@ class InjectionContainer {
       driverToken: driverToken,
       initialJob: initialJob,
     );
+  }
+
+  static RatingBloc createRatingBloc() {
+    final remoteDataSource = RatingRemoteDataSourceImpl(client: httpClient);
+    final repository = RatingRepositoryImpl(remoteDataSource: remoteDataSource);
+    final submitRatingUseCase = SubmitRatingUseCase(repository);
+
+    return RatingBloc(submitRatingUseCase: submitRatingUseCase);
   }
 }

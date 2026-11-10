@@ -108,8 +108,16 @@ class _TripViewState extends State<_TripView> {
         ],
       ),
       body: BlocConsumer<TripBloc, TripState>(
+        listenWhen: (previous, current) =>
+            (current.errorMessage != null &&
+                previous.errorMessage != current.errorMessage) ||
+            (current.statusErrorMessage != null &&
+                previous.statusErrorMessage != current.statusErrorMessage) ||
+            (current.statusSuccessMessage != null &&
+                previous.statusSuccessMessage != current.statusSuccessMessage),
         listener: (context, state) {
           if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
@@ -120,6 +128,7 @@ class _TripViewState extends State<_TripView> {
           }
           if (state.statusErrorMessage != null &&
               state.statusErrorMessage!.isNotEmpty) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.statusErrorMessage!),
@@ -131,6 +140,7 @@ class _TripViewState extends State<_TripView> {
           if (state.statusSuccessMessage != null &&
               state.statusSuccessMessage!.isNotEmpty &&
               state.lastCompletedTripResult == null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.statusSuccessMessage!),
@@ -987,6 +997,8 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
     }
 
     return BlocListener<TripBloc, TripState>(
+      listenWhen: (previous, current) =>
+          previous.statusErrorMessage != current.statusErrorMessage,
       listener: (context, latestState) {
         if (latestState.statusErrorMessage != null &&
             latestState.statusErrorMessage!.isNotEmpty) {
