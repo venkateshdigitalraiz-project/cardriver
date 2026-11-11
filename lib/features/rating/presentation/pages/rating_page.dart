@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../injection_container.dart';
 import '../bloc/rating_bloc.dart';
 import '../bloc/rating_event.dart';
@@ -22,6 +23,9 @@ class RatingPageArgs {
   final String? driverPhoto;
   final String? vehicleInfo;
   final String? tripInfo;
+  final String backgroundImage;
+  final BoxFit backgroundFit;
+  final bool splitHeaderFooter;
 
   const RatingPageArgs({
     this.bookingId = '',
@@ -32,13 +36,16 @@ class RatingPageArgs {
     this.totalFare = '',
     this.driverToken,
     this.avatarUrl,
-    this.title,
-    this.subtitle,
-    this.prompt,
+    this.title = 'Rate Your Driver',
+    this.subtitle = 'Your feedback helps us improve our service',
+    this.prompt = 'How was your ride?',
     this.driverName,
     this.driverPhoto,
     this.vehicleInfo,
     this.tripInfo,
+    this.backgroundImage = 'assets/images/blue_city_drive.png',
+    this.backgroundFit = BoxFit.fill,
+    this.splitHeaderFooter = false,
   });
 
   factory RatingPageArgs.fromMap(Map<String, dynamic> map) {
@@ -54,14 +61,22 @@ class RatingPageArgs {
       totalFare: map['totalFare']?.toString() ?? '',
       driverToken: map['driverToken']?.toString(),
       avatarUrl: map['avatarUrl']?.toString() ?? map['driverPhoto']?.toString(),
-      title: map['title']?.toString(),
-      subtitle: map['subtitle']?.toString(),
-      prompt: map['prompt']?.toString(),
+      title: map['title']?.toString() ?? 'Rate Your Driver',
+      subtitle:
+          map['subtitle']?.toString() ??
+          'Your feedback helps us improve our service',
+      prompt: map['prompt']?.toString() ?? 'How was your ride?',
       driverName: map['driverName']?.toString(),
       driverPhoto:
           map['driverPhoto']?.toString() ?? map['avatarUrl']?.toString(),
       vehicleInfo: map['vehicleInfo']?.toString(),
       tripInfo: map['tripInfo']?.toString(),
+      backgroundImage: map['backgroundImage']?.toString() ??
+          'assets/images/blue_city_drive.png',
+      backgroundFit: map['backgroundFit'] == 'cover'
+          ? BoxFit.cover
+          : BoxFit.fill,
+      splitHeaderFooter: map['splitHeaderFooter'] == true,
     );
   }
 
@@ -82,6 +97,9 @@ class RatingPageArgs {
       'driverPhoto': driverPhoto,
       'vehicleInfo': vehicleInfo,
       'tripInfo': tripInfo,
+      'backgroundImage': backgroundImage,
+      'backgroundFit': backgroundFit.name,
+      'splitHeaderFooter': splitHeaderFooter,
     };
   }
 
@@ -101,6 +119,9 @@ class RatingPageArgs {
     String? driverPhoto,
     String? vehicleInfo,
     String? tripInfo,
+    String? backgroundImage,
+    BoxFit? backgroundFit,
+    bool? splitHeaderFooter,
   }) {
     return RatingPageArgs(
       bookingId: bookingId ?? this.bookingId,
@@ -118,6 +139,9 @@ class RatingPageArgs {
       driverPhoto: driverPhoto ?? this.driverPhoto,
       vehicleInfo: vehicleInfo ?? this.vehicleInfo,
       tripInfo: tripInfo ?? this.tripInfo,
+      backgroundImage: backgroundImage ?? this.backgroundImage,
+      backgroundFit: backgroundFit ?? this.backgroundFit,
+      splitHeaderFooter: splitHeaderFooter ?? this.splitHeaderFooter,
     );
   }
 }
@@ -172,33 +196,37 @@ class _RatingViewState extends State<_RatingView> {
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF0066FF);
+    final hasBgImage = widget.args.backgroundImage.isNotEmpty;
 
-    return BlocConsumer<RatingBloc, RatingState>(
-      listener: (context, state) {
-        if (state.status == RatingSubmissionStatus.success) {
-          _showCelebrationDialog(context);
-        } else if (state.status == RatingSubmissionStatus.error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                state.errorMessage ??
-                    'Failed to submit rating. Please try again.',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+    return Theme(
+      data: AppTheme.light.copyWith(scaffoldBackgroundColor: Colors.white),
+      child: BlocConsumer<RatingBloc, RatingState>(
+        listener: (context, state) {
+          if (state.status == RatingSubmissionStatus.success) {
+            _showCelebrationDialog(context);
+          } else if (state.status == RatingSubmissionStatus.error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.errorMessage ??
+                      'Failed to submit rating. Please try again.',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                backgroundColor: const Color(0xFFEF4444),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              backgroundColor: const Color(0xFFEF4444),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        }
-      },
-      builder: (context, state) {
-        return Scaffold(
+            );
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
           backgroundColor: Colors.white,
+          extendBodyBehindAppBar: true,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.transparent,
             elevation: 0,
             surfaceTintColor: Colors.transparent,
             systemOverlayStyle: SystemUiOverlayStyle.dark,
@@ -212,9 +240,16 @@ class _RatingViewState extends State<_RatingView> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.chevron_left_rounded,
@@ -236,16 +271,82 @@ class _RatingViewState extends State<_RatingView> {
             ),
             centerTitle: true,
           ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Clean white canvas base
+              const Positioned.fill(
+                child: ColoredBox(color: Colors.white),
+              ),
 
-                  // 1. Hero Artwork with City Skyline, White Car, Avatar & Sparkles
-                  _buildHeroIllustration(),
-                  const SizedBox(height: 18),
+              // Crisp, un-stretched background artwork preserving 100% natural aspect ratio
+              if (hasBgImage) ...[
+                if (widget.args.splitHeaderFooter) ...[
+                  // 1. Top Skyline Header (fitted to screen width with natural aspect ratio)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ClipRect(
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        heightFactor: 0.33,
+                        child: Image.asset(
+                          widget.args.backgroundImage,
+                          width: double.infinity,
+                          fit: BoxFit.fitWidth,
+                          filterQuality: FilterQuality.high,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 2. Bottom Wave & Car Footer (anchored at bottom with natural aspect ratio)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: ClipRect(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        heightFactor: 0.25,
+                        child: Image.asset(
+                          widget.args.backgroundImage,
+                          width: double.infinity,
+                          fit: BoxFit.fitWidth,
+                          filterQuality: FilterQuality.high,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // Full-screen cover preserving aspect ratio
+                  Positioned.fill(
+                    child: Image.asset(
+                      widget.args.backgroundImage,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: widget.args.backgroundFit,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ],
+
+              // 2. Foreground content
+              SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 12),
+
+                      // 1. Hero Artwork with City Skyline, White Car, Avatar & Sparkles
+                      _buildHeroIllustration(hasBgImage: hasBgImage),
+                      const SizedBox(height: 18),
 
                   // 2. Headings
                   Text(
@@ -330,6 +431,10 @@ class _RatingViewState extends State<_RatingView> {
                                       fontSize: 13.5,
                                     ),
                                     border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    filled: true,
+                                    fillColor: Colors.white,
                                     isDense: true,
                                     contentPadding: EdgeInsets.zero,
                                     counterText: '',
@@ -420,115 +525,126 @@ class _RatingViewState extends State<_RatingView> {
 
                   const SizedBox(height: 20),
 
-                  // 7. Decorative Footer Illustration (City waves & Little Blue Car)
-                  const _BottomCityCarIllustration(),
-                ],
+                    // 7. Decorative Footer Illustration
+                    _BottomCityCarIllustration(hasBgImage: hasBgImage),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
-  }
+          ],
+        ),
+      );
+    },
+  ),
+);
+}
 
   // ================= 1. Hero Artwork Illustration =================
-  Widget _buildHeroIllustration() {
+  Widget _buildHeroIllustration({bool hasBgImage = false}) {
+    final hasCustomAvatar =
+        widget.args.avatarUrl != null && widget.args.avatarUrl!.isNotEmpty;
+
     return SizedBox(
       height: 180,
       width: double.infinity,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background soft skyline & cloud gradients
-          Positioned.fill(child: CustomPaint(painter: _HeaderSkylinePainter())),
-
-          // White Sedan Car Graphic on the Left
-          Positioned(
-            left: MediaQuery.of(context).size.width * 0.16,
-            bottom: 44,
-            child: Container(
-              width: 90,
-              height: 48,
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const _CarVectorGraphic(color: Colors.white),
+          // Background soft skyline & cloud gradients (fallback if no background image)
+          if (!hasBgImage)
+            Positioned.fill(
+              child: CustomPaint(painter: _HeaderSkylinePainter()),
             ),
-          ),
+
+          // White Sedan Car Graphic on the Left (only drawn if no background image)
+          if (!hasBgImage)
+            Positioned(
+              left: MediaQuery.of(context).size.width * 0.16,
+              bottom: 44,
+              child: Container(
+                width: 90,
+                height: 48,
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const _CarVectorGraphic(color: Colors.white),
+              ),
+            ),
 
           // Central Driver Portrait Avatar with White Border
-          Positioned(
-            bottom: 12,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Avatar circle
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0066FF).withValues(alpha: 0.18),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child:
-                        widget.args.avatarUrl != null &&
-                            widget.args.avatarUrl!.isNotEmpty
-                        ? Image.network(
-                            widget.args.avatarUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                _defaultDriverAvatar(),
-                          )
-                        : _defaultDriverAvatar(),
-                  ),
-                ),
-
-                // Blue Car Badge Icon at bottom-right
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    width: 28,
-                    height: 28,
+          if (!hasBgImage || hasCustomAvatar)
+            Positioned(
+              bottom: 12,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Avatar circle
+                  Container(
+                    width: 96,
+                    height: 96,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0066FF),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2.5),
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              const Color(0xFF0066FF).withValues(alpha: 0.18),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.directions_car_rounded,
-                      color: Colors.white,
-                      size: 14,
+                    child: ClipOval(
+                      child: hasCustomAvatar
+                          ? Image.network(
+                              widget.args.avatarUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _defaultDriverAvatar(),
+                            )
+                          : _defaultDriverAvatar(),
                     ),
                   ),
-                ),
 
-                // Top-right Sparkle Yellow Rays (\ | /)
-                Positioned(
-                  top: -8,
-                  right: -12,
-                  child: CustomPaint(
-                    size: const Size(26, 26),
-                    painter: _SparkleRaysPainter(),
+                  // Blue Car Badge Icon at bottom-right
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0066FF),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                      ),
+                      child: const Icon(
+                        Icons.directions_car_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+
+                  // Top-right Sparkle Yellow Rays (\ | /)
+                  if (!hasBgImage)
+                    Positioned(
+                      top: -8,
+                      right: -12,
+                      child: CustomPaint(
+                        size: const Size(26, 26),
+                        painter: _SparkleRaysPainter(),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -982,10 +1098,14 @@ class _CarPainter extends CustomPainter {
 
 /// Bottom Decorative Skyline & Wave with little Blue Car
 class _BottomCityCarIllustration extends StatelessWidget {
-  const _BottomCityCarIllustration();
+  final bool hasBgImage;
+  const _BottomCityCarIllustration({this.hasBgImage = false});
 
   @override
   Widget build(BuildContext context) {
+    if (hasBgImage) {
+      return const SizedBox(height: 70);
+    }
     return SizedBox(
       height: 90,
       width: double.infinity,

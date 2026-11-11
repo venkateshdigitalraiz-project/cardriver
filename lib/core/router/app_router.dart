@@ -36,6 +36,7 @@ import '../../features/trip/presentation/pages/trip_details_page.dart';
 import '../../features/trip/presentation/pages/trip_page.dart';
 import '../../features/wallet/presentation/pages/driver_wallet_page.dart';
 import '../../features/rating/presentation/pages/rating_page.dart';
+import '../../features/referral/presentation/pages/refer_and_earn_page.dart';
 import '../../injection_container.dart';
 import '../style/app_colors.dart';
 import '../widgets/location_picker_map_screen.dart';
@@ -70,6 +71,7 @@ class AppRoutes {
   static const String driverJobDetailsWithParam = '/driver-job-details/:jobId';
   static const String locationPickerMap = '/location-picker-map';
   static const String rateTrip = '/rate-trip';
+  static const String referAndEarn = '/refer-and-earn';
 }
 
 /// Centralized route names for named navigation
@@ -101,6 +103,7 @@ class AppRouteNames {
   static const String driverJobs = 'driverJobs';
   static const String driverJobDetails = 'driverJobDetails';
   static const String rateTrip = 'rateTrip';
+  static const String referAndEarn = 'referAndEarn';
 }
 
 /// Helper that converts any Stream into a Listenable for GoRouter
@@ -134,8 +137,11 @@ class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
 
+  static GoRouter? _routerInstance;
+  static GoRouter? get routerInstance => _routerInstance;
+
   static GoRouter createRouter(AuthBloc authBloc) {
-    return GoRouter(
+    final router = GoRouter(
       navigatorKey: rootNavigatorKey,
       initialLocation: AppRoutes.splash,
       refreshListenable: GoRouterRefreshStream(authBloc.stream),
@@ -577,6 +583,15 @@ class AppRouter {
             return RatingPage(args: args);
           },
         ),
+        GoRoute(
+          path: AppRoutes.referAndEarn,
+          name: AppRouteNames.referAndEarn,
+          builder: (context, state) {
+            final driverToken =
+                state.extra is String ? state.extra as String : null;
+            return ReferAndEarnPage(driverToken: driverToken);
+          },
+        ),
       ],
       errorBuilder: (context, state) => Scaffold(
         backgroundColor: AppColors.darkBackground,
@@ -588,6 +603,8 @@ class AppRouter {
         ),
       ),
     );
+    _routerInstance = router;
+    return router;
   }
 }
 

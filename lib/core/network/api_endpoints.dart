@@ -2,9 +2,9 @@ class ApiEndpoints {
   // Main Application Server
   // current Live Host  http://194.238.19.189:2200
   // current Test Host  http://192.168.0.161:3000
-  static const String _host = 'https://drivonix.co.in';
+  // static const String _host = 'https://drivonix.co.in';
   // static const String _host = 'http://201.18.205.130:3000';
-  // static const String _host = 'http://192.168.0.161:3000';
+  static const String _host = 'http://192.168.0.161:3000';
   // static const String _host = 'http://194.238.19.189:2200';
   static const String baseUrl = '$_host/api';
 

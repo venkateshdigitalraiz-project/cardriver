@@ -82,7 +82,6 @@ import 'features/wallet/presentation/bloc/driver_wallet_bloc.dart';
 import 'features/driver_jobs/data/datasources/driver_jobs_remote_datasource.dart';
 import 'features/driver_jobs/data/repositories/driver_jobs_repository_impl.dart';
 import 'features/driver_jobs/domain/entities/driver_job_entity.dart';
-import 'features/driver_jobs/domain/repositories/driver_jobs_repository.dart';
 import 'features/driver_jobs/domain/usecases/accept_driver_job_usecase.dart';
 import 'features/driver_jobs/domain/usecases/get_driver_jobs_usecase.dart';
 import 'features/driver_jobs/domain/usecases/get_driver_job_details_usecase.dart';
@@ -93,6 +92,10 @@ import 'features/rating/data/datasources/rating_remote_datasource.dart';
 import 'features/rating/data/repositories/rating_repository_impl.dart';
 import 'features/rating/domain/usecases/submit_rating_usecase.dart';
 import 'features/rating/presentation/bloc/rating_bloc.dart';
+import 'features/referral/data/datasources/referral_remote_datasource.dart';
+import 'features/referral/data/repositories/referral_repository_impl.dart';
+import 'features/referral/domain/usecases/get_referral_info_usecase.dart';
+import 'features/referral/presentation/bloc/referral_bloc.dart';
 
 /// Service Locator / Dependency Injection Setup for Clean Architecture
 class InjectionContainer {
@@ -256,7 +259,9 @@ class InjectionContainer {
     updateTripStatusUseCase = UpdateTripStatusUseCase(tripRepository);
 
     // Subscription Data Sources & Repositories
-    subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl(client: httpClient);
+    subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl(
+      client: httpClient,
+    );
     subscriptionRepository = SubscriptionRepositoryImpl(
       remoteDataSource: subscriptionRemoteDataSource,
     );
@@ -480,5 +485,15 @@ class InjectionContainer {
     final submitRatingUseCase = SubmitRatingUseCase(repository);
 
     return RatingBloc(submitRatingUseCase: submitRatingUseCase);
+  }
+
+  static ReferralBloc createReferralBloc() {
+    final remoteDataSource = ReferralRemoteDataSourceImpl(client: httpClient);
+    final repository = ReferralRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+    final getReferralInfoUseCase = GetReferralInfoUseCase(repository);
+
+    return ReferralBloc(getReferralInfoUseCase: getReferralInfoUseCase);
   }
 }

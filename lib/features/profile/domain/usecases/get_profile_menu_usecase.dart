@@ -5,6 +5,16 @@ class GetProfileMenuUseCase {
   List<ProfileMenuItem> execute() {
     return const [
       ProfileMenuItem(
+        title: 'Review',
+        subtitle: 'Rating Customer | Trip Experience',
+        icon: Icons.star_rounded,
+      ),
+      ProfileMenuItem(
+        title: 'Refer & Earn',
+        subtitle: 'Invite driver & friends to earn wallet',
+        icon: Icons.card_giftcard_rounded,
+      ),
+      ProfileMenuItem(
         title: 'My Booking',
         subtitle: 'View & Manage D-to-D Bookings',
         icon: Icons.calendar_month_rounded,

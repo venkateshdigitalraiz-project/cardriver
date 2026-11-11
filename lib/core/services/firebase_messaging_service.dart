@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../firebase/firebase_options.dart';
+import '../router/app_router.dart';
+import '../storage/local_storage_service.dart';
 
 /// Top-level background message handler required by Firebase Messaging.
 /// Handles background and terminated state pushes for both data-only and notification messages.
@@ -75,12 +80,19 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         ),
       );
 
+      final payloadString = jsonEncode({
+        'type': message.data['type'] ?? '',
+        'title': title,
+        'body': body,
+        'data': message.data,
+      });
+
       await localNotifications.show(
         id: message.hashCode,
         title: title,
         body: body,
         notificationDetails: details,
-        payload: message.data['type']?.toString() ?? 'general',
+        payload: payloadString,
       );
     } catch (e) {
       debugPrint('⚠️ [Background FCM Notification Error] $e');
@@ -209,6 +221,7 @@ class FirebaseMessagingService {
       settings: initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         debugPrint('🔔 [Local Notification Clicked]: ${response.payload}');
+        handleNotificationTap(payload: response.payload);
       },
     );
 
@@ -222,6 +235,22 @@ class FirebaseMessagingService {
       } catch (e) {
         debugPrint('⚠️ [LocalNotification Permission notice]: $e');
       }
+    }
+
+    // Check if launched via local notification tap from terminated state
+    try {
+      final launchDetails =
+          await _localNotificationsPlugin.getNotificationAppLaunchDetails();
+      if (launchDetails != null &&
+          launchDetails.didNotificationLaunchApp &&
+          launchDetails.notificationResponse != null) {
+        debugPrint(
+            '🚀 [Local Notification Launch from terminated]: ${launchDetails.notificationResponse?.payload}');
+        handleNotificationTap(
+            payload: launchDetails.notificationResponse?.payload);
+      }
+    } catch (e) {
+      debugPrint('⚠️ [Local Notification launchDetails check notice]: $e');
     }
   }
 
@@ -389,12 +418,19 @@ class FirebaseMessagingService {
 
           debugPrint('🔔 [Foreground FCM]: $title - $body');
 
+          final payloadString = jsonEncode({
+            'type': message.data['type'] ?? '',
+            'title': title,
+            'body': body,
+            'data': message.data,
+          });
+
           // Show heads-up alert banner on device
           showNotification(
             id: message.hashCode,
             title: title,
             body: body,
-            payload: message.data['type']?.toString() ?? 'general',
+            payload: payloadString,
           );
 
           // Broadcast to stream listeners (NotificationBloc)
@@ -408,6 +444,7 @@ class FirebaseMessagingService {
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         debugPrint('🚀 [FCM Opened from background]: ${message.notification?.title}');
         _messageStreamController.add(message);
+        handleNotificationTap(remoteMessage: message);
       });
 
       // 3. Token refresh stream
@@ -423,11 +460,166 @@ class FirebaseMessagingService {
         if (initialMessage != null) {
           debugPrint('🚀 [FCM Initial Message from terminated]: ${initialMessage.notification?.title}');
           _messageStreamController.add(initialMessage);
+          handleNotificationTap(remoteMessage: initialMessage);
         }
       });
     } catch (e) {
       debugPrint('Error setting up FCM listeners: $e');
     }
+  }
+
+  /// Checks whether an incoming notification is specifically a job offer/job requirement notification.
+  static bool isJobOfferNotification({
+    String? type,
+    String? title,
+    String? body,
+    Map<String, dynamic>? data,
+  }) {
+    // 1. Direct type, category, or event keys
+    final rawType = (type ??
+            data?['type'] ??
+            data?['notificationType'] ??
+            data?['notification_type'] ??
+            data?['event'] ??
+            data?['category'] ??
+            data?['action'] ??
+            '')
+        .toString()
+        .toLowerCase()
+        .trim();
+
+    if (rawType.contains('job')) {
+      return true;
+    }
+
+    // 2. Check presence of job-related ID keys in data map
+    if (data != null) {
+      final keys = data.keys.map((k) => k.toLowerCase()).toList();
+      if (keys.any((k) => k.contains('job'))) {
+        return true;
+      }
+    }
+
+    // 3. Title check for job keywords
+    final rawTitle = (title ?? data?['title'] ?? data?['heading'] ?? data?['subject'] ?? '')
+        .toString()
+        .toLowerCase();
+    if (rawTitle.contains('job')) {
+      return true;
+    }
+
+    // 4. Body check for job offer phrases
+    final rawBody = (body ?? data?['body'] ?? data?['message'] ?? data?['content'] ?? data?['description'] ?? '')
+        .toString()
+        .toLowerCase();
+    if (rawBody.contains('job offer') ||
+        rawBody.contains('driver job') ||
+        rawBody.contains('permanent job') ||
+        rawBody.contains('job requirement') ||
+        rawBody.contains('new job') ||
+        rawBody.contains('posted a job') ||
+        rawBody.contains('job post')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Handles notification tap events and specially redirects job offer notifications
+  /// to [AppRoutes.driverJobs] with the driver token.
+  static Future<void> handleNotificationTap({
+    RemoteMessage? remoteMessage,
+    String? payload,
+  }) async {
+    Map<String, dynamic> data = {};
+    String title = '';
+    String body = '';
+    String type = '';
+
+    if (remoteMessage != null) {
+      data = Map<String, dynamic>.from(remoteMessage.data);
+      title = remoteMessage.notification?.title ?? data['title']?.toString() ?? '';
+      body = remoteMessage.notification?.body ?? data['body']?.toString() ?? '';
+      type = data['type']?.toString() ?? '';
+    } else if (payload != null && payload.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(payload);
+        if (decoded is Map) {
+          final map = Map<String, dynamic>.from(decoded);
+          if (map['data'] is Map) {
+            data = Map<String, dynamic>.from(map['data'] as Map);
+          } else {
+            data = map;
+          }
+          title = map['title']?.toString() ?? data['title']?.toString() ?? '';
+          body = map['body']?.toString() ?? data['body']?.toString() ?? '';
+          type = map['type']?.toString() ?? data['type']?.toString() ?? '';
+        } else {
+          type = payload;
+        }
+      } catch (_) {
+        type = payload;
+      }
+    }
+
+    // Specially ONLY navigate if it's a job offer notification
+    if (!isJobOfferNotification(type: type, title: title, body: body, data: data)) {
+      debugPrint('ℹ️ [Notification Tap] Not a job offer notification (type="$type", title="$title"). Skipping job redirect.');
+      return;
+    }
+
+    debugPrint('🚀 [Notification Tap] Job offer notification tapped! Redirecting to ${AppRoutes.driverJobs}...');
+
+    // Retrieve driver auth token
+    String token = await LocalStorageService.getOrCollectToken();
+    if (token.isEmpty) {
+      token = data['token']?.toString() ?? data['driverToken']?.toString() ?? '';
+    }
+
+    _navigateToDriverJobs(token);
+  }
+
+  /// Safely pushes [AppRoutes.driverJobs] with driver token using root navigator
+  static void _navigateToDriverJobs(String token) {
+    int attempts = 0;
+    const maxAttempts = 15;
+
+    void tryNavigate() {
+      attempts++;
+      final context = AppRouter.rootNavigatorKey.currentContext;
+
+      if (context != null && context.mounted) {
+        try {
+          context.push(
+            AppRoutes.driverJobs,
+            extra: token.isNotEmpty ? token : null,
+          );
+          debugPrint('✅ [Notification Tap] Successfully redirected to ${AppRoutes.driverJobs}');
+          return;
+        } catch (e) {
+          debugPrint('⚠️ [Notification Tap] context.push error: $e, trying routerInstance');
+          final router = AppRouter.routerInstance;
+          if (router != null) {
+            router.push(
+              AppRoutes.driverJobs,
+              extra: token.isNotEmpty ? token : null,
+            );
+            debugPrint('✅ [Notification Tap] Successfully redirected via routerInstance');
+            return;
+          }
+        }
+      }
+
+      if (attempts < maxAttempts) {
+        Future.delayed(const Duration(milliseconds: 500), tryNavigate);
+      } else {
+        debugPrint('⚠️ [Notification Tap] Could not resolve navigator context after $maxAttempts attempts.');
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      tryNavigate();
+    });
   }
 
   /// Invalidates the existing FCM push token by calling [FirebaseMessaging.instance.deleteToken],

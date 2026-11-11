@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../injection_container.dart';
 import '../bloc/notification_bloc.dart';
@@ -544,10 +548,25 @@ class _NotificationsViewState extends State<NotificationsView> {
                                   child: Material(
                                     color: Colors.transparent,
                                     child: InkWell(
-                                      onTap: () {
+                                      onTap: () async {
                                         context
                                             .read<NotificationBloc>()
                                             .add(MarkNotificationAsRead(notification.id));
+
+                                        if (FirebaseMessagingService.isJobOfferNotification(
+                                          type: notification.type,
+                                          title: notification.title,
+                                          body: notification.message,
+                                          data: notification.data,
+                                        )) {
+                                          final token = await LocalStorageService.getOrCollectToken();
+                                          if (context.mounted) {
+                                            context.push(
+                                              AppRoutes.driverJobs,
+                                              extra: token.isNotEmpty ? token : null,
+                                            );
+                                          }
+                                        }
                                       },
                                       child: Stack(
                                         children: [
