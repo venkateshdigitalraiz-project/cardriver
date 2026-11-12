@@ -177,6 +177,7 @@ class OutstationTripChargesModel extends OutstationTripChargesEntity {
     required super.day,
     required super.customerPrice,
     required super.driverPrice,
+    super.note = '',
     super.returnVehicles,
   });
 
@@ -185,6 +186,7 @@ class OutstationTripChargesModel extends OutstationTripChargesEntity {
       day: _parseInt(json['day']),
       customerPrice: _parseDouble(json['customerPrice'] ?? json['customerprice']),
       driverPrice: _parseDouble(json['driverPrice'] ?? json['driverprice']),
+      note: json['note']?.toString() ?? '',
       returnVehicles: _parseStringList(json['returnVehicles']),
     );
   }
@@ -194,6 +196,7 @@ class OutstationTripChargesModel extends OutstationTripChargesEntity {
       'day': day,
       'customerPrice': customerPrice,
       'driverPrice': driverPrice,
+      'note': note,
       'returnVehicles': returnVehicles,
     };
   }

@@ -516,7 +516,7 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
             ),
             const SizedBox(height: 10),
 
-            // Salary & Job Type
+            // Salary, Job Type & Working Hours
             Row(
               children: [
                 Text(
@@ -527,7 +527,7 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                     color: const Color(0xFF059669),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -547,6 +547,39 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                     ),
                   ),
                 ),
+                if (job.hours != null && job.hours! > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.schedule_rounded,
+                          size: 12,
+                          color: Color(0xFFB45309),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${job.hours} hrs/day',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 10),
@@ -578,7 +611,7 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
             ),
             const SizedBox(height: 6),
 
-            // Joining Date
+            // Joining Date & Hours
             Row(
               children: [
                 const Icon(
@@ -595,6 +628,23 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                     color: const Color(0xFF475569),
                   ),
                 ),
+                if (job.hours != null && job.hours! > 0) ...[
+                  const SizedBox(width: 14),
+                  const Icon(
+                    Icons.access_time_rounded,
+                    size: 14,
+                    color: Color(0xFF64748B),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '${job.hours} Hours / Day',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1E3A8A),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 10),

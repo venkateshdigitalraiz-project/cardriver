@@ -30,8 +30,22 @@ class LocationPickerMapScreen extends StatefulWidget {
       _LocationPickerMapScreenState();
 }
 
+class _PlaceSuggestion {
+  final String placeId;
+  final String mainText;
+  final String secondaryText;
+  final String description;
+
+  const _PlaceSuggestion({
+    required this.placeId,
+    required this.mainText,
+    required this.secondaryText,
+    required this.description,
+  });
+}
+
 class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
-  static const String _googleApiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  static const String _googleApiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
 
   GoogleMapController? _mapController;
   LatLng _pickedLocation = const LatLng(20.5937, 78.9629);
@@ -44,17 +58,42 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
+  List<_PlaceSuggestion> _suggestions = [];
+  bool _isSearching = false;
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchQueryChanged);
     _initLocation();
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchQueryChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onSearchQueryChanged() {
+    final query = _searchController.text.trim();
+    if (query.length < 2) {
+      if (_suggestions.isNotEmpty || _isSearching) {
+        setState(() {
+          _suggestions = [];
+          _isSearching = false;
+        });
+      }
+      return;
+    }
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      _fetchPlaceSuggestions(query);
+    });
   }
 
   Future<void> _initLocation() async {
@@ -101,13 +140,126 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   String _extractComponent(List<dynamic> components, List<String> types) {
     for (final type in types) {
       for (final comp in components) {
-        final List<dynamic> compTypes = comp['types'] ?? [];
-        if (compTypes.contains(type)) {
-          return comp['long_name']?.toString() ?? '';
+        if (comp is Map) {
+          final List<dynamic> compTypes = comp['types'] ?? [];
+          if (compTypes.contains(type)) {
+            final val = comp['longText'] ?? comp['long_name'];
+            if (val != null && val.toString().trim().isNotEmpty) {
+              return val.toString().trim();
+            }
+          }
         }
       }
     }
     return '';
+  }
+
+  Future<void> _fetchPlaceSuggestions(String query) async {
+    if (!mounted) return;
+    setState(() => _isSearching = true);
+    final List<_PlaceSuggestion> results = [];
+
+    // 1. Try Places API (New) first: POST https://places.googleapis.com/v1/places:autocomplete
+    try {
+      final url = Uri.parse(
+        'https://places.googleapis.com/v1/places:autocomplete',
+      );
+      final response = await http.post(
+        url,
+        headers: {
+          'X-Goog-Api-Key': _googleApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'input': query,
+          'includedRegionCodes': ['in'],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map && data['suggestions'] is List) {
+          for (final item in data['suggestions']) {
+            final pred = item['placePrediction'];
+            if (pred != null) {
+              final rawPlace = pred['place']?.toString() ?? '';
+              final pId =
+                  pred['placeId']?.toString() ??
+                  (rawPlace.startsWith('places/')
+                      ? rawPlace.substring(7)
+                      : rawPlace);
+              final desc = pred['text']?['text']?.toString() ?? '';
+              final main =
+                  pred['structuredFormat']?['mainText']?['text']?.toString() ??
+                  desc;
+              final sec =
+                  pred['structuredFormat']?['secondaryText']?['text']
+                      ?.toString() ??
+                  '';
+
+              if (pId.isNotEmpty) {
+                results.add(
+                  _PlaceSuggestion(
+                    placeId: pId,
+                    mainText: main,
+                    secondaryText: sec,
+                    description: desc.isNotEmpty ? desc : main,
+                  ),
+                );
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Places API (New) autocomplete error: $e');
+    }
+
+    // 2. If Places API (New) returned no results, fallback to legacy Places Autocomplete
+    if (results.isEmpty) {
+      try {
+        final legacyUrl = Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+          '?input=${Uri.encodeComponent(query)}'
+          '&components=country:in'
+          '&key=$_googleApiKey',
+        );
+        final legacyResp = await http.get(legacyUrl);
+        if (legacyResp.statusCode == 200) {
+          final data = json.decode(legacyResp.body);
+          if (data['status'] == 'OK' && data['predictions'] is List) {
+            for (final p in data['predictions']) {
+              final pId = p['place_id']?.toString() ?? '';
+              final desc = p['description']?.toString() ?? '';
+              final main =
+                  p['structured_formatting']?['main_text']?.toString() ?? desc;
+              final sec =
+                  p['structured_formatting']?['secondary_text']?.toString() ??
+                  '';
+              if (pId.isNotEmpty) {
+                results.add(
+                  _PlaceSuggestion(
+                    placeId: pId,
+                    mainText: main,
+                    secondaryText: sec,
+                    description: desc.isNotEmpty ? desc : main,
+                  ),
+                );
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Legacy places autocomplete error: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _suggestions = results;
+        _isSearching = false;
+      });
+    }
   }
 
   Future<void> _reverseGeocode(LatLng position) async {
@@ -165,6 +317,25 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
           }
         } else {
           debugPrint('Geocode API returned: ${data['status']}');
+          if (_resolvedDetails == null && mounted) {
+            setState(() {
+              _resolvedDetails = PlaceAddressDetails(
+                formattedAddress:
+                    'Location (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})',
+                shortAddress:
+                    'Selected Pin (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})',
+                city: '',
+                state: '',
+                pincode: '',
+                lat: position.latitude,
+                lng: position.longitude,
+                googleMapsUrl: PlaceAddressDetails.buildMapsUrl(
+                  position.latitude,
+                  position.longitude,
+                ),
+              );
+            });
+          }
         }
       } else {
         debugPrint('HTTP error during reverse geocode: ${response.statusCode}');
@@ -176,83 +347,152 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
     }
   }
 
-  Future<void> _onSearchResultSelected(Prediction prediction) async {
+  Future<void> _onSearchResultSelected(_PlaceSuggestion suggestion) async {
     _searchFocusNode.unfocus();
-    if (prediction.placeId == null) {
-      debugPrint('Search result had no placeId');
-      return;
-    }
-    setState(() => _resolving = true);
+    _searchController.text = suggestion.description;
+    setState(() {
+      _suggestions = [];
+      _resolving = true;
+    });
+
+    double? lat;
+    double? lng;
+    String formattedAddress = suggestion.description;
+    String shortAddress = suggestion.mainText;
+    String city = '';
+    String state = '';
+    String pincode = '';
+    List<dynamic> components = [];
+
+    // 1. Try Places API (New) Place Details first
     try {
-      final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json'
-        '?place_id=${prediction.placeId!}'
-        '&fields=geometry,address_components,formatted_address'
-        '&key=$_googleApiKey',
+      final cleanId = suggestion.placeId.startsWith('places/')
+          ? suggestion.placeId.substring(7)
+          : suggestion.placeId;
+      final url = Uri.parse('https://places.googleapis.com/v1/places/$cleanId');
+      final response = await http.get(
+        url,
+        headers: {
+          'X-Goog-Api-Key': _googleApiKey,
+          'X-Goog-FieldMask':
+              'id,displayName,formattedAddress,location,addressComponents',
+        },
       );
-      final response = await http.get(url);
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['status'] == 'OK' && data['result'] != null) {
-          final details = data['result'];
-          final loc = details['geometry']?['location'];
-          if (loc != null) {
-            final lat = double.tryParse(loc['lat'].toString()) ?? 0.0;
-            final lng = double.tryParse(loc['lng'].toString()) ?? 0.0;
-            final target = LatLng(lat, lng);
-            _pickedLocation = target;
-            _isProgrammaticMove = true;
-
-            final List<dynamic> components =
-                details['address_components'] ?? [];
-            final rawFormatted = details['formatted_address']?.toString() ?? '';
-            final formattedAddress = cleanAddressString(rawFormatted);
-            var shortAddress = buildShortAddress(components);
-            if (shortAddress.isEmpty) shortAddress = formattedAddress;
-
-            final city = _extractComponent(components, [
+        if (data is Map) {
+          if (data['location'] != null) {
+            lat = double.tryParse(data['location']['latitude'].toString());
+            lng = double.tryParse(data['location']['longitude'].toString());
+          }
+          if (data['formattedAddress'] != null) {
+            formattedAddress = cleanAddressString(
+              data['formattedAddress'].toString(),
+            );
+          }
+          final dispName = data['displayName']?['text']?.toString();
+          if (dispName != null && dispName.trim().isNotEmpty) {
+            shortAddress = dispName.trim();
+          }
+          if (data['addressComponents'] is List) {
+            components = data['addressComponents'];
+            city = _extractComponent(components, [
               'locality',
               'administrative_area_level_2',
               'sublocality',
               'sublocality_level_1',
             ]);
-            final state = _extractComponent(components, [
+            state = _extractComponent(components, [
               'administrative_area_level_1',
             ]);
-            final pincode = _extractComponent(components, ['postal_code']);
-
-            if (mounted) {
-              setState(() {
-                _resolvedDetails = PlaceAddressDetails(
-                  formattedAddress: formattedAddress,
-                  shortAddress: shortAddress,
-                  city: city,
-                  state: state,
-                  pincode: pincode,
-                  lat: lat,
-                  lng: lng,
-                  googleMapsUrl: PlaceAddressDetails.buildMapsUrl(lat, lng),
-                  cityCandidates: extractCityCandidates(components),
-                );
-              });
-            }
-
-            await _mapController?.animateCamera(
-              CameraUpdate.newLatLngZoom(target, 17),
-            );
+            pincode = _extractComponent(components, ['postal_code']);
           }
-        } else {
-          debugPrint(
-            'Place Details API returned: ${data['status']} - ${data['error_message']}',
-          );
         }
-      } else {
-        debugPrint('HTTP error fetching place details: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error fetching place details for search result: $e');
-    } finally {
-      if (mounted) setState(() => _resolving = false);
+      debugPrint('Places API (New) details error: $e');
+    }
+
+    // 2. If lat/lng still null, try Legacy Place Details
+    if (lat == null || lng == null) {
+      try {
+        final url = Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/details/json'
+          '?place_id=${suggestion.placeId}'
+          '&fields=geometry,address_components,formatted_address'
+          '&key=$_googleApiKey',
+        );
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data['status'] == 'OK' && data['result'] != null) {
+            final details = data['result'];
+            final loc = details['geometry']?['location'];
+            if (loc != null) {
+              lat = double.tryParse(loc['lat'].toString());
+              lng = double.tryParse(loc['lng'].toString());
+              components = details['address_components'] ?? [];
+              final rawFormatted =
+                  details['formatted_address']?.toString() ?? '';
+              formattedAddress = cleanAddressString(rawFormatted);
+              final builtShort = buildShortAddress(components);
+              if (builtShort.isNotEmpty) shortAddress = builtShort;
+
+              city = _extractComponent(components, [
+                'locality',
+                'administrative_area_level_2',
+                'sublocality',
+                'sublocality_level_1',
+              ]);
+              state = _extractComponent(components, [
+                'administrative_area_level_1',
+              ]);
+              pincode = _extractComponent(components, ['postal_code']);
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Legacy place details error: $e');
+      }
+    }
+
+    final effectiveLat = lat ?? _pickedLocation.latitude;
+    final effectiveLng = lng ?? _pickedLocation.longitude;
+    final target = LatLng(effectiveLat, effectiveLng);
+    _pickedLocation = target;
+    _isProgrammaticMove = true;
+
+    final detailsObj = PlaceAddressDetails(
+      formattedAddress: formattedAddress.isNotEmpty
+          ? formattedAddress
+          : suggestion.description,
+      shortAddress: shortAddress.isNotEmpty
+          ? shortAddress
+          : suggestion.mainText,
+      city: city,
+      state: state,
+      pincode: pincode,
+      lat: effectiveLat,
+      lng: effectiveLng,
+      googleMapsUrl: PlaceAddressDetails.buildMapsUrl(
+        effectiveLat,
+        effectiveLng,
+      ),
+      cityCandidates: extractCityCandidates(components),
+    );
+
+    if (mounted) {
+      setState(() {
+        _resolvedDetails = detailsObj;
+        _resolving = false;
+      });
+
+      if (lat != null && lng != null) {
+        await _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(target, 17),
+        );
+      }
     }
   }
 
@@ -334,136 +574,172 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                   top: 12,
                   left: 16,
                   right: 16,
-                  child: GooglePlaceAutoCompleteTextField(
-                    textEditingController: _searchController,
-                    focusNode: _searchFocusNode,
-                    googleAPIKey: _googleApiKey,
-                    debounceTime: 400,
-                    countries: const ['in'],
-                    isLatLngRequired: false,
-                    showError: false,
-                    isCrossBtnShown: false,
-                    boxDecoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    inputDecoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.white,
-                      hintText: widget.isPickup == true
-                          ? 'Search for pickup location (e.g. Ameerpet)'
-                          : widget.isPickup == false
-                          ? 'Search for drop location (e.g. Hitec City)'
-                          : 'Search for a location (e.g. Ameerpet)',
-                      hintStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.textSecondary,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: const Icon(
-                          Icons.clear,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                    textStyle: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
-                    ),
-                    itemClick: (Prediction prediction) {
-                      _searchController.text = prediction.description ?? '';
-                      _onSearchResultSelected(prediction);
-                    },
-                    seperatedBuilder: const Divider(
-                      color: AppColors.borderLight,
-                      height: 1,
-                      thickness: 1,
-                    ),
-                    itemBuilder: (context, index, Prediction prediction) {
-                      final String mainText =
-                          prediction.structuredFormatting?.mainText ??
-                          prediction.description ??
-                          '';
-                      final String secondaryText =
-                          prediction.structuredFormatting?.secondaryText ?? '';
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        color: AppColors.white,
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_outlined,
-                              color: AppColors.primary,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    mainText,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  if (secondaryText.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      secondaryText,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
-                      );
-                    },
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.white,
+                            hintText: widget.isPickup == true
+                                ? 'Search for pickup location (e.g. Ameerpet)'
+                                : widget.isPickup == false
+                                ? 'Search for drop location (e.g. Hitec City)'
+                                : 'Search for a location (e.g. Ameerpet)',
+                            hintStyle: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: AppColors.textSecondary,
+                            ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.clear,
+                                      color: AppColors.textSecondary,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _suggestions = []);
+                                    },
+                                  )
+                                : (_isSearching
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        )
+                                      : null),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (_suggestions.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 240),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: _suggestions.length,
+                            separatorBuilder: (_, __) => const Divider(
+                              color: AppColors.borderLight,
+                              height: 1,
+                              thickness: 1,
+                            ),
+                            itemBuilder: (context, index) {
+                              final suggestion = _suggestions[index];
+                              return InkWell(
+                                onTap: () =>
+                                    _onSearchResultSelected(suggestion),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        color: AppColors.primary,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              suggestion.mainText,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.inter(
+                                                color: AppColors.textPrimary,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            if (suggestion
+                                                .secondaryText
+                                                .isNotEmpty) ...[
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                suggestion.secondaryText,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.inter(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 Positioned(

@@ -158,10 +158,17 @@ class _TripDetailsView extends StatelessWidget {
                   // 3. Route & Schedule Card (Pickup, Drop, Coordinates, Timing)
                   _buildRouteCard(trip),
 
-                  if (trip.driverReturnOption.isNotEmpty) ...[
+                  if (trip.driverReturnOption.isNotEmpty ||
+                      trip.packageNote.trim().isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    // Driver Return Option Card (e.g. Intercity Cab / Taxi, Rapido Charges)
+                    // Driver Return Option / Trip Charges Card (e.g. Intercity Cab / Taxi, Rapido Charges, Inclusive with food and room)
                     _buildDriverReturnOptionCard(trip),
+                  ],
+
+                  if (trip.userNotes.trim().isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    // Customer Note / Instructions Card
+                    _buildUserNotesCard(trip),
                   ],
 
                   const SizedBox(height: 16),
@@ -379,7 +386,14 @@ class _TripDetailsView extends StatelessWidget {
                 const Color(0xFFF1F5F9),
                 Colors.grey.shade700,
               ),
-              if (trip.durationHours > 0)
+              if (trip.durationDays > 0)
+                _buildMetaTag(
+                  Icons.calendar_today_rounded,
+                  '${trip.durationDays} ${trip.durationDays == 1 ? 'DAY' : 'DAYS'}',
+                  const Color(0xFFEFF6FF),
+                  const Color(0xFF1D4ED8),
+                )
+              else if (trip.durationHours > 0)
                 _buildMetaTag(
                   Icons.schedule_rounded,
                   '${trip.durationHours} HOURS',
@@ -521,7 +535,7 @@ class _TripDetailsView extends StatelessWidget {
               children: [
                 Container(width: 2, height: 32, color: Colors.grey.shade300),
                 const SizedBox(width: 20),
-                if (trip.durationHours > 0)
+                if (trip.durationDays > 0 || trip.durationHours > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -535,13 +549,17 @@ class _TripDetailsView extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.timer_outlined,
+                          trip.durationDays > 0
+                              ? Icons.calendar_month_rounded
+                              : Icons.timer_outlined,
                           size: 15,
                           color: Colors.grey.shade600,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${trip.durationHours} Hours Duration',
+                          trip.durationDays > 0
+                              ? '${trip.durationDays} ${trip.durationDays == 1 ? 'Day' : 'Days'} Duration'
+                              : '${trip.durationHours} Hours Duration',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -572,14 +590,31 @@ class _TripDetailsView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'DROP DESTINATION',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade500,
-                        letterSpacing: 0.5,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'DROP DESTINATION',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade500,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        if (trip.formattedReturnDate.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              trip.formattedReturnDate,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -603,7 +638,10 @@ class _TripDetailsView extends StatelessWidget {
   // ================= 3.5. Driver Return Option Card =================
 
   Widget _buildDriverReturnOptionCard(TripEntity trip) {
-    final options = trip.driverReturnOption;
+    final List<String> options = List<String>.from(trip.driverReturnOption);
+    if (options.isEmpty && trip.packageNote.trim().isNotEmpty) {
+      options.add(trip.packageNote.trim());
+    }
     if (options.isEmpty) return const SizedBox.shrink();
 
     final String optionTitle = options.join(', ');
@@ -615,9 +653,16 @@ class _TripDetailsView extends StatelessWidget {
         lower.contains('taxi') ||
         lower.contains('car');
     final bool isBus = lower.contains('bus');
+    final bool isOutstationRoundTrip =
+        trip.serviceType.toLowerCase().contains('outstation') &&
+        trip.tripType.toLowerCase().contains('round');
 
     IconData returnIcon = Icons.transfer_within_a_station_rounded;
-    if (isRapido) {
+    if (isOutstationRoundTrip ||
+        lower.contains('food') ||
+        lower.contains('room')) {
+      returnIcon = Icons.hotel_rounded;
+    } else if (isRapido) {
       returnIcon = Icons.two_wheeler_rounded;
     } else if (isTrain) {
       returnIcon = Icons.train_rounded;
@@ -647,14 +692,16 @@ class _TripDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.transfer_within_a_station_rounded,
+              Icon(
+                isOutstationRoundTrip
+                    ? Icons.hotel_rounded
+                    : Icons.transfer_within_a_station_rounded,
                 size: 18,
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
               Text(
-                'Driver Return Option',
+                isOutstationRoundTrip ? 'Trip Charges' : 'Driver Return Option',
                 style: AppTypography.headingSmall(
                   color: AppColors.textPrimaryLight,
                 ),
@@ -724,7 +771,9 @@ class _TripDetailsView extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'RETURN TRAVEL CHARGES',
+                            isOutstationRoundTrip
+                                ? 'TRIP CHARGES'
+                                : 'RETURN TRAVEL CHARGES',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -815,6 +864,99 @@ class _TripDetailsView extends StatelessWidget {
     );
   }
 
+  // ================= 3.8. Customer Notes Card =================
+
+  Widget _buildUserNotesCard(TripEntity trip) {
+    final note = trip.userNotes.trim();
+    if (note.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.sticky_note_2_rounded,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Customer Note',
+                style: AppTypography.headingSmall(
+                  color: AppColors.textPrimaryLight,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Instructions',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.format_quote_rounded,
+                  size: 20,
+                  color: Color(0xFF94A3B8),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    note,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1E293B),
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ================= 4. Passenger Details Card =================
 
   Widget _buildPassengerCard(BuildContext context, TripEntity trip) {
@@ -892,9 +1034,29 @@ class _TripDetailsView extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 12),
-          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
-          const SizedBox(height: 10),
+          if (trip.customerAddress.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.home_outlined,
+                  size: 16,
+                  color: Color(0xFF64748B),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    trip.customerAddress,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -965,12 +1127,17 @@ class _TripDetailsView extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Container(),
-                //  _buildSpecTile(
-                //   icon: Icons.people_alt_rounded,
-                //   label: 'Capacity',
-                //   value: '${trip.numberOfPassengers} Passenger(s)',
-                // ),
+                child: (trip.durationDays > 0 || trip.durationHours > 0)
+                    ? _buildSpecTile(
+                        icon: trip.durationDays > 0
+                            ? Icons.calendar_month_rounded
+                            : Icons.timer_outlined,
+                        label: 'Duration',
+                        value: trip.durationDays > 0
+                            ? '${trip.durationDays} ${trip.durationDays == 1 ? 'Day' : 'Days'}'
+                            : '${trip.durationHours} Hours',
+                      )
+                    : Container(),
               ),
             ],
           ),

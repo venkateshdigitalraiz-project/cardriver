@@ -1299,6 +1299,24 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                               ),
                             ),
                           )
+                        else if (trip.durationDays > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Duration: ${trip.durationDays} ${trip.durationDays == 1 ? 'day' : 'days'}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          )
                         else if (trip.durationHours > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(

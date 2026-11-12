@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/cache/common_charges_cache.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../../domain/entities/common_charges_entity.dart';
@@ -56,7 +57,9 @@ class HomeState extends Equatable {
   bool get isAcceptingRide => acceptingRideId != null;
   bool get isDecliningRide => decliningRideId != null;
   CommonChargesEntity? get currentCharges =>
-      commonChargesList.isNotEmpty ? commonChargesList.first : null;
+      commonChargesList.isNotEmpty
+          ? commonChargesList.first
+          : CommonChargesCache.instance.currentCharges;
 
   HomeState copyWith({
     bool? isOnline,

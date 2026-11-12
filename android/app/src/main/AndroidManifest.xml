@@ -62,7 +62,7 @@
             
         <meta-data 
             android:name="com.google.android.geo.API_KEY" 
-            android:value="AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s"/>
+            android:value="AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU"/>
 
         <!-- Firebase Cloud Messaging default channel -->
         <meta-data

@@ -13,6 +13,9 @@ class TripEntity extends Equatable {
   final String tripType;
   final String scheduledStartTime;
   final int durationHours;
+  final int durationDays;
+  final String returnDate;
+  final String packageNote;
   final String pickupAddress;
   final double pickupLat;
   final double pickupLng;
@@ -66,6 +69,9 @@ class TripEntity extends Equatable {
     this.tripType = 'round_trip',
     this.scheduledStartTime = '',
     this.durationHours = 0,
+    this.durationDays = 0,
+    this.returnDate = '',
+    this.packageNote = '',
     required this.pickupAddress,
     this.pickupLat = 0.0,
     this.pickupLng = 0.0,
@@ -266,7 +272,58 @@ class TripEntity extends Equatable {
         return '${hours}h ${remMins}m';
       } catch (_) {}
     }
+    if (durationDays > 0) {
+      return '$durationDays ${durationDays == 1 ? 'day' : 'days'}';
+    }
     return durationHours > 0 ? '$durationHours hrs' : '';
+  }
+
+  /// Formatted duration display string (e.g. "2 Days Duration" or "5 Hours Duration")
+  String get displayDuration {
+    if (durationDays > 0) {
+      return '$durationDays ${durationDays == 1 ? 'Day' : 'Days'} Duration';
+    }
+    if (durationHours > 0) {
+      return '$durationHours Hours Duration';
+    }
+    return '';
+  }
+
+  /// Formatted duration badge text (e.g. "2 DAYS" or "5 HOURS")
+  String get durationBadgeText {
+    if (durationDays > 0) {
+      return '$durationDays ${durationDays == 1 ? 'DAY' : 'DAYS'}';
+    }
+    if (durationHours > 0) {
+      return '$durationHours ${durationHours == 1 ? 'HOUR' : 'HOURS'}';
+    }
+    return '';
+  }
+
+  /// Formatted return date string
+  String get formattedReturnDate {
+    if (returnDate.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(returnDate).toLocal();
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      final month = months[dt.month - 1];
+      final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} $month ${dt.year}, $hour:$minute $period';
+    } catch (_) {
+      return returnDate;
+    }
+  }
+
+  /// Whether this trip is outstation round trip
+  bool get isOutstationRoundTrip {
+    final s = serviceType.toLowerCase();
+    final t = tripType.toLowerCase();
+    return s.contains('outstation') && t.contains('round');
   }
 
   /// Formatted driver fee/earnings with currency symbol
@@ -350,6 +407,9 @@ class TripEntity extends Equatable {
     String? tripType,
     String? scheduledStartTime,
     int? durationHours,
+    int? durationDays,
+    String? returnDate,
+    String? packageNote,
     String? pickupAddress,
     double? pickupLat,
     double? pickupLng,
@@ -401,6 +461,9 @@ class TripEntity extends Equatable {
       tripType: tripType ?? this.tripType,
       scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
       durationHours: durationHours ?? this.durationHours,
+      durationDays: durationDays ?? this.durationDays,
+      returnDate: returnDate ?? this.returnDate,
+      packageNote: packageNote ?? this.packageNote,
       pickupAddress: pickupAddress ?? this.pickupAddress,
       pickupLat: pickupLat ?? this.pickupLat,
       pickupLng: pickupLng ?? this.pickupLng,
@@ -518,6 +581,11 @@ class TripEntity extends Equatable {
       returnOptions = [rawRetOpt.trim()];
     }
 
+    final String packageNote = toS(json['packageNote']);
+    if (packageNote.isNotEmpty && !returnOptions.contains(packageNote)) {
+      returnOptions.add(packageNote);
+    }
+
     return TripEntity(
       id: toS(json['_id'] ?? json['id'] ?? json['bookingId']),
       bookingId: toS(json['bookingId']),
@@ -528,6 +596,9 @@ class TripEntity extends Equatable {
       tripType: toS(json['tripType'] ?? 'round_trip'),
       scheduledStartTime: toS(json['scheduledStartTime']),
       durationHours: toI(json['durationHours']),
+      durationDays: toI(json['durationDays']),
+      returnDate: toS(json['returnDate']),
+      packageNote: packageNote,
       pickupAddress: pAddress.isNotEmpty ? pAddress : 'Pickup Location',
       pickupLat: pLat,
       pickupLng: pLng,
@@ -584,6 +655,9 @@ class TripEntity extends Equatable {
         tripType,
         scheduledStartTime,
         durationHours,
+        durationDays,
+        returnDate,
+        packageNote,
         pickupAddress,
         pickupLat,
         pickupLng,

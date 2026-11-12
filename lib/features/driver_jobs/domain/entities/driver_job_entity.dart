@@ -5,6 +5,7 @@ class DriverJobEntity extends Equatable {
   final String jobId;
   final String title;
   final int monthlySalary;
+  final int? hours;
   final String joiningDate;
   final String description;
   final String location;
@@ -19,6 +20,7 @@ class DriverJobEntity extends Equatable {
     required this.jobId,
     required this.title,
     required this.monthlySalary,
+    this.hours,
     required this.joiningDate,
     required this.description,
     required this.location,
@@ -38,6 +40,8 @@ class DriverJobEntity extends Equatable {
               : 'JOB-POST'),
       title: json['title']?.toString() ?? 'Driver Requirement',
       monthlySalary: (json['monthlySalary'] as num?)?.toInt() ?? 0,
+      hours: (json['hours'] as num?)?.toInt() ??
+          (json['totalHours'] as num?)?.toInt(),
       joiningDate: json['joiningDate']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       location: json['location']?.toString() ?? '',
@@ -51,6 +55,13 @@ class DriverJobEntity extends Equatable {
           (json['userId'] is Map ? json['userId']['phone']?.toString() : null),
       createdAt: json['createdAt']?.toString(),
     );
+  }
+
+  String get formattedHours {
+    if (hours != null && hours! > 0) {
+      return '$hours Hours / Day';
+    }
+    return '';
   }
 
   String get formattedSalary {
@@ -126,6 +137,7 @@ class DriverJobEntity extends Equatable {
         jobId,
         title,
         monthlySalary,
+        hours,
         joiningDate,
         description,
         location,

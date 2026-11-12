@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/cache/common_charges_cache.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/place_address_utils.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
@@ -44,6 +45,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
   final _toAddressController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _durationController = TextEditingController(text: '2');
+  final _noteController = TextEditingController();
 
   // Service & Trip Type State
   String _serviceType = 'local';
@@ -87,6 +89,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     _phoneController.addListener(_onFieldChanged);
     _vehicleTypeController.addListener(_onFieldChanged);
     _durationController.addListener(_onFieldChanged);
+    _noteController.addListener(_onFieldChanged);
 
     // Fetch common charges from API when BookingDriverPage screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,14 +119,14 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     final nextDate = DateTime(now.year, now.month, now.day + 1);
     final initialDate =
         (_selectedDateTime != null && !_selectedDateTime!.isBefore(nextDate))
-            ? _selectedDateTime!
-            : DateTime(
-                nextDate.year,
-                nextDate.month,
-                nextDate.day,
-                now.hour,
-                now.minute,
-              );
+        ? _selectedDateTime!
+        : DateTime(
+            nextDate.year,
+            nextDate.month,
+            nextDate.day,
+            now.hour,
+            now.minute,
+          );
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -186,6 +189,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     _phoneController.removeListener(_onFieldChanged);
     _vehicleTypeController.removeListener(_onFieldChanged);
     _durationController.removeListener(_onFieldChanged);
+    _noteController.removeListener(_onFieldChanged);
     _phoneController.dispose();
     _vehicleTypeController.dispose();
     _fromAddressController.dispose();
@@ -193,6 +197,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     _priceController.dispose();
     _dateTimeController.dispose();
     _durationController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -229,13 +234,13 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     }
   }
 
-  void _addQuickFare(int amount) {
-    final current = double.tryParse(_priceController.text.trim()) ?? 0.0;
-    final updated = current + amount;
-    _priceController.text = updated % 1 == 0
-        ? updated.toInt().toString()
-        : updated.toStringAsFixed(0);
-  }
+  // void _addQuickFare(int amount) {
+  //   final current = double.tryParse(_priceController.text.trim()) ?? 0.0;
+  //   final updated = current + amount;
+  //   _priceController.text = updated % 1 == 0
+  //       ? updated.toInt().toString()
+  //       : updated.toStringAsFixed(0);
+  // }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -367,6 +372,27 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
       return;
     }
 
+    final bool isLocal = _serviceType.trim().toLowerCase() == 'local';
+    final bool isOneWay = _tripType.trim().toLowerCase() == 'one_way';
+
+    // Validation: Outstation Round Trip requires trip inclusions checkbox selection
+    if (!isLocal && !isOneWay) {
+      if (!_foodAndRoomSelected) {
+        _showErrorSnackBar(
+          'Please select the trip inclusions checkbox before confirming booking',
+        );
+        return;
+      }
+    }
+
+    // Resolve dynamic note text from CommonChargesCache / HomeBloc state (outstation.round_trip.note)
+    final charges = context.read<HomeBloc>().state.currentCharges ??
+        CommonChargesCache.instance.currentCharges;
+    final dynamicNote = charges?.outstation?.roundTrip?.note.trim() ?? '';
+    final String resolvedNote = dynamicNote.isNotEmpty
+        ? dynamicNote
+        : 'inclusive with food and room';
+
     // Build DtoDBookingRequestModel adhering exactly to API specs:
     // POST http://localhost:3000/api/driver/d-to-d-bookings
     // "totalAmount": pass ride price,
@@ -379,8 +405,6 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     // "vehicleType": "",
     // "transmission": "",
     // "vehicleNumber": ""
-    final bool isLocal = _serviceType.trim().toLowerCase() == 'local';
-    final bool isOneWay = _tripType.trim().toLowerCase() == 'one_way';
 
     final List<String> returnOptions = <String>[];
     if (isOneWay) {
@@ -393,7 +417,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
       }
     } else if (!isLocal && !isOneWay) {
       if (_foodAndRoomSelected) {
-        returnOptions.add('ret-food-room');
+        returnOptions.add(resolvedNote);
       }
     }
 
@@ -411,6 +435,10 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         calculatedReturnDate,
       );
     }
+
+    final String? packageNote = (!isLocal && !isOneWay && _foodAndRoomSelected)
+        ? resolvedNote
+        : null;
 
     final request = DtoDBookingRequestModel(
       serviceType: _serviceType,
@@ -431,29 +459,13 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
       vehicleNumber: '',
       numberOfPassengers: 4,
       driverReturnOption: returnOptions,
+      packageNote: packageNote,
       baseAmount: '',
       driverFee: '',
       taxAmount: '',
       totalAmount: price % 1 == 0 ? price.toInt() : price,
       estimatedDistance: '',
-      userNotes: () {
-        final List<String> notes = [];
-        if (driverPhone.isNotEmpty) notes.add('Driver Mobile: $driverPhone');
-        if (isOneWay && _selectedReturnVehicles.isNotEmpty) {
-          notes.add('Return travel: ${_selectedReturnVehicles.join(", ")}');
-        } else if (isLocal && isOneWay && _rapidoChargesSelected) {
-          notes.add('Rapido return travel charges included');
-        } else if (!isLocal && isOneWay && _selectedOutstationTransit != null) {
-          notes.add(
-            '${_selectedOutstationTransit == 'bus' ? 'Bus' : 'Train'} return travel charges included',
-          );
-        } else if (!isLocal && !isOneWay && _foodAndRoomSelected) {
-          notes.add('Food & Room Maintenance included');
-        }
-        return notes.isNotEmpty
-            ? notes.join(' • ')
-            : 'Customer needs experienced highway driver';
-      }(),
+      userNotes: _noteController.text.trim(),
     );
 
     log('======================================================');
@@ -920,6 +932,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
   /// Section 2: Service Type, Trip Type & Duration (Modern Segmented Selectors)
   Widget _buildServiceAndTripTypeCard() {
     final isLocal = _serviceType == 'local';
+    final isOneWay = _tripType == 'one_way';
 
     return Container(
       decoration: BoxDecoration(
@@ -1044,22 +1057,18 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
             ),
           ),
 
-          // Conditional Additional Charges (Return Vehicles / Food & Room)
+          // Conditional Additional Charges (Return Vehicles / Trip Includes)
           if (_shouldShowAdditionalCharges) ...[
-            // Case 2: Outstation + One Way -> Remove the _buildFieldSectionLabel() widget
             const SizedBox(height: 16),
-            _buildFieldSectionLabel('Return Charges'),
-
-            if (!(!isLocal && _tripType == 'one_way')) ...[
-              const SizedBox(height: 16),
-              _buildFieldSectionLabel(
-                _serviceType == 'outstation' && _tripType == 'round_trip'
-                    ? 'Driver Allowance & Maintenance'
-                    : 'Additional Return Charges',
-              ),
+            if (!isLocal && !isOneWay) ...[
+              _buildFieldSectionLabel('Trip Includes'),
               const SizedBox(height: 8),
-            ] else ...[
-              const SizedBox(height: 12),
+            ] else if (isLocal && isOneWay) ...[
+              _buildFieldSectionLabel('Additional Return Charges'),
+              const SizedBox(height: 8),
+            ] else if (!isLocal && isOneWay) ...[
+              _buildFieldSectionLabel('Return Charges'),
+              const SizedBox(height: 8),
             ],
             _buildAdditionalChargesCard(),
           ],
@@ -1388,168 +1397,146 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     }
   }
 
-  /// Condition 3: Outstation + Round Trip -> Food & Room Maintenance Checkbox Card
+  /// Condition 3: Outstation + Round Trip -> Trip Includes Checkbox Card
   Widget _buildFoodAndRoomMaintenanceCard() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: _foodAndRoomSelected ? const Color(0xFFF0FDF4) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _foodAndRoomSelected
-              ? const Color(0xFF059669)
-              : const Color(0xFFE2E8F0),
-          width: _foodAndRoomSelected ? 1.5 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(
-              0xFF0F172A,
-            ).withValues(alpha: _foodAndRoomSelected ? 0.06 : 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return BlocBuilder<HomeBloc, HomeState>(
+      buildWhen: (prev, current) =>
+          prev.isLoadingCommonCharges != current.isLoadingCommonCharges ||
+          prev.commonChargesList != current.commonChargesList,
+      builder: (context, state) {
+        final charges = state.currentCharges ??
+            CommonChargesCache.instance.currentCharges;
+        final String noteText = charges?.outstation?.roundTrip?.note.trim() ??
+            CommonChargesCache.instance.currentCharges?.outstation?.roundTrip?.note.trim() ??
+            'inclusive with food and room';
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: _foodAndRoomSelected ? const Color(0xFFF0FDF4) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _foodAndRoomSelected
+                  ? const Color(0xFF059669)
+                  : const Color(0xFFE2E8F0),
+              width: _foodAndRoomSelected ? 1.5 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(
+                  0xFF0F172A,
+                ).withValues(alpha: _foodAndRoomSelected ? 0.06 : 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            setState(() {
-              _foodAndRoomSelected = !_foodAndRoomSelected;
-            });
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon Avatar
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: _foodAndRoomSelected
-                        ? const Color(0xFFDCFCE7)
-                        : const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _foodAndRoomSelected
-                          ? const Color(0xFF6EE7B7)
-                          : const Color(0xFFA7F3D0),
-                    ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.night_shelter_rounded,
-                      size: 22,
-                      color: Color(0xFF059669),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Text details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 2.5,
-                        ),
-                        decoration: BoxDecoration(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                setState(() {
+                  _foodAndRoomSelected = !_foodAndRoomSelected;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                child: Row(
+                  children: [
+                    // Icon Avatar
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _foodAndRoomSelected
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
                           color: _foodAndRoomSelected
-                              ? const Color(0xFF059669).withValues(alpha: 0.12)
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(5),
+                              ? const Color(0xFF6EE7B7)
+                              : const Color(0xFFA7F3D0),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.restaurant_rounded,
-                              size: 11,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.hotel_rounded,
+                          size: 22,
+                          color: Color(0xFF059669),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Text details: Card title "Trip Includes" and dynamic note text from CommonChargesCache (outstation.round_trip.note)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Trip Includes',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            noteText.isNotEmpty
+                                ? noteText
+                                : 'inclusive with food and room',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: _foodAndRoomSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                               color: _foodAndRoomSelected
-                                  ? const Color(0xFF059669)
+                                  ? const Color(0xFF065F46)
                                   : const Color(0xFF64748B),
+                              height: 1.35,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'DRIVER ALLOWANCE',
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.4,
-                                color: _foodAndRoomSelected
-                                    ? const Color(0xFF059669)
-                                    : const Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 5),
-                      const Text(
-                        'Food & Room Maintenance',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'Provide food and accommodation expenses for the driver',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF64748B),
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Custom animated checkbox
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: _foodAndRoomSelected
-                          ? const Color(0xFF0F172A)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
+                    ),
+                    const SizedBox(width: 10),
+                    // Custom animated checkbox
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
                         color: _foodAndRoomSelected
                             ? const Color(0xFF0F172A)
-                            : const Color(0xFFCBD5E1),
-                        width: 1.8,
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: _foodAndRoomSelected
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFCBD5E1),
+                          width: 1.8,
+                        ),
                       ),
+                      child: _foodAndRoomSelected
+                          ? const Center(
+                              child: Icon(
+                                Icons.check_rounded,
+                                size: 15,
+                                color: Colors.white,
+                              ),
+                            )
+                          : null,
                     ),
-                    child: _foodAndRoomSelected
-                        ? const Center(
-                            child: Icon(
-                              Icons.check_rounded,
-                              size: 15,
-                              color: Colors.white,
-                            ),
-                          )
-                        : null,
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2100,6 +2087,72 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
               ],
             ),
           ),
+
+          const SizedBox(height: 16),
+
+          // 5. Note
+          _buildFieldSectionLabel('Note'),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _noteController,
+            keyboardType: TextInputType.multiline,
+            maxLines: 3,
+            minLines: 3,
+            textCapitalization: TextCapitalization.sentences,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+            cursorColor: const Color(0xFF0F172A),
+            decoration: InputDecoration(
+              hintText: 'Enter note or special instructions',
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+              // prefixIcon: const Icon(
+              //   Icons.note_alt_outlined,
+              //   size: 20,
+              //   color: Color(0xFF64748B),
+              // ),
+              suffixIcon: _noteController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      onPressed: () {
+                        _noteController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0F172A),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -2245,7 +2298,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
-                              '+ Food & Room',
+                              '+ Trip Includes',
                               style: TextStyle(
                                 color: Color(0xFF059669),
                                 fontSize: 10.5,

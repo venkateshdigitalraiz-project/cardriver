@@ -34,7 +34,8 @@ class HomePage extends StatelessWidget {
     return BlocProvider(
       create: (_) =>
           InjectionContainer.createHomeBloc(driverToken: customer.token)
-            ..add(const ToggleOnlineStatusEvent(forceStatus: true)),
+            ..add(const ToggleOnlineStatusEvent(forceStatus: true))
+            ..add(LoadCommonChargesEvent(token: customer.token, silent: true)),
       child: _HomeView(customer: customer),
     );
   }
@@ -277,7 +278,7 @@ class _HomeView extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.work_outline_rounded,
+                          Icons.directions_car_outlined,
                           color: Colors.white,
                           size: 15,
                         ),

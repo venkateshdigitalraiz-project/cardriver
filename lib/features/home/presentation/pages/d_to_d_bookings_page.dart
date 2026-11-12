@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../core/router/app_router.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
 import '../../domain/entities/d_to_d_booking_entity.dart';
@@ -1002,15 +1000,23 @@ class _DtoDBookingCard extends StatelessWidget {
                     final lower = opt.toLowerCase();
                     final isBus = lower.contains('bus');
                     final isTrain = lower.contains('train');
-                    final isRapido = lower.contains('rapido') || lower.contains('bike');
-                    final isFoodRoom = lower.contains('food') || lower.contains('room') || lower.contains('accommodation');
+                    final isRapido =
+                        lower.contains('rapido') || lower.contains('bike');
+                    final isFoodRoom =
+                        lower.contains('food') ||
+                        lower.contains('room') ||
+                        lower.contains('accommodation');
                     final label = isBus
                         ? 'Bus'
                         : (isTrain
-                            ? 'Train'
-                            : (isRapido
-                                ? 'Rapido'
-                                : (isFoodRoom ? 'Food & Room' : opt.replaceAll('ret-', '').toUpperCase())));
+                              ? 'Train'
+                              : (isRapido
+                                    ? 'Rapido'
+                                    : (isFoodRoom
+                                          ? 'Food & Room'
+                                          : opt
+                                                .replaceAll('ret-', '')
+                                                .toUpperCase())));
                     return Container(
                       margin: const EdgeInsets.only(right: 4),
                       padding: const EdgeInsets.symmetric(

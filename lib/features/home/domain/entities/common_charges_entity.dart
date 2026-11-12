@@ -108,12 +108,14 @@ class OutstationTripChargesEntity extends Equatable {
   final int day;
   final double customerPrice;
   final double driverPrice;
+  final String note;
   final List<String> returnVehicles;
 
   const OutstationTripChargesEntity({
     required this.day,
     required this.customerPrice,
     required this.driverPrice,
+    this.note = '',
     this.returnVehicles = const [],
   });
 
@@ -122,6 +124,7 @@ class OutstationTripChargesEntity extends Equatable {
         day,
         customerPrice,
         driverPrice,
+        note,
         returnVehicles,
       ];
 }

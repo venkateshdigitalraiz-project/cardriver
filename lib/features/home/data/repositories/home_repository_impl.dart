@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../core/cache/common_charges_cache.dart';
 import '../../domain/entities/accepted_ride_entity.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../../domain/entities/common_charges_entity.dart';
@@ -104,6 +105,23 @@ class HomeRepositoryImpl implements HomeRepository {
 
   @override
   Future<List<CommonChargesEntity>> getCommonCharges({String? token}) async {
-    return await remoteDataSource.getCommonCharges(token: token);
+    final cache = CommonChargesCache.instance;
+    if (cache.hasData) {
+      return cache.charges!;
+    }
+    if (cache.inFlight != null) {
+      return await cache.inFlight!;
+    }
+    final future = remoteDataSource.getCommonCharges(token: token);
+    cache.inFlight = future;
+    try {
+      final charges = await future;
+      if (charges.isNotEmpty) {
+        cache.setCharges(charges);
+      }
+      return charges;
+    } finally {
+      cache.inFlight = null;
+    }
   }
 }

@@ -45,14 +45,11 @@ class LocationAutocompleteService {
   final http.Client _client;
 
   /// Default API key configured for Google Places across the project
-  static const String defaultApiKey =
-      'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  static const String defaultApiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
 
-  LocationAutocompleteService({
-    String? apiKey,
-    http.Client? client,
-  })  : apiKey = (apiKey != null && apiKey.isNotEmpty) ? apiKey : defaultApiKey,
-        _client = client ?? http.Client();
+  LocationAutocompleteService({String? apiKey, http.Client? client})
+    : apiKey = (apiKey != null && apiKey.isNotEmpty) ? apiKey : defaultApiKey,
+      _client = client ?? http.Client();
 
   /// Fetches matching location suggestions for the given query.
   Future<List<LocationSuggestion>> getSuggestions(String query) async {
@@ -67,8 +64,9 @@ class LocationAutocompleteService {
         '&key=$apiKey',
       );
 
-      final response =
-          await _client.get(url).timeout(const Duration(seconds: 8));
+      final response = await _client
+          .get(url)
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -110,8 +108,9 @@ class LocationAutocompleteService {
         '&key=$apiKey',
       );
 
-      final response =
-          await _client.get(url).timeout(const Duration(seconds: 8));
+      final response = await _client
+          .get(url)
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

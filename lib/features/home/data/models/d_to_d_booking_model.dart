@@ -27,6 +27,7 @@ class DtoDBookingRequestModel {
   final dynamic totalAmount;
   final String estimatedDistance;
   final String userNotes;
+  final String? packageNote;
 
   const DtoDBookingRequestModel({
     required this.serviceType,
@@ -53,6 +54,7 @@ class DtoDBookingRequestModel {
     required this.totalAmount,
     this.estimatedDistance = '',
     this.userNotes = '',
+    this.packageNote,
   });
 
   /// Helper to convert any DateTime or ISO date string to strict UTC ISO-8601 format:
@@ -128,6 +130,8 @@ class DtoDBookingRequestModel {
       'totalAmount': totalAmount,
       'estimatedDistance': estimatedDistance,
       'userNotes': userNotes,
+      if (packageNote != null && packageNote!.isNotEmpty)
+        'packageNote': packageNote,
     };
 
     if (returnDate != null && returnDate!.isNotEmpty) {
