@@ -60,16 +60,16 @@ class GetProfileMenuUseCase {
         subtitle: 'Track Your Support Requests',
         icon: Icons.confirmation_number_outlined,
       ),
-      ProfileMenuItem(
-        title: 'Terms & Conditions',
-        subtitle: 'Read our terms of service',
-        icon: Icons.description_rounded,
-      ),
-      ProfileMenuItem(
-        title: 'Privacy Policy',
-        subtitle: 'Learn how we protect your data',
-        icon: Icons.privacy_tip_rounded,
-      ),
+      // ProfileMenuItem(
+      //   title: 'Terms & Conditions',
+      //   subtitle: 'Read our terms of service',
+      //   icon: Icons.description_rounded,
+      // ),
+      // ProfileMenuItem(
+      //   title: 'Privacy Policy',
+      //   subtitle: 'Learn how we protect your data',
+      //   icon: Icons.privacy_tip_rounded,
+      // ),
     ];
   }
 }

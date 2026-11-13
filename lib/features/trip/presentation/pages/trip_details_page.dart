@@ -244,6 +244,44 @@ class _TripDetailsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Distinction Banner
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: trip.isDriverToDriver
+                    ? const [Color(0xFF312E81), Color(0xFF4F46E5)]
+                    : const [Color(0xFF065F46), Color(0xFF059669)],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  trip.isDriverToDriver
+                      ? Icons.swap_horizontal_circle_rounded
+                      : Icons.person_pin_circle_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  trip.isDriverToDriver
+                      ? 'DRIVER-TO-DRIVER BOOKING (D2D)'
+                      : 'CUSTOMER DIRECT BOOKING',
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Row 1: Booking ID & Status badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -960,29 +998,65 @@ class _TripDetailsView extends StatelessWidget {
   // ================= 4. Passenger Details Card =================
 
   Widget _buildPassengerCard(BuildContext context, TripEntity trip) {
+    final isD2D = trip.isDriverToDriver;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: isD2D
+              ? const Color(0xFF6366F1).withValues(alpha: 0.35)
+              : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(
-                Icons.person_rounded,
-                size: 18,
-                color: AppColors.primary,
+              Row(
+                children: [
+                  Icon(
+                    isD2D ? Icons.badge_rounded : Icons.person_rounded,
+                    size: 18,
+                    color: isD2D ? const Color(0xFF4F46E5) : AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isD2D
+                        ? 'Driver Referral / Partner'
+                        : 'Customer Information',
+                    style: AppTypography.headingSmall(
+                      color: AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Customer Information',
-                style: AppTypography.headingSmall(
-                  color: AppColors.textPrimaryLight,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isD2D
+                      ? const Color(0xFFEEF2FF)
+                      : const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isD2D
+                        ? const Color(0xFFC7D2FE)
+                        : const Color(0xFFA7F3D0),
+                  ),
+                ),
+                child: Text(
+                  isD2D ? 'D2D Booking' : 'Direct User',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: isD2D
+                        ? const Color(0xFF4338CA)
+                        : const Color(0xFF047857),
+                  ),
                 ),
               ),
             ],
@@ -993,11 +1067,15 @@ class _TripDetailsView extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                child: const Icon(
-                  Icons.person,
-                  size: 28,
-                  color: AppColors.primary,
+                backgroundColor: isD2D
+                    ? const Color(0xFFEEF2FF)
+                    : AppColors.primary.withValues(alpha: 0.1),
+                child: Icon(
+                  isD2D
+                      ? Icons.swap_horizontal_circle_rounded
+                      : Icons.person,
+                  size: 26,
+                  color: isD2D ? const Color(0xFF4F46E5) : AppColors.primary,
                 ),
               ),
               const SizedBox(width: 14),
@@ -1006,7 +1084,7 @@ class _TripDetailsView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      trip.customerName,
+                      isD2D ? 'Driver Network Referral' : trip.customerName,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1015,7 +1093,19 @@ class _TripDetailsView extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (trip.customerPhone.isNotEmpty) ...[
+                    if (isD2D && trip.sourceDriverId.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Source Driver ID: #${trip.sourceDriverId}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4F46E5),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ] else if (trip.customerPhone.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         trip.customerPhone,

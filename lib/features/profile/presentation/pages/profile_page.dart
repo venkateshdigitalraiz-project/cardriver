@@ -444,18 +444,6 @@ class _ProfileView extends StatelessWidget {
                                               context.read<ProfileBloc>().add(
                                                 const OpenWhatsAppHelplineEvent(),
                                               );
-                                            } else if (item.title ==
-                                                'Terms & Conditions') {
-                                              context.push(
-                                                AppRoutes.legal,
-                                                extra: LegalPageType.terms,
-                                              );
-                                            } else if (item.title ==
-                                                'Privacy Policy') {
-                                              context.push(
-                                                AppRoutes.legal,
-                                                extra: LegalPageType.privacy,
-                                              );
                                             }
                                           },
                                         ),
@@ -551,19 +539,26 @@ class _ProfileView extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             _buildActionCard(
-                              Icons.account_balance_wallet,
-                              'View\nEarnings',
+                              Icons.description_rounded,
+                              'Terms &\nConditions',
                               Colors.blue,
+                              
                               onTap: () {
-                                context.push(AppRoutes.earnings);
+                                 context.push(
+                                                AppRoutes.legal,
+                                                extra: LegalPageType.terms,
+                                              );
                               },
                             ),
                             _buildActionCard(
-                              Icons.history,
-                              'Ride\nHistory',
+                              Icons.privacy_tip_rounded,
+                              'Privacy\nPolicy',
                               Colors.purple,
                               onTap: () {
-                                context.push(AppRoutes.rideHistory);
+                                 context.push(
+                                                AppRoutes.legal,
+                                                extra: LegalPageType.privacy,
+                                              );
                               },
                             ),
                             _buildActionCard(

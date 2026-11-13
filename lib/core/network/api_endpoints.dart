@@ -8,6 +8,9 @@ class ApiEndpoints {
   // static const String _host = 'http://194.238.19.189:2200';
   static const String baseUrl = '$_host/api';
 
+  // Google Maps / Places API Key
+  static const String googleApiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
+
   // Socket.IO server root (no /api prefix)
   static const String socketUrl = _host;
 

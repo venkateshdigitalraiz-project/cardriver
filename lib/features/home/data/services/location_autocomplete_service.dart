@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../core/network/api_endpoints.dart';
 
 /// Model representing a location autocomplete suggestion.
 class LocationSuggestion {
@@ -38,6 +39,20 @@ class LocationSuggestion {
   }
 }
 
+class _PlaceItemTemp {
+  final String placeId;
+  final String mainText;
+  final String secondaryText;
+  final String description;
+
+  const _PlaceItemTemp(
+    this.placeId,
+    this.mainText,
+    this.secondaryText,
+    this.description,
+  );
+}
+
 /// Service class for fetching Google Places location autocomplete suggestions & details.
 /// Completely decoupled from any Map widget.
 class LocationAutocompleteService {
@@ -45,7 +60,7 @@ class LocationAutocompleteService {
   final http.Client _client;
 
   /// Default API key configured for Google Places across the project
-  static const String defaultApiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
+  static const String defaultApiKey = ApiEndpoints.googleApiKey;
 
   LocationAutocompleteService({String? apiKey, http.Client? client})
     : apiKey = (apiKey != null && apiKey.isNotEmpty) ? apiKey : defaultApiKey,
@@ -56,6 +71,70 @@ class LocationAutocompleteService {
     final cleanQuery = query.trim();
     if (cleanQuery.length < 2) return [];
 
+    // 1. Try Places API (New) first: POST https://places.googleapis.com/v1/places:autocomplete
+    try {
+      final url = Uri.parse(
+        'https://places.googleapis.com/v1/places:autocomplete',
+      );
+      final response = await _client
+          .post(
+            url,
+            headers: {
+              'X-Goog-Api-Key': apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'input': cleanQuery,
+              'includedRegionCodes': ['in'],
+            }),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map && data['suggestions'] is List) {
+          final List<_PlaceItemTemp> results = [];
+          for (final item in data['suggestions']) {
+            final pred = item['placePrediction'];
+            if (pred != null) {
+              final rawPlace = pred['place']?.toString() ?? '';
+              final pId =
+                  pred['placeId']?.toString() ??
+                  (rawPlace.startsWith('places/')
+                      ? rawPlace.substring(7)
+                      : rawPlace);
+              final desc = pred['text']?['text']?.toString() ?? '';
+              final main =
+                  pred['structuredFormat']?['mainText']?['text']?.toString() ??
+                  desc;
+              final sec =
+                  pred['structuredFormat']?['secondaryText']?['text']
+                      ?.toString() ??
+                  '';
+              if (pId.isNotEmpty) {
+                results.add(_PlaceItemTemp(pId, main, sec, desc));
+              }
+            }
+          }
+          if (results.isNotEmpty) {
+            return results
+                .map(
+                  (r) => LocationSuggestion(
+                    placeId: r.placeId,
+                    mainText: r.mainText,
+                    secondaryText: r.secondaryText,
+                    fullAddress: r.description.isNotEmpty
+                        ? r.description
+                        : r.mainText,
+                  ),
+                )
+                .toList();
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback to Legacy Places Autocomplete
     try {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/autocomplete/json'
@@ -100,6 +179,39 @@ class LocationAutocompleteService {
   ) async {
     if (placeId.isEmpty) return null;
 
+    // 1. Try Places API (New) details first
+    try {
+      final cleanId = placeId.startsWith('places/')
+          ? placeId.substring(7)
+          : placeId;
+      final url = Uri.parse('https://places.googleapis.com/v1/places/$cleanId');
+      final response = await _client
+          .get(
+            url,
+            headers: {
+              'X-Goog-Api-Key': apiKey,
+              'X-Goog-FieldMask': 'id,displayName,formattedAddress,location',
+            },
+          )
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map && data['location'] != null) {
+          final lat =
+              (data['location']['latitude'] as num?)?.toDouble() ??
+              double.tryParse(data['location']['latitude'].toString());
+          final lng =
+              (data['location']['longitude'] as num?)?.toDouble() ??
+              double.tryParse(data['location']['longitude'].toString());
+          if (lat != null && lng != null) {
+            return (lat: lat, lng: lng);
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback to Legacy Place Details
     try {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/details/json'
@@ -116,8 +228,12 @@ class LocationAutocompleteService {
         final data = json.decode(response.body);
         final loc = data['result']?['geometry']?['location'];
         if (loc != null) {
-          final lat = double.tryParse(loc['lat'].toString());
-          final lng = double.tryParse(loc['lng'].toString());
+          final lat =
+              (loc['lat'] as num?)?.toDouble() ??
+              double.tryParse(loc['lat'].toString());
+          final lng =
+              (loc['lng'] as num?)?.toDouble() ??
+              double.tryParse(loc['lng'].toString());
           if (lat != null && lng != null) {
             return (lat: lat, lng: lng);
           }

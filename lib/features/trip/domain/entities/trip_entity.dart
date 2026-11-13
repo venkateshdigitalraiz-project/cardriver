@@ -58,6 +58,9 @@ class TripEntity extends Equatable {
   final List<String> driverReturnOption;
   final bool isUserRated;
   final bool isDriverRated;
+  final bool isDriverToDriver;
+  final String bookingType;
+  final String sourceDriverId;
 
   const TripEntity({
     required this.id,
@@ -114,6 +117,9 @@ class TripEntity extends Equatable {
     this.driverReturnOption = const [],
     this.isUserRated = false,
     this.isDriverRated = false,
+    this.isDriverToDriver = false,
+    this.bookingType = 'user',
+    this.sourceDriverId = '',
   });
 
   // ================= Backwards Compatibility Getters =================
@@ -182,7 +188,8 @@ class TripEntity extends Equatable {
   /// Full customer display name
   String get customerName {
     final name = '$customerFirstName $customerLastName'.trim();
-    return name.isNotEmpty ? name : 'Customer';
+    if (name.isNotEmpty) return name;
+    return isDriverToDriver ? 'Driver Partner' : 'Customer';
   }
 
   /// Pickup address alias
@@ -450,6 +457,11 @@ class TripEntity extends Equatable {
     String? tripStartedAt,
     String? tripCompletedAt,
     List<String>? driverReturnOption,
+    bool? isUserRated,
+    bool? isDriverRated,
+    bool? isDriverToDriver,
+    String? bookingType,
+    String? sourceDriverId,
   }) {
     return TripEntity(
       id: id ?? this.id,
@@ -506,6 +518,9 @@ class TripEntity extends Equatable {
       driverReturnOption: driverReturnOption ?? this.driverReturnOption,
       isUserRated: isUserRated ?? this.isUserRated,
       isDriverRated: isDriverRated ?? this.isDriverRated,
+      isDriverToDriver: isDriverToDriver ?? this.isDriverToDriver,
+      bookingType: bookingType ?? this.bookingType,
+      sourceDriverId: sourceDriverId ?? this.sourceDriverId,
     );
   }
 
@@ -586,6 +601,17 @@ class TripEntity extends Equatable {
       returnOptions.add(packageNote);
     }
 
+    final rawIsD2D = json['isDriverToDriver'];
+    final bType = toS(json['bookingType']).toLowerCase();
+    final bId = toS(json['bookingId']).toUpperCase();
+    final bool isD2D = (rawIsD2D == true || rawIsD2D == 'true' || rawIsD2D == 1) ||
+        bType == 'driver' ||
+        bType == 'driver_to_driver' ||
+        bType == 'd2d' ||
+        bId.startsWith('D2D');
+
+    final String sourceDriverId = toS(json['sourceDriverId']);
+
     return TripEntity(
       id: toS(json['_id'] ?? json['id'] ?? json['bookingId']),
       bookingId: toS(json['bookingId']),
@@ -641,6 +667,9 @@ class TripEntity extends Equatable {
       driverReturnOption: returnOptions,
       isUserRated: json['isUserRated'] == true,
       isDriverRated: json['isDriverRated'] == true,
+      isDriverToDriver: isD2D,
+      bookingType: bType.isNotEmpty ? bType : (isD2D ? 'driver' : 'user'),
+      sourceDriverId: sourceDriverId,
     );
   }
 
@@ -700,5 +729,8 @@ class TripEntity extends Equatable {
         driverReturnOption,
         isUserRated,
         isDriverRated,
+        isDriverToDriver,
+        bookingType,
+        sourceDriverId,
       ];
 }

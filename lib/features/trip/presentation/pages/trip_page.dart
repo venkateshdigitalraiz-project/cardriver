@@ -1012,197 +1012,441 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(
+            color: trip.isDriverToDriver
+                ? const Color(0xFF6366F1).withValues(alpha: 0.45)
+                : const Color(0xFF10B981).withValues(alpha: 0.35),
+            width: trip.isDriverToDriver ? 1.6 : 1.3,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
+              color: trip.isDriverToDriver
+                  ? const Color(0xFF4F46E5).withValues(alpha: 0.08)
+                  : const Color(0xFF0F766E).withValues(alpha: 0.05),
+              blurRadius: 14,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Header: Booking ID, Badge & Fare
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Distinct Ribbon: Driver-to-Driver vs Customer Booking
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: trip.isDriverToDriver
+                        ? const [Color(0xFF312E81), Color(0xFF4F46E5)]
+                        : const [Color(0xFF065F46), Color(0xFF059669)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                if (trip.bookingId.isNotEmpty) {
-                                  Clipboard.setData(
-                                    ClipboardData(text: trip.bookingId),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Copied ${trip.bookingId} to clipboard',
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            trip.isDriverToDriver
+                                ? Icons.swap_horizontal_circle_rounded
+                                : Icons.person_pin_circle_rounded,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Text(
+                          trip.isDriverToDriver
+                              ? 'DRIVER-TO-DRIVER BOOKING'
+                              : 'CUSTOMER BOOKING',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            trip.isDriverToDriver
+                                ? Icons.handshake_rounded
+                                : Icons.smartphone_rounded,
+                            size: 11,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            trip.isDriverToDriver
+                                ? 'D2D Network'
+                                : 'Direct Client',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 1. Header: Booking ID, Badge & Fare
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  if (trip.bookingId.isNotEmpty) {
+                                    Clipboard.setData(
+                                      ClipboardData(text: trip.bookingId),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Copied ${trip.bookingId} to clipboard',
+                                        ),
+                                        duration: const Duration(seconds: 1),
                                       ),
-                                      duration: const Duration(seconds: 1),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: trip.isDriverToDriver
+                                        ? const Color(0xFFEEF2FF)
+                                        : const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: trip.isDriverToDriver
+                                          ? const Color(0xFFC7D2FE)
+                                          : const Color(0xFFA7F3D0),
                                     ),
-                                  );
-                                }
-                              },
-                              child: Container(
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        trip.bookingId.isNotEmpty
+                                            ? '#${trip.bookingId}'
+                                            : '#TRIP',
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: trip.isDriverToDriver
+                                              ? const Color(0xFF4338CA)
+                                              : const Color(0xFF047857),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.copy_rounded,
+                                        size: 12,
+                                        color: trip.isDriverToDriver
+                                            ? const Color(0xFF6366F1)
+                                            : const Color(0xFF10B981),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.grey.shade300,
-                                  ),
+                                  color: statusBgColor,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      trip.bookingId.isNotEmpty
-                                          ? '#${trip.bookingId}'
-                                          : '#TRIP',
-                                      style: const TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimaryLight,
-                                      ),
+                                    Icon(
+                                      statusIcon,
+                                      size: 12,
+                                      color: statusColor,
                                     ),
                                     const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.copy_rounded,
-                                      size: 12,
-                                      color: Colors.grey.shade600,
+                                    Text(
+                                      trip.statusBadgeLabel,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: statusColor,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${trip.serviceType.toUpperCase()} • ${trip.tripType.replaceAll('_', ' ').toUpperCase()}${trip.vehicleType.isNotEmpty ? ' • ${trip.vehicleType.toUpperCase()}' : ''}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                              letterSpacing: 0.5,
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusBgColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    statusIcon,
-                                    size: 12,
-                                    color: statusColor,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    trip.statusBadgeLabel,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: statusColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Fare Column with Category Sub-label
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
                         Text(
-                          '${trip.serviceType.toUpperCase()} • ${trip.tripType.replaceAll('_', ' ').toUpperCase()}',
+                          trip.formattedTotalFare,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: trip.isDriverToDriver
+                                ? const Color(0xFF4338CA)
+                                : AppColors.primary,
+                          ),
+                        ),
+                        Text(
+                          trip.isDriverToDriver ? 'D2D Earnings' : 'Trip Fare',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: trip.isDriverToDriver
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF059669),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+
+              // 2. Customer or Driver Referral Info Strip
+              Container(
+                color: trip.isDriverToDriver
+                    ? const Color(0xFFF8FAFC)
+                    : const Color(0xFFFAFAFA),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 17,
+                            backgroundColor: trip.isDriverToDriver
+                                ? const Color(0xFFEEF2FF)
+                                : const Color(0xFFECFDF5),
+                            child: Icon(
+                              trip.isDriverToDriver
+                                  ? Icons.badge_rounded
+                                  : Icons.person_rounded,
+                              size: 18,
+                              color: trip.isDriverToDriver
+                                  ? const Color(0xFF4F46E5)
+                                  : const Color(0xFF059669),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  trip.isDriverToDriver
+                                      ? 'Driver Network Referral'
+                                      : trip.customerName,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: trip.isDriverToDriver
+                                        ? const Color(0xFF1E1B4B)
+                                        : AppColors.textPrimaryLight,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  trip.isDriverToDriver
+                                      ? (trip.sourceDriverId.isNotEmpty
+                                          ? 'Source Driver: #${trip.sourceDriverId.length > 8 ? trip.sourceDriverId.substring(0, 8) : trip.sourceDriverId}'
+                                          : 'Driver-to-Driver Transfer')
+                                      : (trip.customerPhone.isNotEmpty
+                                          ? trip.customerPhone
+                                          : 'Registered User Booking'),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: trip.isDriverToDriver
+                                        ? const Color(0xFF6366F1)
+                                        : Colors.grey.shade600,
+                                    fontWeight: trip.isDriverToDriver
+                                        ? FontWeight.w500
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: trip.isDriverToDriver
+                            ? const Color(0xFFEEF2FF)
+                            : const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: trip.isDriverToDriver
+                              ? const Color(0xFFC7D2FE)
+                              : const Color(0xFFA7F3D0),
+                        ),
+                      ),
+                      child: Text(
+                        trip.isDriverToDriver ? 'D2D Referral' : 'Direct Client',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: trip.isDriverToDriver
+                              ? const Color(0xFF4338CA)
+                              : const Color(0xFF047857),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Driver Return / Stay Allowance (Highlight for D2D Outstation / Local)
+              if (trip.packageNote.isNotEmpty || trip.driverReturnOption.isNotEmpty) ...[
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.card_giftcard_rounded,
+                        size: 14,
+                        color: Color(0xFFB45309),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Driver Benefit / Return: ${trip.packageNote.isNotEmpty ? trip.packageNote : trip.driverReturnOption.join(', ')}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF92400E),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Booking Notes (User Notes)
+              if (trip.userNotes.trim().isNotEmpty) ...[
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: trip.isDriverToDriver
+                        ? const Color(0xFFEEF2FF)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: trip.isDriverToDriver
+                          ? const Color(0xFFC7D2FE)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.notes_rounded,
+                        size: 13,
+                        color: trip.isDriverToDriver
+                            ? const Color(0xFF4F46E5)
+                            : Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Note: ${trip.userNotes.trim()}',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade500,
-                            letterSpacing: 0.5,
+                            color: trip.isDriverToDriver
+                                ? const Color(0xFF3730A3)
+                                : Colors.grey.shade700,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-
-                  // Fare Column
-                  Text(
-                    trip.formattedTotalFare,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
-
-            // 2. Customer & Start OTP info strip
-            Container(
-              color: const Color(0xFFFAFAFA),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.1,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                trip.customerName,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimaryLight,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (trip.customerPhone.isNotEmpty)
-                                Text(
-                                  trip.customerPhone,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              ],
 
             const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
 
@@ -1418,9 +1662,11 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Customer Start OTP',
-                          style: TextStyle(
+                        Text(
+                          trip.isDriverToDriver
+                              ? 'Trip Start OTP'
+                              : 'Customer Start OTP',
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimaryLight,
@@ -1678,6 +1924,7 @@ class _TripCardWidgetState extends State<_TripCardWidget> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
