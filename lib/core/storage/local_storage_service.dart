@@ -37,20 +37,30 @@ class LocalStorageService {
     if (t.toLowerCase().startsWith('bearer ')) {
       t = t.substring(7).trim();
     }
-    if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+    if ((t.startsWith('"') && t.endsWith('"')) ||
+        (t.startsWith("'") && t.endsWith("'"))) {
       t = t.substring(1, t.length - 1).trim();
     }
     return t;
   }
 
   /// Collects token from SharedPreferences and caches it in static memory.
-  static Future<String> getOrCollectToken([LocalStorageService? service]) async {
+  static Future<String> getOrCollectToken([
+    LocalStorageService? service,
+  ]) async {
     if (_cachedToken != null && _cachedToken!.isNotEmpty) {
       return _cachedToken!;
     }
     try {
-      final prefs = service?.preferences ?? await SharedPreferences.getInstance();
-      for (final key in [keyToken, 'driver_token', 'jwt_token', 'auth_token', 'token']) {
+      final prefs =
+          service?.preferences ?? await SharedPreferences.getInstance();
+      for (final key in [
+        keyToken,
+        'driver_token',
+        'jwt_token',
+        'auth_token',
+        'token',
+      ]) {
         final val = prefs.getString(key);
         if (val != null && val.trim().isNotEmpty) {
           final clean = cleanToken(val);
@@ -61,7 +71,9 @@ class LocalStorageService {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [LocalStorageService] Error collecting token from SharedPreferences: $e');
+      debugPrint(
+        '⚠️ [LocalStorageService] Error collecting token from SharedPreferences: $e',
+      );
     }
     return '';
   }
@@ -269,13 +281,72 @@ class LocalStorageService {
   static const String keyFcmToken = 'fcm_token';
   static const String keyFcmTokenCamel = 'fcmToken';
 
+  /// Key name for Driver Job notification counter in SharedPreferences
+  static const String keyDriverJobNotificationCount =
+      'driver_job_notification_count';
+
+  /// Saves the persistent driver job notification count
+  static Future<void> saveDriverJobNotificationCount(int count) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(keyDriverJobNotificationCount, count < 0 ? 0 : count);
+    } catch (e) {
+      debugPrint(
+        '⚠️ [LocalStorageService] Error saving driver job notif count: $e',
+      );
+    }
+  }
+
+  /// Retrieves the persistent driver job notification count
+  static Future<int> getDriverJobNotificationCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(keyDriverJobNotificationCount) ?? 0;
+    } catch (e) {
+      debugPrint(
+        '⚠️ [LocalStorageService] Error getting driver job notif count: $e',
+      );
+      return 0;
+    }
+  }
+
+  /// Increments the persistent driver job notification count by 1 and returns new count
+  static Future<int> incrementDriverJobNotificationCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final current = prefs.getInt(keyDriverJobNotificationCount) ?? 0;
+      final next = current + 1;
+      await prefs.setInt(keyDriverJobNotificationCount, next);
+      return next;
+    } catch (e) {
+      debugPrint(
+        '⚠️ [LocalStorageService] Error incrementing driver job notif count: $e',
+      );
+      return 1;
+    }
+  }
+
+  /// Resets the persistent driver job notification count to 0
+  static Future<void> resetDriverJobNotificationCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(keyDriverJobNotificationCount, 0);
+    } catch (e) {
+      debugPrint(
+        '⚠️ [LocalStorageService] Error resetting driver job notif count: $e',
+      );
+    }
+  }
+
   /// Persists device FCM push token into SharedPreferences.
   Future<void> saveFcmToken(String fcmToken) async {
     try {
       final prefs = await _getPrefs();
       await prefs.setString(keyFcmToken, fcmToken);
       await prefs.setString(keyFcmTokenCamel, fcmToken);
-      debugPrint('💾 [LocalStorageService] Saved FCM token to SharedPreferences: $fcmToken');
+      debugPrint(
+        '💾 [LocalStorageService] Saved FCM token to SharedPreferences: $fcmToken',
+      );
     } catch (e) {
       debugPrint('⚠️ [LocalStorageService] Error saving FCM token: $e');
     }
@@ -298,7 +369,9 @@ class LocalStorageService {
       final prefs = await _getPrefs();
       await prefs.remove(keyFcmToken);
       await prefs.remove(keyFcmTokenCamel);
-      debugPrint('🗑️ [LocalStorageService] Cleared FCM token from SharedPreferences');
+      debugPrint(
+        '🗑️ [LocalStorageService] Cleared FCM token from SharedPreferences',
+      );
     } catch (e) {
       debugPrint('⚠️ [LocalStorageService] Error clearing FCM token: $e');
     }

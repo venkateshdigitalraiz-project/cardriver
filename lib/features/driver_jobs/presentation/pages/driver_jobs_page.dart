@@ -192,14 +192,15 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -210,12 +211,13 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white,
               shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
             child: const Icon(
               Icons.work_rounded,
-              color: Color(0xFFFFB800),
+              color: Color(0xFF2563EB),
               size: 26,
             ),
           ),
@@ -229,7 +231,7 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -237,7 +239,7 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                   'Connect directly with car owners & corporate employers.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF94A3B8),
+                    color: const Color(0xFF475569),
                   ),
                 ),
               ],
@@ -382,11 +384,13 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
     DriverJobsState state,
   ) {
     final targetJobId = job.jobId.isNotEmpty ? job.jobId : job.id;
-    final action = state.getJobAction(targetJobId) ??
+    final action =
+        state.getJobAction(targetJobId) ??
         state.getJobAction(job.jobId) ??
         (job.id.isNotEmpty ? state.getJobAction(job.id) : null);
     final isActioned = action != null;
-    final isActionLoading = state.isActionLoading(targetJobId) ||
+    final isActionLoading =
+        state.isActionLoading(targetJobId) ||
         state.isActionLoading(job.jobId) ||
         (job.id.isNotEmpty && state.isActionLoading(job.id));
 
@@ -746,10 +750,10 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                         onPressed: isActionLoading
                             ? null
                             : () => _showRejectJobDialog(
-                                  context,
-                                  job,
-                                  targetJobId,
-                                ),
+                                context,
+                                job,
+                                targetJobId,
+                              ),
                         icon: const Icon(
                           Icons.close_rounded,
                           size: 16,
@@ -783,8 +787,8 @@ class _DriverJobsViewState extends State<_DriverJobsView> {
                             ? null
                             : () {
                                 context.read<DriverJobsBloc>().add(
-                                      AcceptDriverJobEvent(targetJobId),
-                                    );
+                                  AcceptDriverJobEvent(targetJobId),
+                                );
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF059669),

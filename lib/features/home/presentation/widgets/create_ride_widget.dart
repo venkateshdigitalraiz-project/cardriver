@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/cache/common_charges_cache.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/style/app_colors.dart';
+import '../../../../core/style/app_typography.dart';
 import '../../../../core/utils/place_address_utils.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
 import '../../data/models/d_to_d_booking_model.dart';
@@ -136,7 +138,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0F172A),
+              primary: Color(0xFF2563EB),
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Color(0xFF0F172A),
@@ -158,7 +160,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0F172A),
+              primary: Color(0xFF2563EB),
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Color(0xFF0F172A),
@@ -232,20 +234,6 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         }
       });
     }
-  }
-
-  void _addQuickFare(int amount) {
-    final current = double.tryParse(_priceController.text.trim()) ?? 0.0;
-    final updated = current + amount;
-    _priceController.text = updated % 1 == 0
-        ? updated.toInt().toString()
-        : updated.toStringAsFixed(0);
-    setState(() {});
-  }
-
-  void _setQuickDuration(String val) {
-    _durationController.text = val;
-    setState(() {});
   }
 
   void _incrementDuration() {
@@ -406,7 +394,8 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     }
 
     // Resolve dynamic note text from CommonChargesCache / HomeBloc state (outstation.round_trip.note)
-    final charges = context.read<HomeBloc>().state.currentCharges ??
+    final charges =
+        context.read<HomeBloc>().state.currentCharges ??
         CommonChargesCache.instance.currentCharges;
     final dynamicNote = charges?.outstation?.roundTrip?.note.trim() ?? '';
     final String resolvedNote = dynamicNote.isNotEmpty
@@ -573,67 +562,56 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFFD97706),
-          surface: Colors.white,
-          onSurface: Color(0xFF0F172A),
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: _buildAppBar(),
-        bottomNavigationBar: _buildBottomActionBar(),
-        body: SafeArea(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 28),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              physics: const BouncingScrollPhysics(),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Clean, Light Header Info Banner (NO black background)
-                    _buildHeaderInfoStrip(),
+    return Scaffold(
+      backgroundColor: AppColors.lightBackground,
+      appBar: _buildAppBar(),
+      bottomNavigationBar: _buildBottomActionBar(),
+      body: SafeArea(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 28),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            physics: const BouncingScrollPhysics(),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Clean, Light Header Info Banner (NO black background)
+                  _buildHeaderInfoStrip(),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // Section 1: Compact Route Card (Uber-style timeline)
-                    _buildRouteCard(),
+                  // Section 1: Compact Route Card (Uber-style timeline)
+                  _buildRouteCard(),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // Section 2: Service & Trip Journey Type
-                    _buildServiceAndTripTypeCard(),
+                  // Section 2: Service & Trip Journey Type
+                  _buildServiceAndTripTypeCard(),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // Section 3: Compact Schedule & Duration (2-Column Space-Efficient Card)
-                    _buildScheduleAndDurationCard(),
+                  // Section 3: Compact Schedule & Duration (2-Column Space-Efficient Card)
+                  _buildScheduleAndDurationCard(),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // Section 4: Compact Driver Mobile & Fare Details
-                    _buildDriverAndFareCard(),
+                  // Section 4: Compact Driver Mobile & Fare Details
+                  _buildDriverAndFareCard(),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // Section 5: Vehicle & Transmission Options
-                    _buildVehicleAndTransmissionCard(),
+                  // Section 5: Vehicle & Transmission Options
+                  _buildVehicleAndTransmissionCard(),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // Section 6: Trip Note
-                    _buildTripNoteCard(),
-                  ],
-                ),
+                  // Section 6: Trip Note
+                  _buildTripNoteCard(),
+                ],
               ),
             ),
           ),
@@ -642,173 +620,140 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     );
   }
 
-  /// Clean, Modern AppBar
+  void _resetForm() {
+    setState(() {
+      _fromAddressController.clear();
+      _toAddressController.clear();
+      _pickupLat = null;
+      _pickupLng = null;
+      _dropLat = null;
+      _dropLng = null;
+      _phoneController.clear();
+      _priceController.clear();
+      _vehicleTypeController.text = 'suv';
+      _serviceType = 'local';
+      _tripType = 'one_way';
+      _transmission = 'manual';
+      _rapidoChargesSelected = false;
+      _selectedOutstationTransit = null;
+      _foodAndRoomSelected = false;
+      _selectedReturnVehicles.clear();
+      _durationController.text = '2';
+      final now = DateTime.now();
+      _selectedDateTime = DateTime(
+        now.year,
+        now.month,
+        now.day + 1,
+        now.hour,
+        now.minute,
+      ).add(const Duration(minutes: 30));
+      _updateDateTimeDisplay();
+    });
+  }
+
+  /// Clean, Modern AppBar following CarDriver Theme
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      scrolledUnderElevation: 1,
-      surfaceTintColor: Colors.transparent,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8, right: 4),
-        child: InkWell(
-          onTap: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              Navigator.pop(context);
-            }
-          },
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 16,
-              color: Color(0xFF0F172A),
-            ),
-          ),
+      backgroundColor: AppColors.lightSurface,
+      elevation: 0.5,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: AppColors.transparent,
+      leading: IconButton(
+        icon: const Icon(
+          Icons.arrow_back_ios_new_rounded,
+          color: AppColors.textPrimaryLight,
+          size: 20,
         ),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            Navigator.pop(context);
+          }
+        },
       ),
       title: Text(
-        'Post Driver Booking',
-        style: GoogleFonts.outfit(
-          color: const Color(0xFF0F172A),
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
-          letterSpacing: -0.3,
-        ),
+        'Booking Driver',
+        style: AppTypography.headingSmall(color: AppColors.textPrimaryLight)
+            .copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+            ),
       ),
+      centerTitle: true,
       actions: [
         IconButton(
           tooltip: 'Reset Form',
           icon: const Icon(
             Icons.refresh_rounded,
             size: 20,
-            color: Color(0xFF64748B),
+            color: AppColors.textMutedLight,
           ),
-          onPressed: () {
-            setState(() {
-              _fromAddressController.clear();
-              _toAddressController.clear();
-              _pickupLat = null;
-              _pickupLng = null;
-              _dropLat = null;
-              _dropLng = null;
-              _phoneController.clear();
-              _priceController.clear();
-              _vehicleTypeController.text = 'suv';
-              _serviceType = 'local';
-              _tripType = 'one_way';
-              _transmission = 'manual';
-              _rapidoChargesSelected = false;
-              _selectedOutstationTransit = null;
-              _foodAndRoomSelected = false;
-              _selectedReturnVehicles.clear();
-              _durationController.text = '2';
-              final now = DateTime.now();
-              _selectedDateTime = DateTime(
-                now.year,
-                now.month,
-                now.day + 1,
-                now.hour,
-                now.minute,
-              ).add(const Duration(minutes: 30));
-              _updateDateTimeDisplay();
-            });
-          },
+          onPressed: _resetForm,
         ),
         const SizedBox(width: 6),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(color: const Color(0xFFF1F5F9), height: 1),
+        child: Container(color: AppColors.lightCardBorder, height: 1),
       ),
     );
   }
 
-  /// Clean Light Header Strip (NO black background)
+  /// Clean Light Header Strip following CarDriver Brand Theme
   Widget _buildHeaderInfoStrip() {
-    final bool isLocal = _serviceType == 'local';
-    final bool isOneWay = _tripType == 'one_way';
-
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.lightCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.lightCardBorder),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: const Icon(
-                  Icons.local_shipping_rounded,
-                  size: 18,
-                  color: Color(0xFFD97706),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Driver-to-Driver Ride',
-                    style: GoogleFonts.outfit(
-                      color: const Color(0xFF0F172A),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'Broadcast booking to active network',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF64748B),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-            child: Text(
-              '${isLocal ? "LOCAL" : "OUTSTATION"} • ${isOneWay ? "1-WAY" : "ROUND"}',
-              style: GoogleFonts.inter(
-                color: const Color(0xFFB45309),
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
+            child: const Icon(
+              Icons.directions_car_rounded,
+              size: 20,
+              color: Color(0xFF2563EB),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Driver-to-Driver Ride',
+                  style: AppTypography.headingSmall(
+                    color: AppColors.textPrimaryLight,
+                  ).copyWith(fontSize: 13.5, fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  'Broadcast booking to active network',
+                  style: AppTypography.bodySmall(
+                    color: AppColors.textMutedLight,
+                  ).copyWith(fontSize: 11),
+                ),
+              ],
             ),
           ),
         ],
@@ -823,12 +768,12 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.lightCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.lightCardBorder),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -848,8 +793,8 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                   Container(
                     width: 26,
                     height: 26,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFECFDF5),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -857,7 +802,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                         width: 10,
                         height: 10,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
+                          color: AppColors.success,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -870,24 +815,30 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                       children: [
                         Text(
                           'PICKUP POINT',
-                          style: GoogleFonts.inter(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF059669),
-                            letterSpacing: 0.5,
-                          ),
+                          style:
+                              AppTypography.badgeText(
+                                color: AppColors.success,
+                              ).copyWith(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
                         ),
                         Text(
                           hasFrom
                               ? _fromAddressController.text
                               : 'Tap to select pickup point on map',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: hasFrom ? FontWeight.w600 : FontWeight.w400,
-                            color: hasFrom
-                                ? const Color(0xFF0F172A)
-                                : const Color(0xFF94A3B8),
-                          ),
+                          style:
+                              AppTypography.bodyMedium(
+                                color: hasFrom
+                                    ? AppColors.textPrimaryLight
+                                    : AppColors.textMutedLight,
+                              ).copyWith(
+                                fontSize: 13,
+                                fontWeight: hasFrom
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -908,20 +859,20 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                         child: Icon(
                           Icons.close_rounded,
                           size: 16,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.textMutedLight,
                         ),
                       ),
                     ),
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: AppColors.lightInputFill,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
                       Icons.map_rounded,
                       size: 16,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.textPrimaryLight,
                     ),
                   ),
                 ],
@@ -934,13 +885,17 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
             padding: const EdgeInsets.only(left: 12),
             child: Row(
               children: [
-                Container(width: 2, height: 14, color: const Color(0xFFCBD5E1)),
+                Container(
+                  width: 2,
+                  height: 14,
+                  color: AppColors.lightCardBorder,
+                ),
                 const SizedBox(width: 20),
                 const Expanded(
                   child: Divider(
                     height: 1,
                     thickness: 0.8,
-                    color: Color(0xFFF1F5F9),
+                    color: AppColors.lightInputFill,
                   ),
                 ),
               ],
@@ -959,7 +914,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                     width: 26,
                     height: 26,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Center(
@@ -967,7 +922,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                         width: 9,
                         height: 9,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD97706),
+                          color: const Color(0xFF2563EB),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -980,24 +935,30 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                       children: [
                         Text(
                           'DROP DESTINATION',
-                          style: GoogleFonts.inter(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFFD97706),
-                            letterSpacing: 0.5,
-                          ),
+                          style:
+                              AppTypography.badgeText(
+                                color: const Color(0xFF2563EB),
+                              ).copyWith(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
                         ),
                         Text(
                           hasTo
                               ? _toAddressController.text
                               : 'Tap to select destination on map',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: hasTo ? FontWeight.w600 : FontWeight.w400,
-                            color: hasTo
-                                ? const Color(0xFF0F172A)
-                                : const Color(0xFF94A3B8),
-                          ),
+                          style:
+                              AppTypography.bodyMedium(
+                                color: hasTo
+                                    ? AppColors.textPrimaryLight
+                                    : AppColors.textMutedLight,
+                              ).copyWith(
+                                fontSize: 13,
+                                fontWeight: hasTo
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1018,20 +979,20 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                         child: Icon(
                           Icons.close_rounded,
                           size: 16,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.textMutedLight,
                         ),
                       ),
                     ),
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: AppColors.lightInputFill,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
                       Icons.map_rounded,
                       size: 16,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.textPrimaryLight,
                     ),
                   ),
                 ],
@@ -1170,12 +1131,12 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.lightCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.lightCardBorder),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1197,9 +1158,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: AppColors.lightInputFill,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: AppColors.lightCardBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1209,17 +1170,19 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                               const Icon(
                                 Icons.calendar_today_rounded,
                                 size: 14,
-                                color: Color(0xFFD97706),
+                                color: Color(0xFF2563EB),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'SCHEDULE',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF64748B),
-                                  letterSpacing: 0.5,
-                                ),
+                                style:
+                                    AppTypography.badgeText(
+                                      color: const Color(0xFF2563EB),
+                                    ).copyWith(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                    ),
                               ),
                             ],
                           ),
@@ -1229,21 +1192,15 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                                     _dateTimeController.text.isNotEmpty
                                 ? _dateTimeController.text
                                 : 'Select Time',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF0F172A),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style:
+                                AppTypography.bodyMedium(
+                                  color: AppColors.textPrimaryLight,
+                                ).copyWith(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Tap to change',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF94A3B8),
-                              fontSize: 10.5,
-                            ),
                           ),
                         ],
                       ),
@@ -1258,9 +1215,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
+                      color: AppColors.lightInputFill,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: AppColors.lightCardBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1270,17 +1227,19 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                             const Icon(
                               Icons.timer_outlined,
                               size: 14,
-                              color: Color(0xFFD97706),
+                              color: Color(0xFF2563EB),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               isLocal ? 'DURATION' : 'DAYS',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF64748B),
-                                letterSpacing: 0.5,
-                              ),
+                              style:
+                                  AppTypography.badgeText(
+                                    color: const Color(0xFF2563EB),
+                                  ).copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
                             ),
                           ],
                         ),
@@ -1296,12 +1255,18 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: const Color(0xFFEFF6FF),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  border: Border.all(
+                                    color: const Color(0xFFBFDBFE),
+                                  ),
                                 ),
                                 child: const Center(
-                                  child: Icon(Icons.remove, size: 16, color: Color(0xFF0F172A)),
+                                  child: Icon(
+                                    Icons.remove,
+                                    size: 16,
+                                    color: Color(0xFF2563EB),
+                                  ),
                                 ),
                               ),
                             ),
@@ -1310,11 +1275,13 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                               isLocal
                                   ? '$durationVal ${durationVal == "1" ? "hr" : "hrs"}'
                                   : '$durationVal ${durationVal == "1" ? "day" : "days"}',
-                              style: GoogleFonts.outfit(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF0F172A),
-                              ),
+                              style:
+                                  AppTypography.headingSmall(
+                                    color: AppColors.textPrimaryLight,
+                                  ).copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                             // Increment
                             InkWell(
@@ -1324,12 +1291,18 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: const Color(0xFFEFF6FF),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  border: Border.all(
+                                    color: const Color(0xFFBFDBFE),
+                                  ),
                                 ),
                                 child: const Center(
-                                  child: Icon(Icons.add, size: 16, color: Color(0xFF0F172A)),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 16,
+                                    color: Color(0xFF2563EB),
+                                  ),
                                 ),
                               ),
                             ),
@@ -1342,48 +1315,6 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
               ],
             ),
           ),
-
-          const SizedBox(height: 8),
-
-          // Quick Duration Preset Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: (isLocal
-                      ? ['2', '4', '6', '8', '12']
-                      : ['1', '2', '3', '5', '7'])
-                  .map((val) {
-                final isSelected = _durationController.text.trim() == val;
-                final label = isLocal ? '$val hrs' : '$val day${val == "1" ? "" : "s"}';
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: InkWell(
-                    onTap: () => _setQuickDuration(val),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFFEF3C7) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
-                        ),
-                      ),
-                      child: Text(
-                        label,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                          color: isSelected ? const Color(0xFF92400E) : const Color(0xFF475569),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
         ],
       ),
     );
@@ -1393,248 +1324,293 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
   Widget _buildDriverAndFareCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.lightCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.lightCardBorder),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       padding: const EdgeInsets.all(12),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Driver Phone Field
-          Text(
-            'Driver Mobile Number',
-            style: GoogleFonts.inter(
-              color: const Color(0xFF334155),
-              fontWeight: FontWeight.w700,
-              fontSize: 12.5,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            style: GoogleFonts.inter(
-              color: const Color(0xFF0F172A),
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-            cursorColor: const Color(0xFFD97706),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
-            decoration: InputDecoration(
-              hintText: '10-digit mobile number',
-              hintStyle: GoogleFonts.inter(
-                color: const Color(0xFF94A3B8),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w400,
-              ),
-              prefixIcon: Container(
-                padding: const EdgeInsets.only(left: 10, right: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.phone_rounded,
-                      size: 16,
-                      color: Color(0xFF64748B),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(4),
+          // 1. Driver Mobile Field (Left Column)
+          Expanded(
+            flex: 7,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Driver Mobile',
+                  style: AppTypography.bodyMedium(
+                    color: AppColors.textPrimaryLight,
+                  ).copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  style:
+                      AppTypography.inputText(
+                        color: AppColors.textPrimaryLight,
+                      ).copyWith(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
                       ),
-                      child: Text(
-                        '+91',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF0F172A),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(height: 16, width: 1, color: const Color(0xFFCBD5E1)),
+                  cursorColor: const Color(0xFF2563EB),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
                   ],
-                ),
-              ),
-              suffixIcon: _phoneController.text.isNotEmpty
-                  ? GestureDetector(
-                      onTap: () {
-                        _phoneController.clear();
-                        setState(() {});
-                      },
-                      child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
-                    )
-                  : null,
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFD97706), width: 1.5),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Enter 10-digit driver mobile number';
-              }
-              final trimmed = value.trim();
-              if (trimmed.length != 10 || !RegExp(r'^\d{10}$').hasMatch(trimmed)) {
-                return 'Driver mobile number must be 10 digits';
-              }
-              return null;
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 2. Ride Fare Field
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Ride Price / Fare (₹)',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF334155),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12.5,
-                ),
-              ),
-              Text(
-                'Total Payable',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF94A3B8),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: _priceController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: GoogleFonts.outfit(
-              color: const Color(0xFF0F172A),
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-            cursorColor: const Color(0xFFD97706),
-            decoration: InputDecoration(
-              hintText: '0',
-              hintStyle: GoogleFonts.outfit(
-                color: const Color(0xFF94A3B8),
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-              ),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 12, right: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '₹',
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFFD97706),
+                  decoration: InputDecoration(
+                    hintText: '9876543210',
+                    hintStyle: AppTypography.inputHint(
+                      color: AppColors.textMutedLight,
+                    ).copyWith(fontSize: 12.5),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 0,
+                      minHeight: 0,
+                    ),
+                    prefixIcon: Container(
+                      padding: const EdgeInsets.only(left: 8, right: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '+91',
+                            style:
+                                AppTypography.inputText(
+                                  color: AppColors.textPrimaryLight,
+                                ).copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11.5,
+                                ),
+                          ),
+                          const SizedBox(width: 5),
+                          Container(
+                            height: 14,
+                            width: 1,
+                            color: AppColors.lightCardBorder,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Container(height: 18, width: 1, color: const Color(0xFFCBD5E1)),
-                  ],
-                ),
-              ),
-              suffixIcon: _priceController.text.isNotEmpty
-                  ? GestureDetector(
-                      onTap: () {
-                        _priceController.clear();
-                        setState(() {});
-                      },
-                      child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
-                    )
-                  : null,
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFD97706), width: 1.5),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Enter ride price / fare';
-              }
-              final parsed = double.tryParse(value.trim());
-              if (parsed == null || parsed <= 0) {
-                return 'Enter a valid price greater than ₹0';
-              }
-              return null;
-            },
-          ),
-
-          const SizedBox(height: 6),
-
-          // Quick-Add Fare Chips (+ ₹100, + ₹200, + ₹500, + ₹1000, + ₹2000)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [100, 200, 500, 1000, 2000].map((amt) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: InkWell(
-                    onTap: () => _addQuickFare(amt),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                    suffixIcon: _phoneController.text.isNotEmpty
+                        ? GestureDetector(
+                            onTap: () {
+                              _phoneController.clear();
+                              setState(() {});
+                            },
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 15,
+                              color: AppColors.textMutedLight,
+                            ),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.lightInputFill,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 11,
+                    ),
+                    errorMaxLines: 3,
+                    errorStyle: AppTypography.inputError(
+                      color: AppColors.error,
+                    ).copyWith(fontSize: 10.5, height: 1.25),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightCardBorder,
                       ),
-                      child: Text(
-                        '+ ₹$amt',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF0F172A),
-                        ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightCardBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF2563EB),
+                        width: 1.5,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.error,
+                        width: 1.2,
+                      ),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.error,
+                        width: 1.5,
                       ),
                     ),
                   ),
-                );
-              }).toList(),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Enter 10-digit driver mobile number';
+                    }
+                    final trimmed = value.trim();
+                    if (trimmed.length != 10 ||
+                        !RegExp(r'^\d{10}$').hasMatch(trimmed)) {
+                      return 'Driver mobile number must be 10 digits';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // 2. Ride Fare Field (Right Column)
+          Expanded(
+            flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Ride Price',
+                      style: AppTypography.bodyMedium(
+                        color: AppColors.textPrimaryLight,
+                      ).copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
+                    ),
+                    Text(
+                      'Fare (₹)',
+                      style: AppTypography.bodySmall(
+                        color: AppColors.textMutedLight,
+                      ).copyWith(fontSize: 10.5, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _priceController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  style: AppTypography.headingSmall(
+                    color: AppColors.textPrimaryLight,
+                  ).copyWith(fontSize: 15, fontWeight: FontWeight.w800),
+                  cursorColor: const Color(0xFF2563EB),
+                  decoration: InputDecoration(
+                    hintText: '0',
+                    hintStyle: AppTypography.inputHint(
+                      color: AppColors.textMutedLight,
+                    ).copyWith(fontSize: 15),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 0,
+                      minHeight: 0,
+                    ),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(left: 10, right: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '₹',
+                            style:
+                                AppTypography.headingSmall(
+                                  color: const Color(0xFF2563EB),
+                                ).copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(width: 5),
+                          Container(
+                            height: 14,
+                            width: 1,
+                            color: AppColors.lightCardBorder,
+                          ),
+                        ],
+                      ),
+                    ),
+                    suffixIcon: _priceController.text.isNotEmpty
+                        ? GestureDetector(
+                            onTap: () {
+                              _priceController.clear();
+                              setState(() {});
+                            },
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 15,
+                              color: AppColors.textMutedLight,
+                            ),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.lightInputFill,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 11,
+                    ),
+                    errorMaxLines: 3,
+                    errorStyle: AppTypography.inputError(
+                      color: AppColors.error,
+                    ).copyWith(fontSize: 10.5, height: 1.25),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightCardBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightCardBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF2563EB),
+                        width: 1.5,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.error,
+                        width: 1.2,
+                      ),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.error,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Enter ride price / fare';
+                    }
+                    final parsed = double.tryParse(value.trim());
+                    if (parsed == null || parsed <= 0) {
+                      return 'Enter a valid price greater than ₹0';
+                    }
+                    return null;
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -1779,15 +1755,15 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
           TextFormField(
             controller: _noteController,
             keyboardType: TextInputType.multiline,
-            maxLines: 2,
-            minLines: 2,
+            maxLines: 3,
+            minLines: 3,
             textCapitalization: TextCapitalization.sentences,
             style: GoogleFonts.inter(
               color: const Color(0xFF0F172A),
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
             ),
-            cursorColor: const Color(0xFFD97706),
+            cursorColor: const Color(0xFF2563EB),
             decoration: InputDecoration(
               hintText: 'Enter pickup notes or instructions for driver...',
               hintStyle: GoogleFonts.inter(
@@ -1801,7 +1777,11 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                         _noteController.clear();
                         setState(() {});
                       },
-                      child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: Color(0xFF94A3B8),
+                      ),
                     )
                   : null,
               filled: true,
@@ -1817,7 +1797,10 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFD97706), width: 1.5),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2563EB),
+                  width: 1.5,
+                ),
               ),
             ),
           ),
@@ -1833,7 +1816,8 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     required String subtitle,
     required IconData icon,
   }) {
-    final isSelected = _vehicleTypeController.text.trim().toLowerCase() == typeKey;
+    final isSelected =
+        _vehicleTypeController.text.trim().toLowerCase() == typeKey;
 
     return InkWell(
       onTap: () {
@@ -1846,10 +1830,14 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFFBEB) : const Color(0xFFF8FAFC),
+          color: isSelected
+              ? const Color(0xFFEFF6FF)
+              : AppColors.lightInputFill,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : AppColors.lightCardBorder,
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
@@ -1858,24 +1846,30 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
             Icon(
               icon,
               size: 20,
-              color: isSelected ? const Color(0xFFD97706) : const Color(0xFF64748B),
+              color: isSelected
+                  ? const Color(0xFF2563EB)
+                  : AppColors.textMutedLight,
             ),
             const SizedBox(height: 4),
             Text(
               title,
-              style: GoogleFonts.outfit(
-                color: isSelected ? const Color(0xFF92400E) : const Color(0xFF0F172A),
-                fontWeight: FontWeight.w700,
-                fontSize: 12.5,
-              ),
+              style:
+                  AppTypography.headingSmall(
+                    color: isSelected
+                        ? const Color(0xFF1D4ED8)
+                        : AppColors.textPrimaryLight,
+                  ).copyWith(
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
             ),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
-                color: isSelected ? const Color(0xFFB45309) : const Color(0xFF94A3B8),
-                fontSize: 9.5,
-                fontWeight: FontWeight.w400,
-              ),
+              style: AppTypography.bodySmall(
+                color: isSelected
+                    ? const Color(0xFF2563EB)
+                    : AppColors.textMutedLight,
+              ).copyWith(fontSize: 9.5),
             ),
           ],
         ),
@@ -1898,10 +1892,14 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFFBEB) : const Color(0xFFF8FAFC),
+          color: isSelected
+              ? const Color(0xFFEFF6FF)
+              : AppColors.lightInputFill,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : AppColors.lightCardBorder,
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
@@ -1912,8 +1910,8 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
               icon,
               size: 15,
               color: isSelected
-                  ? const Color(0xFFD97706)
-                  : const Color(0xFF64748B),
+                  ? const Color(0xFF2563EB)
+                  : AppColors.textMutedLight,
             ),
             const SizedBox(width: 6),
             Column(
@@ -1922,23 +1920,25 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.outfit(
-                    color: isSelected
-                        ? const Color(0xFF92400E)
-                        : const Color(0xFF0F172A),
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  ),
+                  style:
+                      AppTypography.headingSmall(
+                        color: isSelected
+                            ? const Color(0xFF1D4ED8)
+                            : AppColors.textPrimaryLight,
+                      ).copyWith(
+                        fontSize: 12,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                      ),
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: AppTypography.bodySmall(
                     color: isSelected
-                        ? const Color(0xFFB45309)
-                        : const Color(0xFF94A3B8),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w400,
-                  ),
+                        ? const Color(0xFF2563EB)
+                        : AppColors.textMutedLight,
+                  ).copyWith(fontSize: 9.5),
                 ),
               ],
             ),
@@ -1997,7 +1997,7 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFFD97706),
+                  color: Color(0xFF2563EB),
                 ),
               ),
             ),
@@ -2013,11 +2013,9 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
           children: [
             Text(
               isLocal ? 'Return Transit' : 'Return Travel Option',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF64748B),
-              ),
+              style: AppTypography.bodySmall(
+                color: AppColors.textMutedLight,
+              ).copyWith(fontSize: 11, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             SingleChildScrollView(
@@ -2063,15 +2061,17 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFFFFBEB) : Colors.white,
+        color: isSelected ? const Color(0xFFEFF6FF) : AppColors.lightSurface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isSelected ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+          color: isSelected
+              ? const Color(0xFF2563EB)
+              : AppColors.lightCardBorder,
           width: isSelected ? 1.5 : 1.0,
         ),
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
@@ -2085,16 +2085,24 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFD97706) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF2563EB)
+                        : AppColors.transparent,
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFFD97706) : const Color(0xFFCBD5E1),
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : AppColors.lightCardBorder,
                       width: 1.5,
                     ),
                   ),
                   child: isSelected
                       ? const Center(
-                          child: Icon(Icons.check_rounded, size: 12, color: Colors.white),
+                          child: Icon(
+                            Icons.check_rounded,
+                            size: 12,
+                            color: AppColors.white,
+                          ),
                         )
                       : null,
                 ),
@@ -2102,16 +2110,24 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                 Icon(
                   _getTransitIcon(vehicle),
                   size: 15,
-                  color: isSelected ? const Color(0xFFD97706) : const Color(0xFF64748B),
+                  color: isSelected
+                      ? const Color(0xFF2563EB)
+                      : AppColors.textMutedLight,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   vehicle,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? const Color(0xFF92400E) : const Color(0xFF334155),
-                  ),
+                  style:
+                      AppTypography.bodySmall(
+                        color: isSelected
+                            ? const Color(0xFF1D4ED8)
+                            : AppColors.textSecondaryLight,
+                      ).copyWith(
+                        fontSize: 12,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -2148,26 +2164,35 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
           prev.isLoadingCommonCharges != current.isLoadingCommonCharges ||
           prev.commonChargesList != current.commonChargesList,
       builder: (context, state) {
-        final charges = state.currentCharges ??
-            CommonChargesCache.instance.currentCharges;
-        final String noteText = charges?.outstation?.roundTrip?.note.trim() ??
-            CommonChargesCache.instance.currentCharges?.outstation?.roundTrip?.note.trim() ??
+        final charges =
+            state.currentCharges ?? CommonChargesCache.instance.currentCharges;
+        final String noteText =
+            charges?.outstation?.roundTrip?.note.trim() ??
+            CommonChargesCache
+                .instance
+                .currentCharges
+                ?.outstation
+                ?.roundTrip
+                ?.note
+                .trim() ??
             'inclusive with food and room';
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            color: _foodAndRoomSelected ? const Color(0xFFF0FDF4) : Colors.white,
+            color: _foodAndRoomSelected
+                ? AppColors.success.withValues(alpha: 0.1)
+                : AppColors.lightSurface,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: _foodAndRoomSelected
-                  ? const Color(0xFF059669)
-                  : const Color(0xFFE2E8F0),
+                  ? AppColors.success
+                  : AppColors.lightCardBorder,
               width: _foodAndRoomSelected ? 1.5 : 1.0,
             ),
           ),
           child: Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: () {
@@ -2176,7 +2201,10 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                 });
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Container(
@@ -2184,15 +2212,15 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                       height: 32,
                       decoration: BoxDecoration(
                         color: _foodAndRoomSelected
-                            ? const Color(0xFFDCFCE7)
-                            : const Color(0xFFECFDF5),
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(
                         child: Icon(
                           Icons.hotel_rounded,
                           size: 18,
-                          color: Color(0xFF059669),
+                          color: AppColors.success,
                         ),
                       ),
                     ),
@@ -2204,25 +2232,29 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                         children: [
                           Text(
                             'Trip Includes',
-                            style: GoogleFonts.outfit(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0F172A),
-                            ),
+                            style:
+                                AppTypography.headingSmall(
+                                  color: AppColors.textPrimaryLight,
+                                ).copyWith(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                           Text(
                             noteText.isNotEmpty
                                 ? noteText
                                 : 'inclusive with food and room',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: _foodAndRoomSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: _foodAndRoomSelected
-                                  ? const Color(0xFF065F46)
-                                  : const Color(0xFF64748B),
-                            ),
+                            style:
+                                AppTypography.bodySmall(
+                                  color: _foodAndRoomSelected
+                                      ? AppColors.textPrimaryLight
+                                      : AppColors.textMutedLight,
+                                ).copyWith(
+                                  fontSize: 11,
+                                  fontWeight: _foodAndRoomSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
                           ),
                         ],
                       ),
@@ -2234,19 +2266,23 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
                       height: 18,
                       decoration: BoxDecoration(
                         color: _foodAndRoomSelected
-                            ? const Color(0xFF059669)
-                            : Colors.transparent,
+                            ? AppColors.success
+                            : AppColors.transparent,
                         borderRadius: BorderRadius.circular(5),
                         border: Border.all(
                           color: _foodAndRoomSelected
-                              ? const Color(0xFF059669)
-                              : const Color(0xFFCBD5E1),
+                              ? AppColors.success
+                              : AppColors.lightCardBorder,
                           width: 1.6,
                         ),
                       ),
                       child: _foodAndRoomSelected
                           ? const Center(
-                              child: Icon(Icons.check_rounded, size: 13, color: Colors.white),
+                              child: Icon(
+                                Icons.check_rounded,
+                                size: 13,
+                                color: AppColors.white,
+                              ),
                             )
                           : null,
                     ),
@@ -2260,174 +2296,94 @@ class _BookingDriverPageState extends State<BookingDriverPage> {
     );
   }
 
-  /// Sticky Bottom Action Bar with Real-time Summary (NO black background)
+  /// Sticky Bottom Action Bar with Real-time Summary (CarDriver Theme)
   Widget _buildBottomActionBar() {
-    final fareText = _priceController.text.trim();
-    final driverPhone = _phoneController.text.trim();
-    final vehicleType = _vehicleTypeController.text.trim();
-
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.lightSurface,
         border: const Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          top: BorderSide(color: AppColors.lightCardBorder, width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),
         ],
       ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Summary strip
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
+        child: BlocBuilder<HomeBloc, HomeState>(
+          builder: (context, state) {
+            final isSubmitting = state.isSubmittingDtoDBooking;
+            return SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isSubmitting ? null : _submitForm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFF93C5FD),
+                  elevation: 2,
+                  shadowColor: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: isSubmitting
+                        ? null
+                        : const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          child: Text(
-                            '${_serviceType == 'local' ? 'Local' : 'Outstation'} • ${_tripType == 'one_way' ? '1-Way' : 'Round'}',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFFB45309),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        if (vehicleType.isNotEmpty) ...[
-                          const SizedBox(width: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              vehicleType.toUpperCase(),
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF0F172A),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
                               ),
                             ),
-                          ),
-                        ],
-                        if (driverPhone.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '+91 $driverPhone',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF64748B),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  fareText.isNotEmpty ? '₹$fareText' : 'Fare pending',
-                  style: GoogleFonts.outfit(
-                    color: fareText.isNotEmpty
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFF94A3B8),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // Primary CTA Button with Radiant Driver Yellow/Gold Gradient (NO black button)
-            BlocBuilder<HomeBloc, HomeState>(
-              builder: (context, state) {
-                final isSubmitting = state.isSubmittingDtoDBooking;
-                return SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: isSubmitting ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFB800),
-                      foregroundColor: const Color(0xFF0F172A),
-                      disabledBackgroundColor: const Color(0xFFFFB800).withValues(alpha: 0.6),
-                      elevation: 2,
-                      shadowColor: const Color(0xFFFFB800).withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: EdgeInsets.zero,
-                    ),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: isSubmitting
-                            ? null
-                            : const LinearGradient(
-                                colors: [Color(0xFFFFB800), Color(0xFFFF8A00)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: isSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0F172A)),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Post Driver Booking',
-                                    style: GoogleFonts.outfit(
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Post Driver Booking',
+                                style:
+                                    AppTypography.buttonPrimary(
+                                      color: Colors.white,
+                                    ).copyWith(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF0F172A),
                                       letterSpacing: -0.2,
                                     ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(
-                                    Icons.flash_on_rounded,
-                                    size: 18,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ],
                               ),
-                      ),
-                    ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.flash_on_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
                   ),
-                );
-              },
-            ),
-          ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

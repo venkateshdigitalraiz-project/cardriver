@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+// import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
+import '../../../../core/storage/local_storage_service.dart';
 
 import '../../../../core/style/app_colors.dart';
 import '../../../../core/style/app_spacing.dart';
@@ -15,6 +17,9 @@ import '../../../../injection_container.dart';
 import '../../../auth/domain/entities/customer_entity.dart';
 import '../../../navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../navigation/presentation/bloc/navigation_event.dart';
+import '../../../notifications/presentation/bloc/notification_bloc.dart';
+import '../../../notifications/presentation/bloc/notification_event.dart';
+import '../../../notifications/presentation/bloc/notification_state.dart';
 import '../../domain/entities/available_ride_entity.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -265,31 +270,8 @@ class _HomeView extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 4),
-                    // Circle Driver Jobs Icon Button
-                    IconButton(
-                      tooltip: 'Driver Jobs',
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2563EB),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.directions_car_outlined,
-                          color: Colors.white,
-                          size: 15,
-                        ),
-                      ),
-                      onPressed: () {
-                        context.push(
-                          AppRoutes.driverJobs,
-                          extra: customer.token,
-                        );
-                      },
-                    ),
+                    // Circle Driver Jobs Icon Button with Persistent Notification Count
+                    _DriverJobsIconButton(customer: customer),
                     const SizedBox(width: 4),
                     // WhatsApp Helpline Icon Button in AppBar right corner
                     IconButton(
@@ -993,7 +975,7 @@ class _HomeView extends StatelessWidget {
     final driverName = ride.sourceDriverName;
     final driverId = ride.sourceDriverId;
     final driverPhone = ride.sourceDriverPhone;
-    final returnOptions = ride.formattedReturnOptions;
+    // final returnOptions = ride.formattedReturnOptions;
 
     return Container(
       decoration: BoxDecoration(
@@ -1866,121 +1848,310 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  void _showShareDialog(BuildContext context) {
-    const shareText =
-        'Join me on the Car Driver app! Earn more with flexible bookings. Download now: https://play.google.com/store/apps/details?id=com.cardriver.app';
+  // void _showShareDialog(BuildContext context) {
+  //   const shareText =
+  //       'Join me on the Car Driver app! Earn more with flexible bookings. Download now: https://play.google.com/store/apps/details?id=com.cardriver.app';
 
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.white,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Share Car Driver App',
-                      style: AppTypography.headingSmall(
-                        color: AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.pop(sheetContext),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Share the app with fellow drivers and colleagues.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF25D366),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const FaIcon(
-                      FontAwesomeIcons.whatsapp,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                  title: const Text(
-                    'Share on WhatsApp',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    final waUri = Uri.parse(
-                      'whatsapp://send?text=${Uri.encodeComponent(shareText)}',
-                    );
-                    final webWaUri = Uri.parse(
-                      'https://wa.me/?text=${Uri.encodeComponent(shareText)}',
-                    );
-                    try {
-                      if (await canLaunchUrl(waUri)) {
-                        await launchUrl(
-                          waUri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      } else {
-                        await launchUrl(
-                          webWaUri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      }
-                    } catch (_) {}
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEFF6FF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.copy_rounded,
-                      color: Color(0xFF2563EB),
-                      size: 18,
-                    ),
-                  ),
-                  title: const Text(
-                    'Copy Link',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    Clipboard.setData(const ClipboardData(text: shareText));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('App link copied to clipboard!'),
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
+  //   showModalBottomSheet(
+  //     context: context,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     backgroundColor: Colors.white,
+  //     builder: (sheetContext) {
+  //       return SafeArea(
+  //         child: Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   Text(
+  //                     'Share Car Driver App',
+  //                     style: AppTypography.headingSmall(
+  //                       color: AppColors.textPrimaryLight,
+  //                     ),
+  //                   ),
+  //                   IconButton(
+  //                     icon: const Icon(Icons.close, size: 20),
+  //                     onPressed: () => Navigator.pop(sheetContext),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 6),
+  //               const Text(
+  //                 'Share the app with fellow drivers and colleagues.',
+  //                 style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               ListTile(
+  //                 contentPadding: EdgeInsets.zero,
+  //                 leading: Container(
+  //                   padding: const EdgeInsets.all(10),
+  //                   decoration: const BoxDecoration(
+  //                     color: Color(0xFF25D366),
+  //                     shape: BoxShape.circle,
+  //                   ),
+  //                   child: const FaIcon(
+  //                     FontAwesomeIcons.whatsapp,
+  //                     color: Colors.white,
+  //                     size: 18,
+  //                   ),
+  //                 ),
+  //                 title: const Text(
+  //                   'Share on WhatsApp',
+  //                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+  //                 ),
+  //                 onTap: () async {
+  //                   Navigator.pop(sheetContext);
+  //                   final waUri = Uri.parse(
+  //                     'whatsapp://send?text=${Uri.encodeComponent(shareText)}',
+  //                   );
+  //                   final webWaUri = Uri.parse(
+  //                     'https://wa.me/?text=${Uri.encodeComponent(shareText)}',
+  //                   );
+  //                   try {
+  //                     if (await canLaunchUrl(waUri)) {
+  //                       await launchUrl(
+  //                         waUri,
+  //                         mode: LaunchMode.externalApplication,
+  //                       );
+  //                     } else {
+  //                       await launchUrl(
+  //                         webWaUri,
+  //                         mode: LaunchMode.externalApplication,
+  //                       );
+  //                     }
+  //                   } catch (_) {}
+  //                 },
+  //               ),
+  //               ListTile(
+  //                 contentPadding: EdgeInsets.zero,
+  //                 leading: Container(
+  //                   padding: const EdgeInsets.all(10),
+  //                   decoration: const BoxDecoration(
+  //                     color: Color(0xFFEFF6FF),
+  //                     shape: BoxShape.circle,
+  //                   ),
+  //                   child: const Icon(
+  //                     Icons.copy_rounded,
+  //                     color: Color(0xFF2563EB),
+  //                     size: 18,
+  //                   ),
+  //                 ),
+  //                 title: const Text(
+  //                   'Copy Link',
+  //                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+  //                 ),
+  //                 onTap: () {
+  //                   Navigator.pop(sheetContext);
+  //                   Clipboard.setData(const ClipboardData(text: shareText));
+  //                   ScaffoldMessenger.of(context).showSnackBar(
+  //                     const SnackBar(
+  //                       content: Text('App link copied to clipboard!'),
+  //                       behavior: SnackBarBehavior.floating,
+  //                       duration: Duration(seconds: 2),
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+}
+
+/// Circular Driver Jobs Icon Button with Persistent Notification Badge Counter
+class _DriverJobsIconButton extends StatefulWidget {
+  final CustomerEntity customer;
+
+  const _DriverJobsIconButton({required this.customer});
+
+  @override
+  State<_DriverJobsIconButton> createState() => _DriverJobsIconButtonState();
+}
+
+class _DriverJobsIconButtonState extends State<_DriverJobsIconButton>
+    with WidgetsBindingObserver {
+  int _count = 0;
+  final Set<String> _processedNotifIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadStoredCount();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadStoredCount();
+    }
+  }
+
+  Future<void> _loadStoredCount() async {
+    final stored = await LocalStorageService.getDriverJobNotificationCount();
+    if (mounted) {
+      setState(() => _count = stored);
+    }
+  }
+
+  bool _isJobNotification({
+    String? type,
+    String? title,
+    String? body,
+    Map<String, dynamic>? data,
+  }) {
+    try {
+      return FirebaseMessagingService.isJobOfferNotification(
+        type: type,
+        title: title,
+        body: body,
+        data: data,
+      );
+    } catch (_) {
+      final t = (type ?? '').toLowerCase();
+      final ti = (title ?? '').toLowerCase();
+      final b = (body ?? '').toLowerCase();
+      return t.contains('job') || ti.contains('job') || b.contains('job');
+    }
+  }
+
+  Future<void> _onOpenDriverJobs() async {
+    // 1. Reset count in memory and persist 0 to SharedPreferences
+    setState(() => _count = 0);
+    await LocalStorageService.resetDriverJobNotificationCount();
+
+    // 2. Mark any currently loaded job notifications as read in NotificationBloc
+    try {
+      final notifBloc = context.read<NotificationBloc>();
+      final currentState = notifBloc.state;
+      if (currentState is NotificationLoaded) {
+        for (final n in currentState.notifications) {
+          if (!n.isRead &&
+              _isJobNotification(
+                type: n.type,
+                title: n.title,
+                body: n.message,
+                data: n.data,
+              )) {
+            notifBloc.add(MarkNotificationAsRead(n.id));
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 3. Navigate to Driver Jobs screen
+    if (context.mounted) {
+      await context.push(AppRoutes.driverJobs, extra: widget.customer.token);
+    }
+
+    // 4. Re-check stored count when returning (if a notification arrived while on the screen)
+    if (mounted) {
+      final currentStored =
+          await LocalStorageService.getDriverJobNotificationCount();
+      setState(() => _count = currentStored);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<NotificationBloc, NotificationState>(
+      listener: (context, notifState) {
+        if (notifState is NotificationLoaded &&
+            notifState.newlyReceived != null) {
+          final notif = notifState.newlyReceived!;
+          if (!_processedNotifIds.contains(notif.id)) {
+            _processedNotifIds.add(notif.id);
+            if (_isJobNotification(
+              type: notif.type,
+              title: notif.title,
+              body: notif.message,
+              data: notif.data,
+            )) {
+              final nextCount = _count + 1;
+              setState(() => _count = nextCount);
+              LocalStorageService.saveDriverJobNotificationCount(nextCount);
+            }
+          }
+        }
       },
+      child: IconButton(
+        tooltip: 'Driver Jobs',
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        icon: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF2563EB),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.directions_car_outlined,
+                color: Colors.white,
+                size: 15,
+              ),
+            ),
+            if (_count > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 15,
+                    minHeight: 15,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1.4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      _count > 99 ? '99+' : '$_count',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        onPressed: _onOpenDriverJobs,
+      ),
     );
   }
 }

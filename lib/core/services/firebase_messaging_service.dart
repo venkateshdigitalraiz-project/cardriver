@@ -27,20 +27,24 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     } catch (_) {}
   }
 
-  final title = message.notification?.title ??
+  final title =
+      message.notification?.title ??
       message.data['title']?.toString() ??
       message.data['heading']?.toString() ??
       message.data['subject']?.toString() ??
       'New Ride Notification';
 
-  final body = message.notification?.body ??
+  final body =
+      message.notification?.body ??
       message.data['body']?.toString() ??
       message.data['message']?.toString() ??
       message.data['content']?.toString() ??
       message.data['description']?.toString() ??
       'You have received an update';
 
-  debugPrint('🔔 [Background FCM] Received: id=${message.messageId}, title=$title, body=$body');
+  debugPrint(
+    '🔔 [Background FCM] Received: id=${message.messageId}, title=$title, body=$body',
+  );
 
   // If the push message is data-only (no system 'notification' object in FCM payload),
   // Android will NOT display a status-bar notification by default.
@@ -48,7 +52,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (message.notification == null) {
     try {
       final localNotifications = FlutterLocalNotificationsPlugin();
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const darwinSettings = DarwinInitializationSettings();
       const initSettings = InitializationSettings(
         android: androidSettings,
@@ -59,7 +65,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       final androidDetails = AndroidNotificationDetails(
         'high_importance_channel',
         'High Importance Notifications',
-        channelDescription: 'This channel is used for important ride alerts, updates, and messages.',
+        channelDescription:
+            'This channel is used for important ride alerts, updates, and messages.',
         importance: Importance.max,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
@@ -94,6 +101,16 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         notificationDetails: details,
         payload: payloadString,
       );
+
+      // Persist increment in background if job notification
+      if (FirebaseMessagingService.isJobOfferNotification(
+        type: message.data['type']?.toString(),
+        title: title,
+        body: body,
+        data: message.data,
+      )) {
+        await LocalStorageService.incrementDriverJobNotificationCount();
+      }
     } catch (e) {
       debugPrint('⚠️ [Background FCM Notification Error] $e');
     }
@@ -108,7 +125,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// - Topic subscriptions ('drivers', 'all', 'driver', 'rides') for ride dispatches
 /// - Receiving foreground, background, and opened-app messages
 class FirebaseMessagingService {
-  static final FirebaseMessagingService _instance = FirebaseMessagingService._internal();
+  static final FirebaseMessagingService _instance =
+      FirebaseMessagingService._internal();
   factory FirebaseMessagingService() => _instance;
   FirebaseMessagingService._internal();
 
@@ -129,12 +147,14 @@ class FirebaseMessagingService {
   final StreamController<String> _tokenRefreshStreamController =
       StreamController<String>.broadcast();
 
-  Stream<String> get onTokenRefreshStream => _tokenRefreshStreamController.stream;
+  Stream<String> get onTokenRefreshStream =>
+      _tokenRefreshStreamController.stream;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'high_importance_channel',
     'High Importance Notifications',
-    description: 'This channel is used for important ride alerts, updates, and messages.',
+    description:
+        'This channel is used for important ride alerts, updates, and messages.',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
@@ -153,7 +173,9 @@ class FirebaseMessagingService {
         );
       }
       _isInitialized = true;
-      debugPrint('✅ [Firebase] Initialized successfully with driverbooking-4b700');
+      debugPrint(
+        '✅ [Firebase] Initialized successfully with driverbooking-4b700',
+      );
     } catch (e) {
       try {
         if (Firebase.apps.isEmpty) {
@@ -169,17 +191,20 @@ class FirebaseMessagingService {
     if (_isInitialized) {
       try {
         // 3. Register top-level background message handler
-        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
 
         // 4. Request user notification permissions (including Android 13+)
         await requestPermission();
 
         // 5. Set foreground presentation options
-        await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+        await FirebaseMessaging.instance
+            .setForegroundNotificationPresentationOptions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
 
         // 6. Subscribe to broadcast topics for dispatch alerts
         try {
@@ -187,7 +212,9 @@ class FirebaseMessagingService {
           await FirebaseMessaging.instance.subscribeToTopic('drivers');
           await FirebaseMessaging.instance.subscribeToTopic('driver');
           await FirebaseMessaging.instance.subscribeToTopic('rides');
-          debugPrint('✅ [FCM Topics] Subscribed to "all", "drivers", "driver", and "rides"');
+          debugPrint(
+            '✅ [FCM Topics] Subscribed to "all", "drivers", "driver", and "rides"',
+          );
         } catch (e) {
           debugPrint('⚠️ [FCM Topics] Failed to subscribe: $e');
         }
@@ -205,7 +232,9 @@ class FirebaseMessagingService {
 
   /// Initialize local notification channels and permissions
   Future<void> _initLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -227,7 +256,9 @@ class FirebaseMessagingService {
 
     // Create high importance channel on Android
     final androidImplementation = _localNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidImplementation != null) {
       await androidImplementation.createNotificationChannel(_channel);
       try {
@@ -239,15 +270,17 @@ class FirebaseMessagingService {
 
     // Check if launched via local notification tap from terminated state
     try {
-      final launchDetails =
-          await _localNotificationsPlugin.getNotificationAppLaunchDetails();
+      final launchDetails = await _localNotificationsPlugin
+          .getNotificationAppLaunchDetails();
       if (launchDetails != null &&
           launchDetails.didNotificationLaunchApp &&
           launchDetails.notificationResponse != null) {
         debugPrint(
-            '🚀 [Local Notification Launch from terminated]: ${launchDetails.notificationResponse?.payload}');
+          '🚀 [Local Notification Launch from terminated]: ${launchDetails.notificationResponse?.payload}',
+        );
         handleNotificationTap(
-            payload: launchDetails.notificationResponse?.payload);
+          payload: launchDetails.notificationResponse?.payload,
+        );
       }
     } catch (e) {
       debugPrint('⚠️ [Local Notification launchDetails check notice]: $e');
@@ -262,7 +295,8 @@ class FirebaseMessagingService {
     String? payload,
   }) async {
     try {
-      final notificationId = id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      final notificationId =
+          id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
 
       final androidDetails = AndroidNotificationDetails(
         _channel.id,
@@ -319,10 +353,14 @@ class FirebaseMessagingService {
         provisional: false,
         sound: true,
       );
-      debugPrint('🔔 [FCM Permission] Authorization status: ${settings.authorizationStatus}');
+      debugPrint(
+        '🔔 [FCM Permission] Authorization status: ${settings.authorizationStatus}',
+      );
 
       final androidImplementation = _localNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidImplementation != null) {
         try {
           await androidImplementation.requestNotificationsPermission();
@@ -348,7 +386,8 @@ class FirebaseMessagingService {
     // 1. Try reading stored token from SharedPreferences first
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getString('fcm_token') ?? prefs.getString('fcmToken');
+      final stored =
+          prefs.getString('fcm_token') ?? prefs.getString('fcmToken');
       if (stored != null && stored.isNotEmpty) {
         _cachedToken = stored;
       }
@@ -403,13 +442,15 @@ class FirebaseMessagingService {
       // 1. Foreground message stream
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         try {
-          final title = message.notification?.title ??
+          final title =
+              message.notification?.title ??
               message.data['title']?.toString() ??
               message.data['heading']?.toString() ??
               message.data['subject']?.toString() ??
               'New Notification';
 
-          final body = message.notification?.body ??
+          final body =
+              message.notification?.body ??
               message.data['body']?.toString() ??
               message.data['message']?.toString() ??
               message.data['content']?.toString() ??
@@ -442,7 +483,9 @@ class FirebaseMessagingService {
 
       // 2. Message opened app from background
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        debugPrint('🚀 [FCM Opened from background]: ${message.notification?.title}');
+        debugPrint(
+          '🚀 [FCM Opened from background]: ${message.notification?.title}',
+        );
         _messageStreamController.add(message);
         handleNotificationTap(remoteMessage: message);
       });
@@ -458,7 +501,9 @@ class FirebaseMessagingService {
       // 4. Initial message when launched from terminated state
       FirebaseMessaging.instance.getInitialMessage().then((initialMessage) {
         if (initialMessage != null) {
-          debugPrint('🚀 [FCM Initial Message from terminated]: ${initialMessage.notification?.title}');
+          debugPrint(
+            '🚀 [FCM Initial Message from terminated]: ${initialMessage.notification?.title}',
+          );
           _messageStreamController.add(initialMessage);
           handleNotificationTap(remoteMessage: initialMessage);
         }
@@ -476,17 +521,18 @@ class FirebaseMessagingService {
     Map<String, dynamic>? data,
   }) {
     // 1. Direct type, category, or event keys
-    final rawType = (type ??
-            data?['type'] ??
-            data?['notificationType'] ??
-            data?['notification_type'] ??
-            data?['event'] ??
-            data?['category'] ??
-            data?['action'] ??
-            '')
-        .toString()
-        .toLowerCase()
-        .trim();
+    final rawType =
+        (type ??
+                data?['type'] ??
+                data?['notificationType'] ??
+                data?['notification_type'] ??
+                data?['event'] ??
+                data?['category'] ??
+                data?['action'] ??
+                '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
     if (rawType.contains('job')) {
       return true;
@@ -501,24 +547,32 @@ class FirebaseMessagingService {
     }
 
     // 3. Title check for job keywords
-    final rawTitle = (title ?? data?['title'] ?? data?['heading'] ?? data?['subject'] ?? '')
-        .toString()
-        .toLowerCase();
+    final rawTitle =
+        (title ?? data?['title'] ?? data?['heading'] ?? data?['subject'] ?? '')
+            .toString()
+            .toLowerCase();
     if (rawTitle.contains('job')) {
       return true;
     }
 
     // 4. Body check for job offer phrases
-    final rawBody = (body ?? data?['body'] ?? data?['message'] ?? data?['content'] ?? data?['description'] ?? '')
-        .toString()
-        .toLowerCase();
+    final rawBody =
+        (body ??
+                data?['body'] ??
+                data?['message'] ??
+                data?['content'] ??
+                data?['description'] ??
+                '')
+            .toString()
+            .toLowerCase();
     if (rawBody.contains('job offer') ||
         rawBody.contains('driver job') ||
         rawBody.contains('permanent job') ||
         rawBody.contains('job requirement') ||
         rawBody.contains('new job') ||
         rawBody.contains('posted a job') ||
-        rawBody.contains('job post')) {
+        rawBody.contains('job post') ||
+        rawBody.contains('job')) {
       return true;
     }
 
@@ -538,7 +592,8 @@ class FirebaseMessagingService {
 
     if (remoteMessage != null) {
       data = Map<String, dynamic>.from(remoteMessage.data);
-      title = remoteMessage.notification?.title ?? data['title']?.toString() ?? '';
+      title =
+          remoteMessage.notification?.title ?? data['title']?.toString() ?? '';
       body = remoteMessage.notification?.body ?? data['body']?.toString() ?? '';
       type = data['type']?.toString() ?? '';
     } else if (payload != null && payload.isNotEmpty) {
@@ -563,17 +618,30 @@ class FirebaseMessagingService {
     }
 
     // Specially ONLY navigate if it's a job offer notification
-    if (!isJobOfferNotification(type: type, title: title, body: body, data: data)) {
-      debugPrint('ℹ️ [Notification Tap] Not a job offer notification (type="$type", title="$title"). Skipping job redirect.');
+    if (!isJobOfferNotification(
+      type: type,
+      title: title,
+      body: body,
+      data: data,
+    )) {
+      debugPrint(
+        'ℹ️ [Notification Tap] Not a job offer notification (type="$type", title="$title"). Skipping job redirect.',
+      );
       return;
     }
 
-    debugPrint('🚀 [Notification Tap] Job offer notification tapped! Redirecting to ${AppRoutes.driverJobs}...');
+    // Reset notification count since user is visiting driver jobs
+    await LocalStorageService.resetDriverJobNotificationCount();
+
+    debugPrint(
+      '🚀 [Notification Tap] Job offer notification tapped! Redirecting to ${AppRoutes.driverJobs}...',
+    );
 
     // Retrieve driver auth token
     String token = await LocalStorageService.getOrCollectToken();
     if (token.isEmpty) {
-      token = data['token']?.toString() ?? data['driverToken']?.toString() ?? '';
+      token =
+          data['token']?.toString() ?? data['driverToken']?.toString() ?? '';
     }
 
     _navigateToDriverJobs(token);
@@ -594,17 +662,23 @@ class FirebaseMessagingService {
             AppRoutes.driverJobs,
             extra: token.isNotEmpty ? token : null,
           );
-          debugPrint('✅ [Notification Tap] Successfully redirected to ${AppRoutes.driverJobs}');
+          debugPrint(
+            '✅ [Notification Tap] Successfully redirected to ${AppRoutes.driverJobs}',
+          );
           return;
         } catch (e) {
-          debugPrint('⚠️ [Notification Tap] context.push error: $e, trying routerInstance');
+          debugPrint(
+            '⚠️ [Notification Tap] context.push error: $e, trying routerInstance',
+          );
           final router = AppRouter.routerInstance;
           if (router != null) {
             router.push(
               AppRoutes.driverJobs,
               extra: token.isNotEmpty ? token : null,
             );
-            debugPrint('✅ [Notification Tap] Successfully redirected via routerInstance');
+            debugPrint(
+              '✅ [Notification Tap] Successfully redirected via routerInstance',
+            );
             return;
           }
         }
@@ -613,7 +687,9 @@ class FirebaseMessagingService {
       if (attempts < maxAttempts) {
         Future.delayed(const Duration(milliseconds: 500), tryNavigate);
       } else {
-        debugPrint('⚠️ [Notification Tap] Could not resolve navigator context after $maxAttempts attempts.');
+        debugPrint(
+          '⚠️ [Notification Tap] Could not resolve navigator context after $maxAttempts attempts.',
+        );
       }
     }
 
@@ -644,7 +720,9 @@ class FirebaseMessagingService {
       _tokenRefreshStreamController.add(newToken);
       await _saveTokenToPreferences(newToken);
     }
-    debugPrint('🔄 [FCM] New token generated and saved in SharedPreferences after logout: $newToken');
+    debugPrint(
+      '🔄 [FCM] New token generated and saved in SharedPreferences after logout: $newToken',
+    );
     return newToken;
   }
 
@@ -668,4 +746,20 @@ class FirebaseMessagingService {
     _messageStreamController.close();
     _tokenRefreshStreamController.close();
   }
+}
+
+/// Top-level helper function delegating to [FirebaseMessagingService.isJobOfferNotification].
+/// Allows direct invocation without specifying class prefix.
+bool isJobOfferNotification({
+  String? type,
+  String? title,
+  String? body,
+  Map<String, dynamic>? data,
+}) {
+  return FirebaseMessagingService.isJobOfferNotification(
+    type: type,
+    title: title,
+    body: body,
+    data: data,
+  );
 }
